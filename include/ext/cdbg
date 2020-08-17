@@ -1,0 +1,89 @@
+﻿/**
+ * @file cdbg
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements debug stream class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#include <ostream>
+#include <streambuf>
+#include <string>
+
+#if _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#elif defined(QT_VERSION)
+#include <QDebug>
+#else
+#include <iostream>
+#endif
+
+namespace ext {
+/**
+ * @brief The debug stream buffer class
+ * Use ext::wcdbg or ext::cdbg (Same usage as std::cout or std::cerr)
+ *
+ * @tparam T
+ */
+template <class T>
+class debug_streambuf : public std::basic_streambuf<T, std::char_traits<T>> {
+public:
+  typedef typename std::char_traits<T> traits_type;
+  typedef
+      typename std::basic_streambuf<T, std::char_traits<T>>::int_type int_type;
+  typedef typename std::basic_streambuf<T, std::char_traits<T>>::char_type
+      char_type;
+
+  std::streamsize xsputn(const char_type *__s, std::streamsize __n) {
+    buffer_.assign(__s, __n);
+    sync();
+    return __n;
+  }
+
+  template <class Q = T>
+  typename std::enable_if<std::is_same<Q, char>::value, int>::type sync() {
+    int result = -1;
+#if defined(_WIN32)
+    OutputDebugStringA((PCSTR)buffer_.c_str());
+    result = 0;
+#elif defined(QT_VERSION)
+    qDebug().noquote() << QString::fromStdString(buffer_);
+    result = 0;
+#else
+    std::cout << buffer_.c_str();
+#endif
+    if (result == 0)
+      buffer_.clear();
+    return result;
+  }
+
+  template <class Q = T>
+  typename std::enable_if<std::is_same<Q, wchar_t>::value, int>::type sync() {
+    int result = -1;
+#if defined(_WIN32)
+    OutputDebugStringW((PCWSTR)buffer_.c_str());
+    result = 0;
+#elif defined(QT_VERSION)
+    qDebug().noquote() << QString::fromStdWString(buffer_);
+    result = 0;
+#else
+    std::wcout << buffer_.c_str();
+#endif
+    if (result == 0)
+      buffer_.clear();
+    return result;
+  }
+
+private:
+  std::basic_string<T> buffer_;
+};
+
+static debug_streambuf<char> cdbg_buffer;
+static std::ostream cdbg(&cdbg_buffer);
+
+static debug_streambuf<wchar_t> wcdbg_buffer;
+static std::wostream wcdbg(&wcdbg_buffer);
+} // namespace ext

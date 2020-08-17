@@ -1,0 +1,214 @@
+﻿/**
+ * @file collection
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements collection class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#include <iterator>
+#include <list>
+#include <memory>
+#include <utility>
+
+#include "shared_recursive_mutex"
+#include "singleton"
+
+namespace ext {
+template <class T, class L> class collection_base;
+template <class T> class collection_mgr;
+
+/// Defines the mutex class to use as the default.
+using mutex_class = ext::shared_recursive_mutex;
+
+/**
+ * @brief The collection_base_data class
+ * (Implemented for internal use only, do not use outside.)
+ *
+ * @tparam T : Item object class
+ */
+template <class T>
+class collection_base_data : public singleton<collection_base_data<T>> {
+  ///
+  /// Definition for singleton class
+  ///
+private:
+  /// In the singleton class, you declare that you can create objects.
+  friend ext::singleton<collection_base_data<T>>;
+
+  /**
+   * @brief It is defined so that it cannot be created directly from outside.
+   */
+  collection_base_data() {}
+
+  /**
+   * @brief It is defined so that it cannot be destroyed directly from the
+   * outside.
+   */
+  ~collection_base_data() {}
+
+  ///
+  /// implementation of the collection_base_data class
+  ///
+private:
+  /**
+   * @brief add
+   * @param item
+   */
+  void add(T *item) {
+    std::unique_lock<mutex_class> lock(mutex_);
+    items_.push_back(item);
+    const_items_.push_back(item);
+  }
+
+  /**
+   * @brief remove
+   * @param item
+   */
+  void remove(T *item) {
+    std::unique_lock<mutex_class> lock(mutex_);
+    items_.remove(item);
+    const_items_.remove(item);
+  }
+
+private:
+  std::list<T *> items_;
+  std::list<const T *> const_items_;
+  mutex_class mutex_;
+
+  friend class collection_mgr<T>;
+  friend class collection_base<T, std::unique_lock<mutex_class>>;
+  friend class collection_base<T, std::shared_lock<mutex_class>>;
+};
+
+/**
+ * @brief The collection_base class
+ * A class that manages adding/removing/retrieving items into a collection.
+ * The item is added in the constructor, and the item is removed in the
+ * destructor. (It is recommended to use collection, const_collection,
+ * collection_with_unique_lock, and collection_with_shared_lock rather than
+ * using this class directly.)
+ *
+ * @tparam T : Item object class
+ * @tparam L : Lock class
+ */
+template <class T, class L> class collection_base {
+public:
+  /**
+   * @brief The collection item class
+   */
+  class item : public mutex_class {
+  public:
+    /**
+     * @brief a item constructor
+     * @param is_temporary If this parameter is true, do not add to the
+     * collection.
+     */
+    item(bool is_temporary = false) : added_(false) {
+      if (!is_temporary) {
+        collection_base_data<T>::instance().add((T *)this);
+        added_ = true;
+      }
+    }
+
+    ~item() {
+      if (added_)
+        collection_base_data<T>::instance().remove((T *)this);
+    }
+
+  private:
+    bool added_;
+  };
+
+  collection_base() : lock_(collection_base_data<T>::instance().mutex_) {}
+
+  template <bool FOR_SHARED_ACCESS, typename U>
+  using iterator_type =
+      typename std::enable_if<std::is_same<std::shared_lock<mutex_class>,
+                                           L>::value == FOR_SHARED_ACCESS,
+                              U>::type;
+
+  template <class U = typename std::list<const T *>::const_iterator>
+  iterator_type<true, U> begin() const {
+    return collection_base_data<T>::instance().const_items_.cbegin();
+  }
+
+  template <class U = typename std::list<const T *>::const_iterator>
+  iterator_type<true, U> end() const {
+    return collection_base_data<T>::instance().const_items_.cend();
+  }
+
+  template <class U = typename std::list<const T *>::const_iterator>
+  iterator_type<true, U> erase(iterator_type<true, U> position) {
+    return collection_base_data<T>::instance().const_items_.erase(position);
+  }
+
+  template <class U = typename std::list<T *>::iterator>
+  iterator_type<false, U> begin() {
+    return collection_base_data<T>::instance().items_.begin();
+  }
+
+  template <class U = typename std::list<T *>::iterator>
+  iterator_type<false, U> end() {
+    return collection_base_data<T>::instance().items_.end();
+  }
+
+  template <class U = typename std::list<T *>::iterator>
+  iterator_type<false, U> erase(iterator_type<false, U> position) {
+    return collection_base_data<T>::instance().items_.erase(position);
+  }
+
+  mutex_class &mutex() { return collection_base_data<T>::instance().mutex_; }
+
+private:
+  L lock_;
+};
+
+/// Define constant collection object
+template <class T>
+using const_collection = collection_base<T, std::shared_lock<mutex_class>>;
+template <class T> using collection_with_shared_lock = const_collection<T>;
+
+/// Define collection object
+template <class T>
+using collection = collection_base<T, std::unique_lock<mutex_class>>;
+template <class T> using collection_with_unique_lock = collection<T>;
+
+/**
+ * @brief The collection_mgr class
+ * A class that directly adds/removes items to the collection.
+ * (This class is not recommended, and if you can, you should inherit
+ * ext::collection<T>::item from the item class so that it is automatically
+ * managed.)
+ *
+ * @tparam T : Item object class
+ */
+template <class T> class collection_mgr : private collection_base_data<T> {
+public:
+  /**
+   * @brief Add items directly to the collection.
+   *
+   * @param item Items to add
+   */
+  void add(T *item) {
+    std::unique_lock<mutex_class> lock(
+        collection_base_data<T>::instance().mutex_);
+    collection_base_data<T>::instance().items_.push_back(item);
+    collection_base_data<T>::instance().const_items_.push_back(item);
+  }
+
+  /**
+   * @brief Remove items directly to the collection.
+   *
+   * @param item Items to remove
+   */
+  void remove(T *item) {
+    std::unique_lock<mutex_class> lock(
+        collection_base_data<T>::instance().mutex_, std::defer_lock);
+    collection_base_data<T>::instance().items_.remove(item);
+    collection_base_data<T>::instance().const_items_.remove(item);
+  }
+};
+} // namespace ext

@@ -1,0 +1,45 @@
+﻿/**
+ * @file singleton
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements singleton template class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+namespace ext {
+/**
+ * @brief  The singleton template class.
+ * You need to specify "friend ext::singleton<?>" in your class.
+ * 
+ * ex)
+ * 
+ * class test : public ext::singleton<test>
+ * {
+ * private:
+ *     friend ext::singleton<test>;
+ *     test() {};
+ * ...
+ * };
+ * 
+ * @tparam C Class to apply singleton
+ */
+template <class C> class singleton {
+protected:
+  /**
+   * @brief It is defined so that it cannot be created directly from outside.
+   */
+  singleton(){};
+
+public:
+  /**
+   * @brief Create/return unique instance.
+   * @return Instance
+   */
+  static C &instance() {
+    static C instance;
+    return instance;
+  }
+};
+} // namespace ext

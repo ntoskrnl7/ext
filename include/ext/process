@@ -1,0 +1,226 @@
+/**
+ * @file process
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements process class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#elif defined(__linux)
+#include <string.h>
+#include <sys/signal.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
+
+#include <list>
+#include <ostream>
+#include <string>
+#include <thread>
+
+namespace ext {
+/**
+ * @brief The process class
+ *
+ */
+class process {
+private:
+#if defined(_WIN32)
+  typedef HANDLE native_handle_type;
+  typedef DWORD native_error_code;
+  typedef DWORD native_exit_code;
+#elif defined(__linux)
+  typedef pid_t native_handle_type;
+  typedef int native_error_code;
+  typedef int native_exit_code;
+#endif
+public:
+#if defined(_WIN32)
+  static const native_error_code no_error = 0;
+  static const native_exit_code exit_success = 0;
+#elif defined(__linux)
+  static const native_error_code no_error = 0;
+  static const native_exit_code exit_success = 0;
+#endif
+  class id {
+  public:
+#if defined(_WIN32)
+    id() : handle_(NULL) {}
+#elif defined(__linux)
+    id() : handle_(-1) {}
+#endif
+    id(native_handle_type handle) : handle_(handle) {}
+
+    friend bool operator==(process::id lhs, process::id rhs) noexcept {
+      return lhs.handle_ == rhs.handle_;
+    }
+
+    friend bool operator<(process::id lhs, process::id rhs) noexcept {
+      return lhs.handle_ < rhs.handle_;
+    }
+
+    template <class _CharT, class _Traits>
+    friend std::basic_ostream<_CharT, _Traits> &
+    operator<<(std::basic_ostream<_CharT, _Traits> &stream, process::id id) {
+      if (id == process::id())
+        return stream << "process::id of a non-executing process";
+      else
+        return stream << id.handle_;
+    }
+
+  private:
+    friend process;
+    mutable native_handle_type handle_;
+  };
+
+public:
+  process() : lastError_(no_error), exitCode_(exit_success) {}
+
+  process(const std::string &command, const std::list<std::string> &arguments)
+      : lastError_(no_error), exitCode_(exit_success), command_(command),
+        arguments_(arguments) {
+    execute_(command, arguments);
+  }
+
+  process(const process &) = delete;
+
+  process(process &&other) noexcept { swap(other); }
+
+  process &operator=(const process &) = delete;
+
+  process &operator=(process &&rhs) noexcept {
+    if (joinable())
+      std::terminate();
+    swap(rhs);
+    return *this;
+  }
+
+  void swap(process &p) noexcept { std::swap(id_, p.id_); }
+
+  ~process() {
+    if (joinable())
+      std::terminate();
+  }
+
+  bool joinable() const noexcept {
+    if (id_ == id())
+      return false;
+#if defined(_WIN32)
+    if (WaitForSingleObject(id_.handle_, 0) == WAIT_ABANDONED_0)
+      id_.handle_ = id().handle_;
+#elif defined(__linux)
+    int status;
+    if (waitpid(id_.handle_, &status, WNOHANG) > 0) {
+      if (WIFEXITED(status))
+        id_.handle_ = id().handle_;
+    }
+#endif
+    return !(id_ == id());
+  }
+
+  void join() {
+    if (!joinable())
+      return;
+#if defined(_WIN32)
+    if (WaitForSingleObject(id_.handle_, INFINITE) != WAIT_OBJECT_0) {
+      lastError_ = GetLastError();
+      return;
+    }
+    if (!GetExitCodeProcess(id_.handle_, &exitCode_)) {
+      lastError_ = GetLastError();
+    }
+    CloseHandle(id_.handle_);
+#elif defined(__linux)
+    int status;
+    if (waitpid(id_.handle_, &status, 0) == -1) {
+      lastError_ = errno;
+      return;
+    }
+    if (WIFEXITED(status))
+      exitCode_ = WEXITSTATUS(status);
+#endif
+    id_.handle_ = id().handle_;
+    return;
+  }
+
+  int exitCode() const { return exitCode_; }
+
+  void detach() {
+    if (!joinable())
+      return;
+#if defined(_WIN32)
+    CloseHandle(id_.handle_);
+#elif defined(__linux)
+    native_handle_type handle = id_.handle_;
+    std::thread([handle]() {
+      int status;
+      waitpid(handle, &status, 0);
+    }).detach();
+#endif
+    id_.handle_ = id().handle_;
+  }
+
+  process::id get_id() const noexcept { return id_; }
+
+  native_handle_type native_handle() { return id_.handle_; }
+
+private:
+  bool execute_(const std::string &command,
+                const std::list<std::string> &arguments) {
+    command_ = command;
+    arguments_ = arguments;
+    lastError_ = no_error;
+#if defined(_WIN32)
+    PROCESS_INFORMATION pi;
+    STARTUPINFO si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+
+    std::string cmd = command;
+    for (auto &argument : arguments)
+      cmd += " " + argument;
+
+    if (!CreateProcessA(nullptr, &cmd[0], NULL, NULL, FALSE,
+                        NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE |
+                            CREATE_SEPARATE_WOW_VDM | CREATE_NEW_PROCESS_GROUP,
+                        NULL, NULL, &si, &pi))
+      return false;
+    id_.handle_ = pi.hProcess;
+    return (pi.hProcess != NULL);
+#elif defined(__linux)
+    id_.handle_ = fork();
+    if (id_ == id()) {
+      lastError_ = errno;
+      return false;
+    }
+    if (id_.handle_)
+      return true;
+    setsid();
+    char **argv = new char *[arguments.size() + 2];
+    argv[0] = (char *)command.c_str();
+
+    const char **const_argv = (const char **)&argv[1];
+    for (auto &argument : arguments)
+      *const_argv++ = argument.c_str();
+    *const_argv = nullptr;
+    execvp(argv[0], argv);
+    std::terminate();
+    delete[] argv;
+    return true;
+#endif
+  }
+
+private:
+  native_error_code lastError_;
+  native_exit_code exitCode_;
+  id id_;
+  std::string command_;
+  std::list<std::string> arguments_;
+  std::thread waitThread_;
+};
+} // namespace ext

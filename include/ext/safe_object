@@ -1,0 +1,432 @@
+﻿/**
+ * @file safe_object
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements a template class for object thread-safe.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#include <functional>
+#include <shared_mutex>
+#include <utility>
+
+#include <algorithm>
+#include <atomic>
+#include <list>
+#include <sstream>
+#include <thread>
+
+#include "singleton"
+#include "typeinfo"
+
+namespace ext {
+/**
+ * @brief The safe_object_base class
+ *
+ * @tparam T : Target object class
+ * @tparam OBJECT : Target object
+ * @tparam M : Mutex class
+ * @tparam MUTEX : Mutex object
+ * @tparam L : lock class
+ * @tparam FOR_SHARED_ACCESS : If this parameter is true, shared aceess. if
+ * false, exclusive acess.
+ */
+template <class T, T &OBJECT, class M, M &MUTEX, class L,
+          bool FOR_SHARED_ACCESS>
+class safe_object_base {
+public:
+  /**
+   * @brief safe_object_base 생성자
+   *
+   * @param object 안전하게 접근할 객체
+   */
+  safe_object_base() : lock_(MUTEX) {}
+
+  /// 공유 접근일때는 상수 객체를 반환하도록 합니다.
+  template <bool B, typename U>
+  using return_type = typename std::enable_if<FOR_SHARED_ACCESS == B, U>::type;
+
+  /**
+   * @brief operator () 안전하게 접근할 객체를 반환하는 ()연산자
+   *object_
+   * @return 안전하게 접근할 객체
+   */
+  template <class R = const T &> return_type<true, R> operator()() {
+    return OBJECT;
+  }
+
+  /**
+   * @brief operator () 안전하게 접근할 객체를 반환하는 ()연산자
+   *
+   * @return 안전하게 접근할 객체
+   */
+  template <class R = T &> return_type<false, R> operator()() { return OBJECT; }
+
+private:
+  L lock_;
+};
+
+/**
+ * @brief Macro to obtain safe object type
+ *
+ * @param _obj_ : Target object
+ * @param _mutex_ : Mutex object
+ * @param _lock_type_ : lock class
+ * @param _for_shared_access_ : If this parameter is true, shared aceess. if
+ * false, exclusive acess.
+ * @return Safe object type
+ */
+#define get_safe_object_base_type(_obj_, _mutex_, _lock_type_,                 \
+                                  _for_shared_access_)                         \
+  ext::safe_object_base<decltype(_obj_), _obj_, decltype(_mutex_),             \
+                        _lock_type_<decltype(_mutex_)>, _for_shared_access_>(  \
+      _obj_, _mutex_)
+
+/**
+ * @brief Macros to safety acquire object
+ *
+ * @param _obj_ : Target object
+ * @param _mutex_ : Mutex object
+ * @param _lock_type_ : lock class
+ * @param _for_shared_access_ : If this parameter is true, shared aceess. if
+ * false, exclusive acess.
+ * @return Safe object
+ */
+#define get_object_base_safety(_obj_, _mutex_, _lock_type_,                    \
+                               _for_shared_access_)                            \
+  get_safe_object_base_type(_obj_, _mutex_, _lock_type_, _for_shared_access_)()
+
+#if defined(_MSC_VER)
+#pragma warning(disable : 4984)
+///
+///  MSVC는 아직 깔끔한 방법이 안떠올라서 if constexpr를 사용하여
+///  FOR_SHARED_ACCESS의 값에 따라서 다른 코드가 컴파일되도록 하였습니다.
+/// (깔끔한 방법이 아니므로 추후 개선이 필요합니다.)
+///
+
+template <class T, T &OBJECT, class M, M &MUTEX, bool FOR_SHARED_ACCESS>
+class safe_object {
+public:
+  safe_object() : obj_(nullptr) {
+    if constexpr (FOR_SHARED_ACCESS)
+      obj_ = static_cast<void *>(
+          new safe_object_base<T, OBJECT, M, MUTEX, std::shared_lock<M>,
+                               FOR_SHARED_ACCESS>());
+    else
+      obj_ = static_cast<void *>(
+          new safe_object_base<T, OBJECT, M, MUTEX, std::unique_lock<M>,
+                               FOR_SHARED_ACCESS>());
+  }
+
+  ~safe_object() {
+    if (obj_ == nullptr)
+      return;
+
+    if constexpr (FOR_SHARED_ACCESS)
+      delete static_cast<safe_object_base<
+          T, OBJECT, M, MUTEX, std::shared_lock<M>, FOR_SHARED_ACCESS> *>(obj_);
+    else
+      delete static_cast<safe_object_base<
+          T, OBJECT, M, MUTEX, std::unique_lock<M>, FOR_SHARED_ACCESS> *>(obj_);
+  }
+
+  template <bool B, typename U>
+  using return_type = typename std::enable_if<FOR_SHARED_ACCESS == B, U>::type;
+
+  template <class R = const T &> return_type<true, R> operator()() {
+    return OBJECT;
+  }
+  
+  template <class R = T &> return_type<false, R> operator()() { return OBJECT; }
+
+private:
+  void *obj_;
+};
+#pragma warning(default : 4984)
+#else
+
+template <class T, T &OBJECT, class M, M &MUTEX, bool FOR_SHARED_ACCESS>
+class safe_object;
+
+///
+/// MSVC에서는 종속 형식이 아닌 템플릿 매개 변수를 포함 하는 템플릿 클래스를
+/// 부분적으로 특수화 하는것이 허용되지 않습니다. (gcc나 Clang은 허용됨)
+/// https://docs.microsoft.com/ko-kr/cpp/error-messages/compiler-errors-2/compiler-error-c2754
+/// https://timsong-cpp.github.io/cppwp/n4659/temp.class.spec#8
+///
+
+/**
+ * @brief 공유 잠금을 수행하는 safe_object 클래스
+ *
+ * @tparam T : 대상 클래스
+ * @tparam OBJECT : 대상 객체
+ * @tparam M : 뮤텍스 클래스
+ * @tparam MUTEX : 뮤텍스 객체
+ */
+template <class T, T &OBJECT, class M, M &MUTEX>
+class safe_object<T, OBJECT, M, MUTEX, true>
+    : public safe_object_base<T, OBJECT, M, MUTEX, std::shared_lock<M>, true> {
+public:
+  safe_object()
+      : safe_object_base<T, OBJECT, M, MUTEX, std::shared_lock<M>, true>() {}
+};
+
+/**
+ * @brief 단독 잠금을 수행하는 safe_object 클래스
+ *
+ * @tparam T : 대상 클래스
+ * @tparam OBJECT : 대상 객체
+ * @tparam M : 뮤텍스 클래스
+ * @tparam MUTEX : 뮤텍스 객체
+ */
+template <class T, T &OBJECT, class M, M &MUTEX>
+class safe_object<T, OBJECT, M, MUTEX, false>
+    : public safe_object_base<T, OBJECT, M, MUTEX, std::unique_lock<M>, false> {
+public:
+  safe_object()
+      : safe_object_base<T, OBJECT, M, MUTEX, std::unique_lock<M>, false>() {}
+};
+
+#endif
+
+/**
+ * @brief 안전한 객체 타입을 획득하는 매크로
+ *
+ * @param _obj_ : 안전하게 접근할 객체
+ * @param _mutex_ : 뮤텍스 객체
+ * @param _for_shared_access_ : 공유 접근을 위한 경우 true, 단독 접근을 위한
+ * 경우 false
+ * @return 안전하게 접근할 객체의 타입
+ */
+#define safe_object_type(_obj_, _mutex_, _for_shared_access_)                  \
+  ext::safe_object<decltype(_obj_), _obj_, decltype(_mutex_), _mutex_,         \
+                   _for_shared_access_>()
+
+/**
+ * @brief 객체를 안전하게 획득하는 매크로
+ *
+ * @param _obj_ : 안전하게 접근할 객체
+ * @param _mutex_ : 뮤텍스 객체
+ * @param _for_shared_access_ : 공유 접근을 위한 경우 true, 단독 접근을 위한
+ * 경우 false
+ * @return 안전하게 접근할 객체
+ */
+#define get_object_safety(_obj_, _mutex_, _for_shared_access_)                 \
+  (safe_object_type(_obj_, _mutex_, _for_shared_access_))()
+
+///
+///  추적 기능
+///
+
+template <class T, T &OBJECT, class M, M &MUTEX, bool FOR_SHARED_ACCESS>
+class safe_object_with_trace;
+
+/**
+ * @brief 뮤텍스 추적 데이터 클래스
+ *
+ * @tparam T : 대상 객체 클래스
+ * @tparam OBJECT : 대상 객체
+ * @tparam M : 뮤텍스 클래스
+ * @tparam MUTEX : 뮤텍스 객체
+ */
+template <class T, T &OBJECT, class M, M &MUTEX>
+class mutex_trace_data
+    : public ext::singleton<mutex_trace_data<T, OBJECT, M, MUTEX>> {
+  ///
+  /// singleton 클래스를 위한 정의
+  ///
+private:
+  /// singleton 클래스에서는 객체를 생성할 수 있도록 선언합니다.
+  friend ext::singleton<mutex_trace_data<T, OBJECT, M, MUTEX>>;
+
+  /**
+   * @brief 생성자 (외부에서 생성하지 못하도록 private로 선언함)
+   */
+  mutex_trace_data() {}
+
+  ///
+  /// mutex_trace_data 클래스 구현
+  ///
+public:
+  /**
+   * @brief 추적하지 않을 스레드를 등록합니다.
+   */
+  void
+  registerUntrackedThread(std::thread::id id = std::this_thread::get_id()) {
+    std::unique_lock<decltype(untrackedThreadsMutex_)> lock(
+        untrackedThreadsMutex_);
+    untrackedThreads_.push_back(id);
+    untrackedThreads_.sort();
+    untrackedThreads_.unique();
+  }
+
+  /**
+   * @brief 추적하지 않는 스레드를 추적합니다.
+   */
+  void
+  unregisterUntrackedThread(std::thread::id id = std::this_thread::get_id()) {
+    std::unique_lock<decltype(untrackedThreadsMutex_)> lock(
+        untrackedThreadsMutex_);
+    untrackedThreads_.remove(id);
+  }
+
+public:
+  std::atomic<bool> enabled;
+
+private:
+  std::atomic<unsigned long long> lockCount_;
+  std::atomic<unsigned long long> unlockCount_;
+  std::atomic<unsigned long long> waitCount_;
+  std::shared_timed_mutex untrackedThreadsMutex_;
+  std::list<std::thread::id> untrackedThreads_;
+
+  // safe_object_with_trace클래스에서는 멤버에 접근할 수 있도록 정의.
+  friend class safe_object_with_trace<T, OBJECT, M, MUTEX, true>;
+  friend class safe_object_with_trace<T, OBJECT, M, MUTEX, false>;
+};
+
+/**
+ * @brief 객체를 안전하게 접근하는 클래스입니다.
+ *
+ * @tparam T : 대상 객체 클래스
+ * @tparam OBJECT : 대상 객체
+ * @tparam M : 뮤텍스 클래스
+ * @tparam MUTEX : 뮤텍스 객체
+ * @tparam FOR_SHARED_ACCESS : 공유 접근을 위한 경우 true, 단독 접근을 위한 경우
+ * false
+ */
+template <class T, T &OBJECT, class M, M &MUTEX, bool FOR_SHARED_ACCESS>
+class safe_object_with_trace
+    : public safe_object<T, OBJECT, M, MUTEX, FOR_SHARED_ACCESS> {
+public:
+  safe_object_with_trace(std::ostream &trace_stream, const char *file_name,
+                         int line)
+      : safe_object<T, OBJECT, M, MUTEX, FOR_SHARED_ACCESS>(),
+        trace_stream_(trace_stream), file_name_(file_name), line_(line) {
+    auto &trace_data = mutex_trace_data<T, OBJECT, M, MUTEX>::instance();
+
+    // 추적하지 않는 스레드라면 작업을 마치도록 합니다.
+    {
+      std::shared_lock<decltype(trace_data.untrackedThreadsMutex_)> lock(
+          trace_data.untrackedThreadsMutex_);
+      traced_ = std::find(trace_data.untrackedThreads_.begin(),
+                          trace_data.untrackedThreads_.end(),
+                          std::this_thread::get_id()) ==
+                trace_data.untrackedThreads_.end();
+      if (!traced_)
+        return;
+    }
+    traced_ = trace_data.enabled;
+
+    // 추적 내용을 출력합니다.
+    if (traced_) {
+      std::ostringstream stream;
+      stream << "--------------- lock "
+             << (FOR_SHARED_ACCESS ? "for shared" : "for exclusive")
+             << " ---------------" << std::endl;
+      stream << "location : " << file_name_ << ":" << line_ << std::endl;
+      stream << "thread id : " << std::this_thread::get_id() << std::endl;
+
+      stream << "class type : " << get_type_name<T>().c_str()
+             << "\tobject address : " << std::hex << &OBJECT << std::endl;
+      stream << "mutex type :" << get_type_name<M>().c_str()
+             << "\t mutex address : " << std::hex << &MUTEX << std::endl;
+
+      stream << "mutex - " << (FOR_SHARED_ACCESS ? "shared" : "exclusive")
+             << "_lock : " << std::dec << ++trace_data.lockCount_ << std::endl;
+      stream << "mutex - wait : " << std::dec << ++trace_data.waitCount_
+             << std::endl;
+      stream << "--------------- lock "
+             << (FOR_SHARED_ACCESS ? "for shared" : "for exclusive")
+             << " ---------------" << std::endl
+             << std::endl;
+      trace_stream_ << stream.str();
+      trace_stream_.flush();
+    }
+  }
+
+  ~safe_object_with_trace() {
+    // 추적 내용을 출력합니다.
+    if (traced_) {
+      auto &trace_data = mutex_trace_data<T, OBJECT, M, MUTEX>::instance();
+      std::ostringstream stream;
+      stream << "--------------- unlock "
+             << (FOR_SHARED_ACCESS ? "for shared" : "for exclusive")
+             << " ---------------" << std::endl;
+      stream << "location : " << file_name_ << ":" << line_ << std::endl;
+      stream << "thread id : " << std::this_thread::get_id() << std::endl;
+
+      stream << "class type : " << get_type_name<T>().c_str()
+             << "\tobject address : " << std::hex << &OBJECT << std::endl;
+      stream << "mutex type :" << get_type_name<M>().c_str()
+             << "\t mutex address : " << std::hex << &MUTEX << std::endl;
+
+      stream << "mutex " << (FOR_SHARED_ACCESS ? "shared" : "exclusive")
+             << "_unlock : " << std::dec << ++trace_data.unlockCount_
+             << std::endl;
+      stream << "mutex - wait : " << std::dec << --trace_data.waitCount_
+             << std::endl;
+      stream << "--------------- unlock "
+             << (FOR_SHARED_ACCESS ? "for shared" : "for exclusive")
+             << " ---------------" << std::endl
+             << std::endl;
+      trace_stream_ << stream.str();
+      trace_stream_.flush();
+    }
+  }
+
+private:
+  std::ostream &trace_stream_;
+  const char *file_name_;
+  int line_;
+  bool traced_;
+};
+
+/**
+ * @brief 추적 로그를 남기면서 안전하게 객체를 획득하는 클래스의 타입을 획득하는
+ * 매크로
+ *
+ * @param _obj_ : 안전하게 접근할 객체
+ * @param _mutex_ : 뮤텍스 객체
+ * @param _for_shared_access_ : 공유 접근을 위한 경우 true, 단독 접근을 위한
+ * 경우 true
+ * @return 안전하게 접근할 객체
+ */
+#define safe_object_with_trace_type(_obj_, _mutex_, _for_shared_access_)       \
+  ext::safe_object_with_trace<decltype(_obj_), _obj_, decltype(_mutex_),       \
+                              _mutex_, _for_shared_access_>
+
+/**
+ * @brief 뮤텍스 추적 데이터 타입을 반환하는 매크로
+ *
+ * @param _obj_ : 안전하게 접근할 객체
+ * @param _mutex_ : 뮤텍스 객체
+ * @return 뮤텍스 추적 데이터 타입
+ */
+#define mutex_trace_data_type(_obj_, _mutex_)                                  \
+  ext::mutex_trace_data<decltype(_obj_), _obj_, decltype(_mutex_), _mutex_>
+
+/**
+ * @brief 추적 로그를 남기면서 객체를 안전하게 획득하는 매크로
+ *
+ * @param _obj_ : 안전하게 접근할 객체
+ * @param _mutex_ : 뮤텍스 객체
+ * @param _for_shared_access_ : 공유 접근을 위한 경우 true, 단독 접근을 위한
+ * 경우 false
+ * @param stream : Log stream object (std::cout, std::cerr, ext:cdbg, ...)
+ * @return 안전하게 접근할 객체
+ */
+#define get_object_safety_with_trace(_obj_, _mutex_, _for_shared_access_,      \
+                                     stream)                                   \
+  safe_object_with_trace_type(_obj_, _mutex_, _for_shared_access_)(            \
+      stream, __FILE__, __LINE__)()
+
+#define register_untracked_thread(_obj_, _mutex_)                              \
+  mutex_trace_data_type(_obj_, _mutex_)::instance().registerUntrackedThread
+
+#define unregister_untracked_thread(_obj_, _mutex_)                            \
+  mutex_trace_data_type(_obj_, _mutex_)::instance().unregisterUntrackedThread
+
+} // namespace ext
