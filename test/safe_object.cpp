@@ -32,8 +32,8 @@ TEST(safe_object_test, safe_object) {
 }
 
 #define obj_t mutex_trace_data_type(obj, mtx)::instance()
-#define obj_t_rw get_object_safety_with_trace(obj, mtx, false, ext::cdbg)
-#define obj_t_r get_object_safety_with_trace(obj, mtx, true, ext::cdbg)
+#define obj_t_rw (get_object_safety_with_trace(obj, mtx, false, ext::cdbg))
+#define obj_t_r (get_object_safety_with_trace(obj, mtx, true, ext::cdbg))
 
 TEST(safe_object_test, safe_object_with_trace) {
   obj_t.enabled = true;
