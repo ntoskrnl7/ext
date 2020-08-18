@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file process
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
  * @brief This module implements process class.
@@ -11,7 +11,7 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#elif defined(__linux)
+#else
 #include <string.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
@@ -34,7 +34,7 @@ private:
   typedef HANDLE native_handle_type;
   typedef DWORD native_error_code;
   typedef DWORD native_exit_code;
-#elif defined(__linux)
+#else
   typedef pid_t native_handle_type;
   typedef int native_error_code;
   typedef int native_exit_code;
@@ -43,7 +43,7 @@ public:
 #if defined(_WIN32)
   static const native_error_code no_error = 0;
   static const native_exit_code exit_success = 0;
-#elif defined(__linux)
+#else
   static const native_error_code no_error = 0;
   static const native_exit_code exit_success = 0;
 #endif
@@ -51,7 +51,7 @@ public:
   public:
 #if defined(_WIN32)
     id() : handle_(NULL) {}
-#elif defined(__linux)
+#else
     id() : handle_(-1) {}
 #endif
     id(native_handle_type handle) : handle_(handle) {}
@@ -113,7 +113,7 @@ public:
 #if defined(_WIN32)
     if (WaitForSingleObject(id_.handle_, 0) == WAIT_ABANDONED_0)
       id_.handle_ = id().handle_;
-#elif defined(__linux)
+#else
     int status;
     if (waitpid(id_.handle_, &status, WNOHANG) > 0) {
       if (WIFEXITED(status))
@@ -135,7 +135,7 @@ public:
       lastError_ = GetLastError();
     }
     CloseHandle(id_.handle_);
-#elif defined(__linux)
+#else
     int status;
     if (waitpid(id_.handle_, &status, 0) == -1) {
       lastError_ = errno;
@@ -155,7 +155,7 @@ public:
       return;
 #if defined(_WIN32)
     CloseHandle(id_.handle_);
-#elif defined(__linux)
+#else
     native_handle_type handle = id_.handle_;
     std::thread([handle]() {
       int status;
@@ -192,7 +192,7 @@ private:
       return false;
     id_.handle_ = pi.hProcess;
     return (pi.hProcess != NULL);
-#elif defined(__linux)
+#else
     id_.handle_ = fork();
     if (id_ == id()) {
       lastError_ = errno;
