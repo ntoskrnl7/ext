@@ -12,6 +12,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #else
+#include <limits.h>
 #include <string.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
@@ -79,14 +80,18 @@ public:
   };
 
 public:
-  process() : lastError_(no_error), exitCode_(exit_success) {}
+  process() : last_error_(no_error), exit_code_(exit_success) {}
 
   process(const std::string &command, const std::list<std::string> &arguments)
-      : lastError_(no_error), exitCode_(exit_success), command_(command),
-        arguments_(arguments) {
-    execute_(command, arguments);
+      : last_error_(no_error), exit_code_(exit_success) {
+    execute_(command, std::string(), arguments);
   }
 
+  process(const std::string &command, const std::string &working_directory,
+          const std::list<std::string> &arguments)
+      : last_error_(no_error), exit_code_(exit_success) {
+    execute_(command, working_directory, arguments);
+  }
   process(const process &) = delete;
 
   process(process &&other) noexcept { swap(other); }
@@ -128,27 +133,27 @@ public:
       return;
 #if defined(_WIN32)
     if (WaitForSingleObject(id_.handle_, INFINITE) != WAIT_OBJECT_0) {
-      lastError_ = GetLastError();
+      last_error_ = GetLastError();
       return;
     }
-    if (!GetExitCodeProcess(id_.handle_, &exitCode_)) {
-      lastError_ = GetLastError();
+    if (!GetExitCodeProcess(id_.handle_, &exit_code_)) {
+      last_error_ = GetLastError();
     }
     CloseHandle(id_.handle_);
 #else
     int status;
     if (waitpid(id_.handle_, &status, 0) == -1) {
-      lastError_ = errno;
+      last_error_ = errno;
       return;
     }
     if (WIFEXITED(status))
-      exitCode_ = WEXITSTATUS(status);
+      exit_code_ = WEXITSTATUS(status);
 #endif
     id_.handle_ = id().handle_;
     return;
   }
 
-  int exitCode() const { return exitCode_; }
+  int exitCode() const { return exit_code_; }
 
   void detach() {
     if (!joinable())
@@ -171,13 +176,12 @@ public:
 
 private:
   bool execute_(const std::string &command,
+                const std::string &working_directory,
                 const std::list<std::string> &arguments) {
-    command_ = command;
-    arguments_ = arguments;
-    lastError_ = no_error;
+    last_error_ = no_error;
 #if defined(_WIN32)
     PROCESS_INFORMATION pi;
-    STARTUPINFO si;
+    STARTUPINFOA si;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
 
@@ -186,20 +190,27 @@ private:
       cmd += " " + argument;
 
     if (!CreateProcessA(nullptr, &cmd[0], NULL, NULL, FALSE,
-                        NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE |
-                            CREATE_SEPARATE_WOW_VDM | CREATE_NEW_PROCESS_GROUP,
-                        NULL, NULL, &si, &pi))
+                        NORMAL_PRIORITY_CLASS | CREATE_SEPARATE_WOW_VDM, NULL,
+                        working_directory.empty() ? NULL
+                                                  : working_directory.c_str(),
+                        &si, &pi))
       return false;
     id_.handle_ = pi.hProcess;
     return (pi.hProcess != NULL);
 #else
+    char buf[PATH_MAX];
+    char *cwd = getcwd(buf, sizeof(buf));
+    chdir(working_directory.c_str());
     id_.handle_ = fork();
     if (id_ == id()) {
-      lastError_ = errno;
+      last_error_ = errno;
       return false;
     }
-    if (id_.handle_)
+    if (id_.handle_) {
+      chdir(cwd);
       return true;
+    }
+
     setsid();
     char **argv = new char *[arguments.size() + 2];
     argv[0] = (char *)command.c_str();
@@ -216,11 +227,8 @@ private:
   }
 
 private:
-  native_error_code lastError_;
-  native_exit_code exitCode_;
+  native_error_code last_error_;
+  native_exit_code exit_code_;
   id id_;
-  std::string command_;
-  std::list<std::string> arguments_;
-  std::thread waitThread_;
 };
 } // namespace ext
