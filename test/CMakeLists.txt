@@ -26,9 +26,9 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 include_directories("${gtest_SOURCE_DIR}/include")
 
 
-# Linux의 g++ 7.5.0이나 macOS의 Clang 10.0.1에서 C++14이하는 shared_mutex를 사용하지 못하므로 C++17로 빌드되도록 지정했습니다.
+# shared_timed_mutex를 사용하므로 C++14로 빌드되도록 지정했습니다.
 if (UNIX)
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 
 
@@ -59,21 +59,13 @@ add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
 target_link_libraries(unittest gtest gtest_main)
 
 
-# # 운영체제 별 컴파일 옵션을 설정합니다.
-# if (WIN32)
-# elseif(APPLE)
-# elseif(UNIX)
-# target_link_libraries(unittest rt)
-# endif()
-
-
 enable_testing()
 
 
 # macOS의 경우 LC_ALL=C으로 테스트가 실행되어 문자열 변환이 안되는 현상이 있습니다.
 # 그래서 테스트를 실행할때 LC_ALL을 en_US.UTF-8로 지정하여 문자열 변환이 잘되도록 처리했습니다.
 if (APPLE)
-add_test(NAME unittest COMMAND ${CMAKE_COMMAND} -E env LC_ALL=en_US.UTF-8 ${CMAKE_BINARY_DIR}/unittest)
+  add_test(NAME unittest COMMAND ${CMAKE_COMMAND} -E env LC_ALL=en_US.UTF-8 ${CMAKE_BINARY_DIR}/unittest)
 else()
-add_test(NAME unittest COMMAND unittest)
+  add_test(NAME unittest COMMAND unittest)
 endif()
