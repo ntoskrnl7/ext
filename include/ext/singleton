@@ -7,14 +7,15 @@
  *
  */
 #pragma once
+#ifndef _EXT_SINGLETON_
+#define _EXT_SINGLETON_
 
 namespace ext {
 /**
  * @brief  The singleton template class.
  * You need to specify "friend ext::singleton<?>" in your class.
  * 
- * ex)
- * 
+ * @code
  * class test : public ext::singleton<test>
  * {
  * private:
@@ -43,3 +44,4 @@ public:
   }
 };
 } // namespace ext
+#endif // _EXT_SINGLETON_

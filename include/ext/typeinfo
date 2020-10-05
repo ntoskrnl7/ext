@@ -7,6 +7,8 @@
  *
  */
 #pragma once
+#ifndef _EXT_TYPEINFO_
+#define _EXT_TYPEINFO_
 
 #include <string>
 #include <typeinfo>
@@ -46,3 +48,4 @@ template <class T> static std::string get_type_name() {
   return result;
 }
 } // namespace ext
+#endif // _EXT_TYPEINFO_

@@ -1,0 +1,186 @@
+﻿/**
+ * @file observable
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements observable template class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+#ifndef _EXT_OBSERVABLE_
+#define _EXT_OBSERVABLE_
+
+#include "stl_compat"
+
+// Define a "observable" arguments
+#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+#define __TYPE_NAME__OBSERVABLE_ARGS__ typename Arg
+#define __OBSERVABLE_ARGS__ arg
+#define __OBSERVABLE_ARGS_DECLARATION__ Arg arg
+#else
+#define __TYPE_NAME__OBSERVABLE_ARGS__ typename... Args
+#define __OBSERVABLE_ARGS__ args...
+#define __OBSERVABLE_ARGS_DECLARATION__ Args... args
+#endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+
+// Define shared mutex to use in 'observable' class
+#ifdef CXX_SHARED_MUTEX
+#define __OBSERVABLE_SHARED_MUTEX__   CXX_SHARED_MUTEX
+#else
+#define __OBSERVABLE_SHARED_MUTEX__   std::shared_mutex
+#endif
+
+#include <list>
+#include <mutex>
+#include <shared_mutex>
+
+namespace ext {
+/**
+ * @brief observable class
+ *
+ * @tparam T
+ * @tparam Args
+ */
+template <typename T, __TYPE_NAME__OBSERVABLE_ARGS__> class observable {
+public:
+  class observer {
+    friend class observable;
+
+  private:
+    /**
+     * @brief
+     *
+     * @tparam Args
+     */
+    virtual void update(T &, __OBSERVABLE_ARGS_DECLARATION__) { return; }
+
+  public:
+    ~observer() { unsubscribe(); }
+
+    /**
+     * @brief
+     *
+     * @param observable
+     */
+    void operator+=(observable &observable) { subscribe(observable); }
+
+    /**
+     * @brief
+     *
+     * @param observable
+     */
+    void operator-=(observable &observable) { unsubscribe(observable); }
+
+    /**
+     * @brief
+     *
+     * @param observable
+     * @return true
+     * @return false
+     */
+    bool subscribe(observable &observable) {
+      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+      observables_.push_back(&observable);
+      observables_.sort();
+      observables_.unique();
+      observable.observers_.push_back(this);
+      observable.observers_.sort();
+      observable.observers_.unique();
+      return true;
+    }
+
+    /**
+     * @brief
+     *
+     * @param observable
+     */
+    void unsubscribe(observable &observable) {
+      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+      observables_.remove(&observable);
+      observable.observers_.remove(this);
+    }
+
+    /**
+     * @brief
+     *
+     */
+    void unsubscribe() {
+      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+#if defined(CXX_FOR)
+      CXX_FOR(auto &observable, observables_)
+#elif defined(CXX_FOR_O)
+      CXX_FOR_O(observable * observable, std::list<observable *>::iterator,
+                observables_)
+#else
+      for (auto &observable : observables_) {
+#endif // CXX_FOR
+      observable->observers_.remove(this);
+#ifdef CXX_FOR_END
+      CXX_FOR_END
+#else
+    }
+#endif
+      observables_.clear();
+    }
+
+  private:
+    std::list<observable *> observables_;
+  };
+
+public:
+  ~observable() {
+    std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+#if defined(CXX_FOR)
+    CXX_FOR(auto &observer, observers_)
+#elif defined(CXX_FOR_O)
+  CXX_FOR_O(observer * observer, std::list<observer *>::iterator, observers_)
+#else
+      for (auto &observer : observers_) {
+#endif // CXX_FOR
+    observer->observables_.remove(this);
+#ifdef CXX_FOR_END
+    CXX_FOR_END
+#else
+}
+#endif
+  } // namespace ext
+
+protected:
+  /**
+   * @brief
+   *
+   */
+  void notify(__OBSERVABLE_ARGS_DECLARATION__) {
+    std::shared_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+#if defined(CXX_FOR)
+    CXX_FOR(auto &observer, observers_)
+#elif defined(CXX_FOR_O)
+  CXX_FOR_O(observer * observer, std::list<observer *>::iterator, observers_)
+#else
+        for (auto &observer : observers_) {
+#endif // CXX_FOR
+    observer->update(static_cast<T &>(*this), __OBSERVABLE_ARGS__);
+#ifdef CXX_FOR_END
+    CXX_FOR_END
+#else
+}
+#endif
+  }
+
+private:
+  std::list<observer *> observers_;
+
+protected:
+  /**
+   * @brief
+   *
+   * @return __OBSERVABLE_SHARED_MUTEX__&
+   */
+  static __OBSERVABLE_SHARED_MUTEX__ &global_lock_() {
+    static __OBSERVABLE_SHARED_MUTEX__ mtx_;
+    return mtx_;
+  }
+};
+
+} // namespace ext
+#endif // _EXT_OBSERVABLE_

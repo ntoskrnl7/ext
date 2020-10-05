@@ -1,27 +1,44 @@
 ﻿/**
  * @file collection
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
- * @brief This Module implements collection class.
+ * @brief This Module implements collection template class.
  *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
 #pragma once
+#ifndef _EXT_COLLECTION_
+#define _EXT_COLLECTION_
+
+#include "stl_compat"
+
+// Define shared mutex to use in 'collection' class
+#ifdef CXX_SHARED_MUTEX
+#define __COLLECTION_SHARED_MUTEX__   CXX_SHARED_MUTEX
+#else
+#define __COLLECTION_SHARED_MUTEX__   std::shared_mutex
+#endif
 
 #include <iterator>
 #include <list>
 #include <memory>
 #include <utility>
+#ifndef _EXT_SHARED_RECURSIVE_MUTEX_
+#include <shared_mutex>
+#endif
 
-#include "shared_recursive_mutex"
 #include "singleton"
 
 namespace ext {
+/// Defines the mutex class to use as the default.
+#ifdef _EXT_SHARED_RECURSIVE_MUTEX_
+typedef ext::shared_recursive_mutex mutex_class;
+#else
+typedef __COLLECTION_SHARED_MUTEX__ mutex_class;
+#endif
+
 template <class T, class L> class collection_base;
 template <class T> class collection_mgr;
-
-/// Defines the mutex class to use as the default.
-using mutex_class = ext::shared_recursive_mutex;
 
 /**
  * @brief The collection_base_data class
@@ -124,6 +141,7 @@ public:
 
   collection_base() : lock_(collection_base_data<T>::instance().mutex_) {}
 
+#if (CXX_VER >= 201103L)
   template <bool FOR_SHARED_ACCESS, typename U>
   using iterator_type =
       typename std::enable_if<std::is_same<std::shared_lock<mutex_class>,
@@ -159,13 +177,26 @@ public:
   iterator_type<false, U> erase(iterator_type<false, U> position) {
     return collection_base_data<T>::instance().items_.erase(position);
   }
+#else
+  typedef typename std::list<T *>::iterator iterator;
 
+  iterator begin() {
+    return collection_base_data<T>::instance().items_.begin();
+  }
+
+  iterator end() { return collection_base_data<T>::instance().items_.end(); }
+
+  iterator erase(iterator position) {
+    return collection_base_data<T>::instance().items_.erase(position);
+  }
+#endif
   mutex_class &mutex() { return collection_base_data<T>::instance().mutex_; }
 
 private:
   L lock_;
 };
 
+#if (CXX_VER >= 201103L)
 /// Define constant collection object
 template <class T>
 using const_collection = collection_base<T, std::shared_lock<mutex_class>>;
@@ -175,6 +206,26 @@ template <class T> using collection_with_shared_lock = const_collection<T>;
 template <class T>
 using collection = collection_base<T, std::unique_lock<mutex_class>>;
 template <class T> using collection_with_unique_lock = collection<T>;
+#else
+/// Define constant collection object
+template <typename T>
+class const_collection
+    : public collection_base<T, std::shared_lock<mutex_class>> {
+public:
+  typedef typename std::list<T *>::iterator iterator;
+  const_collection() : collection_base() {}
+};
+#define collection_with_shared_lock const_collection
+
+/// Define collection object
+template <typename T>
+class collection : public collection_base<T, std::unique_lock<mutex_class>> {
+public:
+  typedef typename std::list<T *>::iterator iterator;
+  collection() : collection_base() {}
+};
+#define collection_with_unique_lock collection
+#endif
 
 /**
  * @brief The collection_mgr class
@@ -212,3 +263,4 @@ public:
   }
 };
 } // namespace ext
+#endif // _EXT_COLLECTION_

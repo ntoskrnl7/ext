@@ -1,0 +1,107 @@
+﻿/**
+ * @file stl_compat
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module defines STL compatible macros.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+#ifndef _EXT_STL_COMPAT_
+#define _EXT_STL_COMPAT_
+
+// Compiler specification definition
+#if defined(_MSVC_LANG)
+#define CXX_VER _MSVC_LANG
+#else
+#define CXX_VER __cplusplus
+#endif
+
+#if CXX_VER < 201103L
+#define CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+#define CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
+#define CXX_AUTO_TYPE_NOT_SUPPORTED
+#define CXX_LAMBDAS_NOT_SUPPORTED
+#endif
+#endif
+
+#if CXX_VER < 201103L
+#define CXX_NOEXCEPT
+#else
+#define CXX_NOEXCEPT noexcept
+#endif
+
+// Latest supported shared mutex definitions
+#if CXX_VER >= 201703L
+#define CXX_SHARED_MUTEX std::shared_mutex
+#else
+#define CXX_SHARED_MUTEX std::shared_timed_mutex
+#endif
+
+// Define a "range based for loop" macro
+#ifdef CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
+#ifdef CXX_AUTO_TYPE_NOT_SUPPORTED
+#define __CXX_FOR_ARG__(...) __VA_ARGS__
+#define CXX_FOR_O(range_declaration, iter_type, range_expression)              \
+  for (__CXX_FOR_ARG__(iter_type) it = (range_expression).begin();             \
+       it != (range_expression).end(); ++it) {                                 \
+    __CXX_FOR_ARG__(range_declaration) = *it;
+#define CXX_FOR_END }
+#else
+#define CXX_FOR(range_declaration, range_expression)                           \
+  for (auto it = (range_expression).begin(); it != (range_expression).end();   \
+       ++it) {                                                                 \
+    range_declaration = *it;
+#define CXX_FOR_END }
+#endif
+#else
+#define CXX_FOR(range_declaration, range_expression)                           \
+  for (range_declaration : (range_expression)) {
+#define CXX_FOR_END }
+#endif
+
+#if !defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED) && CXX_VER < 201703L
+#include <functional>
+#include <tuple>
+
+namespace ext {
+template <int N> struct apply_wrap {
+  template <typename R, typename... TupleArgs, typename... UnpackedArgs>
+  static R apply(std::function<R(TupleArgs...)> &f,
+                 const std::tuple<TupleArgs...> &t, UnpackedArgs... args) {
+    return apply_wrap<N - 1>::apply(f, t, std::get<N - 1>(t), args...);
+  }
+};
+
+template <> struct apply_wrap<0> {
+  template <typename R, typename... TupleArgs, typename... UnpackedArgs>
+  static R apply(std::function<R(TupleArgs...)> &f,
+                 const std::tuple<TupleArgs...> &, UnpackedArgs... args) {
+    return f(args...);
+  }
+};
+
+template <typename R, typename... TupleArgs>
+inline R apply(std::function<R(TupleArgs...)> &&f,
+               std::tuple<TupleArgs...> const &t) {
+  return apply_wrap<sizeof...(TupleArgs)>::apply(f, t);
+}
+} // namespace ext
+#endif
+
+#if CXX_VER >= 201703L
+#define CXX_STD_APPLY std::apply
+#else
+#define CXX_STD_APPLY ext::apply
+#endif
+
+#if CXX_VER >= 201703L
+#define CXX_INVOKE_RESULT(F, Args) std::invoke_result_t<F, Args>
+#elif CXX_VER >= 201402L
+#define CXX_INVOKE_RESULT(F, Args) std::result_of_t<F(Args)>
+#else
+#define CXX_INVOKE_RESULT(F, Args) std::result_of<F(Args)>::value
+#endif
+
+#endif // _EXT_STL_COMPAT_

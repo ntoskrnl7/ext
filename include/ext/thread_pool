@@ -1,0 +1,240 @@
+﻿/**
+ * @file thread_pool
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements thread pool template class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+#ifndef _EXT_THREAD_POOL_
+#define _EXT_THREAD_POOL_
+
+#include "stl_compat"
+
+#include <condition_variable>
+#include <functional>
+#include <future>
+#include <mutex>
+#include <queue>
+#include <thread>
+
+namespace ext {
+/**
+ * @brief thread_pool class
+ *
+ */
+class thread_pool {
+  typedef std::function<bool()> initialize_callback;
+  typedef std::function<bool()> finalize_callback;
+
+public:
+  enum status { running, stop_pending, stopped };
+
+  template <typename T> class queue_item {
+  public:
+    queue_item(thread_pool *pool, std::shared_ptr<std::packaged_task<T()>> task)
+        : pool_(pool), task_(task) {}
+
+  public:
+    void cancel() {}
+
+    std::future<T> get_future() { return task_->get_future(); }
+
+  private:
+    thread_pool *pool_;
+    std::shared_ptr<std::packaged_task<T()>> task_;
+  };
+
+  /**
+   * @brief Construct a new thread pool object
+   *
+   */
+  thread_pool() : pool_size_(0), status_(stopped) {}
+
+  /**
+   * @brief Construct a new thread pool object
+   *
+   * @param initializer
+   * @param finalizer
+   */
+  thread_pool(initialize_callback initializer, finalize_callback finalizer)
+      : initializer_(initializer), finalizer_(finalizer), pool_size_(0),
+        status_(stopped) {}
+
+  /**
+   * @brief Construct a new thread pool object
+   *
+   * @param pool_size
+   */
+  thread_pool(size_t pool_size) : status_(stopped) { start(pool_size); }
+
+  /**
+   * @brief Construct a new thread pool object
+   *
+   * @param pool_size
+   * @param initializer
+   * @param finalizer
+   */
+  thread_pool(size_t pool_size, initialize_callback initializer,
+              finalize_callback finalizer)
+      : initializer_(initializer), finalizer_(finalizer), pool_size_(0),
+        status_(stopped) {
+    start(pool_size);
+  }
+
+  /**
+   * @brief Destroy the thread pool object
+   *
+   */
+  ~thread_pool() { stop(); }
+
+  /**
+   * @brief
+   *
+   * @param pool_size
+   * @return true
+   * @return false
+   */
+  bool start(size_t pool_size) {
+    if (status_ != stopped)
+      return false;
+    status_ = running;
+    pool_size_ = pool_size;
+    for (size_t i = 0; i < pool_size_; i++)
+#if CXX_VER >= 201103L
+      threads_.emplace_back(std::thread(std::bind(&thread_pool::woker_, this)));
+#else
+      threads_.push_back(std::thread(std::bind(&thread_pool::woker_, this)));
+#endif
+    return true;
+  }
+
+  /**
+   * @brief
+   *
+   * @param wait
+   */
+  void stop(bool wait = true) {
+    if (status_ != running)
+      return;
+
+    status_ = stop_pending;
+    cv_.notify_all();
+#if defined(CXX_FOR)
+    CXX_FOR(std::thread &thread, threads_)
+#elif defined(CXX_FOR_O)
+    CXX_FOR_O(std::thread &thread, std::vector<std::thread>::iterator,
+              threads_)
+#else
+    for (auto &thread : threads_)
+#endif
+    if (thread.joinable())
+      thread.join();
+#if defined(CXX_FOR_END)
+    CXX_FOR_END
+#endif
+    status_ = stopped;
+  }
+
+  /**
+   * @brief
+   *
+   * @tparam F
+   * @tparam Args
+   * @param fn
+   * @param args
+   * @return std::future<typename CXX_INVOKE_RESULT(F, Args...)>
+   */
+
+#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+  template <typename F> std::future<void> queue(F fn) {
+    if (status_ != running)
+      throw std::runtime_error("This thread pool is not running");
+
+    std::shared_ptr<std::packaged_task<void>> task =
+        std::make_shared<std::packaged_task<void>>(fn);
+    {
+      std::unique_lock<std::mutex> lock(mtx_);
+#ifdef CXX_LAMBDAS_NOT_SUPPORTED
+      queue_.push(std::bind(push_task_, task));
+#else
+      queue_.push([task]() { (*task)(); });
+#endif
+    }
+    cv_.notify_one();
+    return task->get_future();
+  }
+#else // CXX_TEMPLATE_VARIADIC_ARGS_NOT_SUPPORTED
+  template <typename F, typename... Args>
+#ifdef CXX_RVALUE_REF_NOT_SUPPORTED
+  std::future<typename CXX_INVOKE_RESULT(F, Args...)> queue(F fn,
+                                                            Args... args) {
+#else  // CXX_RVALUE_REF_NOT_SUPPORTED
+  std::future<typename CXX_INVOKE_RESULT(F, Args...)> queue(F &&fn,
+                                                            Args &&... args) {
+#endif // CXX_RVALUE_REF_NOT_SUPPORTED
+    if (status_ != status::running)
+      throw std::runtime_error("This thread pool is not running");
+
+    auto task = std::make_shared<
+        std::packaged_task<typename CXX_INVOKE_RESULT(F, Args...)()>>(
+        std::bind(std::forward<F>(fn), std::forward<Args>(args)...));
+    {
+      std::unique_lock<std::mutex> lock(mtx_);
+      queue_.push([task]() { (*task)(); });
+    }
+    cv_.notify_one();
+    return task->get_future();
+  }
+#endif // CXX_TEMPLATE_VARIADIC_ARGS_SUPPORTED
+
+  /**
+   * @brief
+   *
+   * @return status
+   */
+  status status() { return status_; }
+
+private:
+  void woker_() {
+    std::function<void()> fn;
+    for (;;) {
+      {
+        std::unique_lock<std::mutex> lk(mtx_);
+#ifdef CXX_LAMBDAS_NOT_SUPPORTED
+        cv_.wait(lk, std::bind(&thread_pool::wait_, this));
+#else  // CXX_LAMBDAS_NOT_SUPPORTED
+        cv_.wait(lk,
+                 [this]() { return !queue_.empty() || status_ != running; });
+#endif // CXX_LAMBDAS_NOT_SUPPORTED
+        if (status_ != running)
+          return;
+
+        fn = queue_.front();
+        queue_.pop();
+      }
+      fn();
+    }
+  }
+#ifdef CXX_LAMBDAS_NOT_SUPPORTED
+  bool wait_() { return !queue_.empty() || status_ != running; }
+  static void push_task_(std::shared_ptr<std::packaged_task<void>> task) {
+    (*task)();
+  }
+#endif // CXX_LAMBDAS_NOT_SUPPORTED
+
+private:
+  enum status status_;
+
+  std::mutex mtx_;
+  std::condition_variable cv_;
+  std::queue<std::function<void()>> queue_;
+  std::vector<std::thread> threads_;
+  size_t pool_size_;
+
+  initialize_callback initializer_;
+  finalize_callback finalizer_;
+};
+} // namespace ext
+#endif // _EXT_THREAD_POOL_

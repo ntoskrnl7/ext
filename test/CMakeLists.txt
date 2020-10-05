@@ -26,12 +26,6 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 include_directories("${gtest_SOURCE_DIR}/include")
 
 
-# shared_timed_mutex를 사용하므로 C++14로 빌드되도록 지정했습니다.
-if (UNIX)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-
 #  포함 경로를 설정합니다.
 if (WIN32)
   include_directories("../platforms/windows/")
@@ -58,6 +52,9 @@ file(GLOB SOURCE_FILES ./*.cpp)
 add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
 target_link_libraries(unittest gtest gtest_main)
 
+# shared_timed_mutex를 사용하므로 C++14로 빌드되도록 지정했습니다.
+set_property(TARGET unittest PROPERTY CXX_STANDARD 14)
+set_property(TARGET unittest PROPERTY CXX_STANDARD_REQUIRED ON)
 
 enable_testing()
 

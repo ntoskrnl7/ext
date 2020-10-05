@@ -1,0 +1,303 @@
+﻿/**
+ * @file chain
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements chain template class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+#ifndef _EXT_CHAIN_
+#define _EXT_CHAIN_
+
+#include "stl_compat"
+
+// Define a "chain" arguments
+#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+#define __TYPE_NAME__CHAIN_ARGS__ typename Arg
+#define __CHAIN_ARGS__ arg
+#define __CHAIN_ARGS_DECLARATION__ Arg arg
+#else
+#define __TYPE_NAME__CHAIN_ARGS__ typename... Args
+#define __CHAIN_ARGS__ args...
+#define __CHAIN_ARGS_DECLARATION__ Args... args
+#endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+
+#include <functional>
+#include <tuple>
+
+namespace ext {
+/**
+ * @brief chain class
+ *
+ * @tparam T
+ * @tparam R
+ * @tparam Args or Arg
+ */
+template <typename T, typename R, __TYPE_NAME__CHAIN_ARGS__> class chain {
+#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+  typedef Arg arguments;
+#else
+  typedef std::tuple<Args...> arguments;
+#endif
+
+public:
+  class chain_aborted : public std::exception {
+  public:
+    chain_aborted(const std::exception &cause) : cause_(cause) {}
+    char const *what() const CXX_NOEXCEPT { return cause_.what(); }
+
+  private:
+    std::exception cause_;
+  };
+
+  class end_of_chain : public std::runtime_error {
+  public:
+    end_of_chain() : std::runtime_error("end of chain") {}
+  };
+
+  class invalid_chain : public std::runtime_error {
+  public:
+    invalid_chain() : std::runtime_error("invalid chain") {}
+  };
+
+  class result {
+    friend class chain;
+
+  public:
+    enum state { done, aborted, end_of_chain };
+
+  protected:
+    result(chain &chain, const std::exception &cause)
+        : chain_(&chain), state_(aborted), cause_(cause) {}
+
+    result(chain &chain, const R &value)
+        : chain_(&chain), state_(done), value_(value) {}
+
+    result(enum state state, chain &chain) : chain_(&chain), state_(state) {}
+
+  public:
+    result(const chain &chain) {
+      if (chain.begin_)
+#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+        *this = (*chain.begin_)(chain.begin_->args_);
+#else
+        *this = CXX_STD_APPLY(
+            std::function<result(Args...)>(
+                [&chain](Args &&... args) { return (*chain.begin_)(args...); }),
+            chain.begin_->args_);
+#endif
+      else if (chain.next_)
+        throw std::invalid_argument("One or more arguments are required.");
+      else
+        throw invalid_chain();
+    }
+
+    result(const result &other)
+        : chain_(other.chain_), state_(other.state_), value_(other.value_) {}
+
+    state state() const { return state_; }
+
+    T &get_chain() {
+      if (chain_ == nullptr)
+        throw invalid_chain();
+      return static_cast<T &>(*chain_);
+    }
+
+    R get() {
+      if (state_ == result::done)
+        return value_;
+      else if (state_ == result::aborted)
+        throw chain_aborted(cause_);
+      else if (state_ == result::end_of_chain)
+        throw chain::end_of_chain();
+      return R();
+    }
+
+    operator T &() {
+      if (chain_ == nullptr)
+        throw invalid_chain();
+      return static_cast<T &>(*chain_);
+    }
+
+    operator R() { return get(); }
+
+    std::tuple<R, T &> tuple() {
+      if (chain_ == nullptr)
+        throw invalid_chain();
+      return std::forward_as_tuple(get(), static_cast<T &>(*chain_));
+    }
+
+  private:
+    R value_;
+    class chain *chain_;
+    enum state state_;
+    std::exception cause_;
+  };
+
+  chain() : next_(nullptr), begin_(nullptr) {}
+
+  /**
+   * @brief get a next chain
+   *
+   * @return T& next chain
+   */
+  T &next() const {
+    if (next_ == nullptr)
+      throw invalid_chain();
+    return *next_;
+  }
+
+  /**
+   * @brief set a next chain
+   *
+   * @param chain next chain
+   * @return T& next chain
+   */
+  T &next(T &chain) {
+    chain.begin_ = nullptr;
+    begin_ = nullptr;
+    args_ = arguments();
+    next_ = &chain;
+    return chain;
+  }
+
+  /**
+   * @brief set a next chain
+   *
+   * @param chain next chain
+   * @return T& next chain
+   */
+  T &operator>>(T &chain) { return next(chain); }
+
+  /**
+   * @brief invoke a chain
+   *
+   * @param args A arguments to be passed to the chain.
+   * @return result
+   */
+  result invoke(__CHAIN_ARGS_DECLARATION__) {
+    try {
+      return execute(__CHAIN_ARGS__);
+    } catch (const std::exception &e) {
+      return result(*this, e);
+    }
+  }
+
+  /**
+   * @brief
+   *
+   * @return result
+   */
+  result operator()(__CHAIN_ARGS_DECLARATION__) {
+    return invoke(__CHAIN_ARGS__);
+  }
+
+  /**
+   * @brief
+   *
+   * @param args
+   * @return chain&
+   */
+  chain &start(__CHAIN_ARGS_DECLARATION__) {
+    args_ = arguments(__CHAIN_ARGS__);
+    begin_ = dynamic_cast<T *>(this);
+    return *this;
+  }
+
+  /**
+   * @brief
+   *
+   * @param chain
+   * @return T&
+   */
+  T &operator|(T &chain) {
+    chain.next_ = nullptr;
+    next_ = &chain;
+    chain.begin_ = begin_;
+    return chain;
+  }
+
+  /**
+   * @brief
+   *
+   * @return result
+   */
+  operator result() { return static_cast<result>(*this); }
+
+  /**
+   * @brief
+   *
+   * @return R
+   */
+  operator R() { return (R) operator result(); }
+
+  /**
+   * @brief
+   *
+   * @param args
+   * @param chain
+   * @return chain&
+   */
+  friend chain &operator>>(const arguments &args, T &chain) {
+    return args | chain;
+  }
+
+  /**
+   * @brief
+   *
+   * @param args
+   * @param chain
+   * @return chain&
+   */
+  friend chain &operator|(const arguments &args, T &chain) {
+    chain.args_ = args;
+    chain.begin_ = &chain;
+    chain.next_ = nullptr;
+    return chain;
+  }
+
+protected:
+  /**
+   * @brief
+   *
+   * @return result
+   */
+  result abort() { return result(*this, result::aborted); }
+
+  /**
+   * @brief
+   *
+   * @param result
+   * @return result
+   */
+  result done(const R &result) { return chain::result(*this, result); }
+
+  /**
+   * @brief
+   *
+   * @return result
+   */
+  result next(__CHAIN_ARGS_DECLARATION__) {
+    if (!next_)
+      return result(result::end_of_chain, *this);
+    return next_->execute(__CHAIN_ARGS__);
+  }
+  friend T;
+
+private:
+  /**
+   * @brief
+   *
+   * @return result
+   */
+  virtual result execute(__CHAIN_ARGS_DECLARATION__) = 0;
+
+private:
+  T *next_;
+
+  T *begin_;
+  arguments args_;
+};
+} // namespace ext
+#endif // _EXT_CHAIN_

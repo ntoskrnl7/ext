@@ -7,6 +7,8 @@
  *
  */
 #pragma once
+#ifndef _EXT_CDBG_
+#define _EXT_CDBG_
 
 #include <ostream>
 #include <streambuf>
@@ -87,3 +89,4 @@ static std::ostream cdbg(&cdbg_buffer);
 static debug_streambuf<wchar_t> wcdbg_buffer;
 static std::wostream wcdbg(&wcdbg_buffer);
 } // namespace ext
+#endif // _EXT_CDBG_
