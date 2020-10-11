@@ -3,6 +3,13 @@
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
  * @brief This module defines STL compatible macros.
  *
+ * CXX_VER
+ * CXX_NOEXCEPT
+ * CXX_SHARED_MUTEX
+ * CXX_FOR_O
+ * CXX_FOR
+ * CXX_INVOKE_RESULT
+ * 
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
@@ -61,11 +68,17 @@
 #define CXX_FOR_END }
 #endif
 
+#if CXX_VER < 201103L
+namespace std {
+template <typename T> T &move(T &t) { return t; }
+} // namespace ext
+#endif
+
 #if !defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED) && CXX_VER < 201703L
 #include <functional>
 #include <tuple>
 
-namespace ext {
+namespace std {
 template <int N> struct apply_wrap {
   template <typename R, typename... TupleArgs, typename... UnpackedArgs>
   static R apply(std::function<R(TupleArgs...)> &f,
@@ -88,12 +101,6 @@ inline R apply(std::function<R(TupleArgs...)> &&f,
   return apply_wrap<sizeof...(TupleArgs)>::apply(f, t);
 }
 } // namespace ext
-#endif
-
-#if CXX_VER >= 201703L
-#define CXX_STD_APPLY std::apply
-#else
-#define CXX_STD_APPLY ext::apply
 #endif
 
 #if CXX_VER >= 201703L

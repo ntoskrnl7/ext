@@ -82,7 +82,7 @@ public:
 #ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
         *this = (*chain.begin_)(chain.begin_->args_);
 #else
-        *this = CXX_STD_APPLY(
+        *this = std::apply(
             std::function<result(Args...)>(
                 [&chain](Args &&... args) { return (*chain.begin_)(args...); }),
             chain.begin_->args_);
