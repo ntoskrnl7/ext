@@ -5,11 +5,15 @@
  *
  * CXX_VER
  * CXX_NOEXCEPT
+ * CXX_CONSTEXPR
  * CXX_SHARED_MUTEX
  * CXX_FOR_O
  * CXX_FOR
  * CXX_INVOKE_RESULT
- * 
+ *
+ * std::byte
+ * std::apply
+ *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
@@ -37,6 +41,12 @@
 #define CXX_NOEXCEPT
 #else
 #define CXX_NOEXCEPT noexcept
+#endif
+
+#if CXX_VER < 201103L
+#define CXX_CONSTEXPR
+#else
+#define CXX_CONSTEXPR constexpr
 #endif
 
 // Latest supported shared mutex definitions
@@ -68,10 +78,85 @@
 #define CXX_FOR_END }
 #endif
 
+#if CXX_VER >= 201703L
+#include <cstddef>
+#else
+#include <type_traits>
+
+namespace std {
+enum byte : unsigned char {};
+
+template <typename _IntType>
+CXX_CONSTEXPR byte operator<<(const byte _Arg,
+                              const _IntType _Shift) CXX_NOEXCEPT {
+  return static_cast<byte>(
+      static_cast<unsigned char>(static_cast<unsigned int>(_Arg) << _Shift));
+}
+
+template <class _IntType>
+CXX_CONSTEXPR byte operator>>(const byte _Arg,
+                              const _IntType _Shift) CXX_NOEXCEPT {
+  return static_cast<byte>(
+      static_cast<unsigned char>(static_cast<unsigned int>(_Arg) >> _Shift));
+}
+
+CXX_CONSTEXPR byte operator|(const byte _Left, const byte _Right) CXX_NOEXCEPT {
+  return static_cast<byte>(static_cast<unsigned char>(
+      static_cast<unsigned int>(_Left) | static_cast<unsigned int>(_Right)));
+}
+
+CXX_CONSTEXPR byte operator&(const byte _Left, const byte _Right) CXX_NOEXCEPT {
+  return static_cast<byte>(static_cast<unsigned char>(
+      static_cast<unsigned int>(_Left) & static_cast<unsigned int>(_Right)));
+}
+
+CXX_CONSTEXPR byte operator^(const byte _Left, const byte _Right) CXX_NOEXCEPT {
+  return static_cast<byte>(static_cast<unsigned char>(
+      static_cast<unsigned int>(_Left) ^ static_cast<unsigned int>(_Right)));
+}
+
+CXX_CONSTEXPR byte operator~(const byte _Arg) CXX_NOEXCEPT {
+  return static_cast<byte>(
+      static_cast<unsigned char>(~static_cast<unsigned int>(_Arg)));
+}
+
+template <class _IntType>
+CXX_CONSTEXPR byte &operator<<=(byte &_Arg,
+                                const _IntType _Shift) CXX_NOEXCEPT {
+  return _Arg = _Arg << _Shift;
+}
+
+template <class _IntType>
+CXX_CONSTEXPR byte &operator>>=(byte &_Arg,
+                                const _IntType _Shift) CXX_NOEXCEPT {
+  return _Arg = _Arg >> _Shift;
+}
+
+CXX_CONSTEXPR byte &operator|=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
+  return _Left = _Left | _Right;
+}
+
+CXX_CONSTEXPR byte &operator&=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
+  return _Left = _Left & _Right;
+}
+
+CXX_CONSTEXPR byte &operator^=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
+  return _Left = _Left ^ _Right;
+}
+
+template <class _IntType>
+CXX_CONSTEXPR _IntType to_integer(const byte _Arg) CXX_NOEXCEPT {
+  return static_cast<_IntType>(_Arg);
+}
+} // namespace std
+#endif
+
 #if CXX_VER < 201103L
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
 namespace std {
 template <typename T> T &move(T &t) { return t; }
-} // namespace ext
+} // namespace std
+#endif
 #endif
 
 #if !defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED) && CXX_VER < 201703L
@@ -100,7 +185,7 @@ inline R apply(std::function<R(TupleArgs...)> &&f,
                std::tuple<TupleArgs...> const &t) {
   return apply_wrap<sizeof...(TupleArgs)>::apply(f, t);
 }
-} // namespace ext
+} // namespace std
 #endif
 
 #if CXX_VER >= 201703L
