@@ -14,13 +14,17 @@
 
 // Define a "chain" arguments
 #ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-#define __TYPE_NAME__CHAIN_ARGS__ typename Arg
+#define __CHAIN_ARGS_TYPE___ Arg
 #define __CHAIN_ARGS__ arg
-#define __CHAIN_ARGS_DECLARATION__ Arg arg
+#define __TYPE_NAME_CHAIN_ARGS__ typename __CHAIN_ARGS_TYPE___
+#define __CHAIN_ARGS_UNPACKED__ __CHAIN_ARGS__
+#define __CHAIN_ARGS_DECLARATION__ __CHAIN_ARGS_TYPE___ __CHAIN_ARGS__
 #else
-#define __TYPE_NAME__CHAIN_ARGS__ typename... Args
-#define __CHAIN_ARGS__ args...
-#define __CHAIN_ARGS_DECLARATION__ Args... args
+#define __CHAIN_ARGS_TYPE___ Args
+#define __CHAIN_ARGS__ args
+#define __TYPE_NAME_CHAIN_ARGS__ typename... __CHAIN_ARGS_TYPE___
+#define __CHAIN_ARGS_UNPACKED__ __CHAIN_ARGS__...
+#define __CHAIN_ARGS_DECLARATION__ __CHAIN_ARGS_TYPE___... __CHAIN_ARGS__
 #endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
 
 #include <functional>
@@ -34,7 +38,7 @@ namespace ext {
  * @tparam R
  * @tparam Args or Arg
  */
-template <typename T, typename R, __TYPE_NAME__CHAIN_ARGS__> class chain {
+template <typename T, typename R, __TYPE_NAME_CHAIN_ARGS__> class chain {
 #ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
   typedef Arg arguments;
 #else
@@ -76,23 +80,24 @@ public:
 
     result(enum state state, chain &chain) : chain_(&chain), state_(state) {}
 
-  public:
-    result(const chain &chain) {
-      if (chain.begin_)
+    result(const chain *chain) {
+      if (chain->begin_)
 #ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-        *this = (*chain.begin_)(chain.begin_->args_);
+        *this = (*chain->begin_)(chain->begin_->args_);
 #else
-        *this = std::apply(
-            std::function<result(Args...)>(
-                [&chain](Args &&... args) { return (*chain.begin_)(args...); }),
-            chain.begin_->args_);
+        *this = std::apply(std::function<result(__CHAIN_ARGS_TYPE___...)>(
+                               [&chain](__CHAIN_ARGS_TYPE___ &&... args) {
+                                 return (*chain->begin_)(args...);
+                               }),
+                           chain->begin_->args_);
 #endif
-      else if (chain.next_)
+      else if (chain->next_)
         throw std::invalid_argument("One or more arguments are required.");
       else
         throw invalid_chain();
     }
 
+  public:
     result(const result &other)
         : chain_(other.chain_), state_(other.state_), value_(other.value_) {}
 
@@ -178,7 +183,7 @@ public:
    */
   result invoke(__CHAIN_ARGS_DECLARATION__) {
     try {
-      return execute(__CHAIN_ARGS__);
+      return execute(__CHAIN_ARGS_UNPACKED__);
     } catch (const std::exception &e) {
       return result(*this, e);
     }
@@ -190,7 +195,7 @@ public:
    * @return result
    */
   result operator()(__CHAIN_ARGS_DECLARATION__) {
-    return invoke(__CHAIN_ARGS__);
+    return invoke(__CHAIN_ARGS_UNPACKED__);
   }
 
   /**
@@ -200,7 +205,7 @@ public:
    * @return chain&
    */
   chain &start(__CHAIN_ARGS_DECLARATION__) {
-    args_ = arguments(__CHAIN_ARGS__);
+    args_ = arguments(__CHAIN_ARGS_UNPACKED__);
     begin_ = dynamic_cast<T *>(this);
     return *this;
   }
@@ -223,7 +228,7 @@ public:
    *
    * @return result
    */
-  operator result() { return static_cast<result>(*this); }
+  operator result() { return this; }
 
   /**
    * @brief
@@ -281,7 +286,7 @@ protected:
   result next(__CHAIN_ARGS_DECLARATION__) {
     if (!next_)
       return result(result::end_of_chain, *this);
-    return next_->execute(__CHAIN_ARGS__);
+    return next_->execute(__CHAIN_ARGS_UNPACKED__);
   }
   friend T;
 
