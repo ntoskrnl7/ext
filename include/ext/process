@@ -8,6 +8,8 @@
  */
 #pragma once
 
+#include "stl_compat"
+
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -42,11 +44,11 @@ private:
 #endif
 public:
 #if defined(_WIN32)
-  static const native_error_code no_error = 0;
-  static const native_exit_code exit_success = 0;
+  static CXX_CONSTEXPR const native_error_code no_error = 0;
+  static CXX_CONSTEXPR const native_exit_code exit_success = 0;
 #else
-  static const native_error_code no_error = 0;
-  static const native_exit_code exit_success = 0;
+  static CXX_CONSTEXPR const native_error_code no_error = 0;
+  static CXX_CONSTEXPR const native_exit_code exit_success = 0;
 #endif
   class id {
   public:
@@ -82,13 +84,9 @@ public:
 public:
   process() : last_error_(no_error), exit_code_(exit_success) {}
 
-  process(const std::string &command, const std::list<std::string> &arguments)
-      : last_error_(no_error), exit_code_(exit_success) {
-    execute_(command, std::string(), arguments);
-  }
-
-  process(const std::string &command, const std::string &working_directory,
-          const std::list<std::string> &arguments)
+  process(const std::string &command,
+          const std::list<std::string> &arguments = {},
+          const std::string &working_directory = std::string())
       : last_error_(no_error), exit_code_(exit_success) {
     execute_(command, working_directory, arguments);
   }
@@ -153,8 +151,6 @@ public:
     return;
   }
 
-  int exitCode() const { return exit_code_; }
-
   void detach() {
     if (!joinable())
       return;
@@ -171,6 +167,10 @@ public:
   }
 
   process::id get_id() const noexcept { return id_; }
+
+  native_exit_code exit_code() const { return exit_code_; }
+
+  native_error_code last_error() const { return last_error_; }
 
   native_handle_type native_handle() { return id_.handle_; }
 
@@ -193,24 +193,31 @@ private:
                         NORMAL_PRIORITY_CLASS | CREATE_SEPARATE_WOW_VDM, NULL,
                         working_directory.empty() ? NULL
                                                   : working_directory.c_str(),
-                        &si, &pi))
+                        &si, &pi)) {
+      last_error_ = GetLastError();
       return false;
+    }
     id_.handle_ = pi.hProcess;
     return (pi.hProcess != NULL);
 #else
-    char buf[PATH_MAX];
-    char *cwd = getcwd(buf, sizeof(buf));
-    chdir(working_directory.c_str());
+    char *cwd = nullptr;
+    if (!working_directory.empty()) {
+      char buf[PATH_MAX];
+      cwd = getcwd(buf, sizeof(buf));
+      chdir(working_directory.c_str());
+    }
     id_.handle_ = fork();
     if (id_ == id()) {
       last_error_ = errno;
+      if (cwd)
+        chdir(cwd);
       return false;
     }
     if (id_.handle_) {
-      chdir(cwd);
+      if (cwd)
+        chdir(cwd);
       return true;
     }
-
     setsid();
     char **argv = new char *[arguments.size() + 2];
     argv[0] = (char *)command.c_str();

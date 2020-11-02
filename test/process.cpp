@@ -2,6 +2,17 @@
 #include <ext/process>
 #include <gtest/gtest.h>
 
+TEST(process_test, run_inalid_cmd) {
+  ext::process process("_invalid_");
+#ifdef _WIN32
+  EXPECT_EQ(process.last_error(), ERROR_FILE_NOT_FOUND);
+  EXPECT_FALSE(process.joinable());
+#else
+  if (process.joinable())
+    process.join();
+#endif
+}
+
 TEST(process_test, run_list_working_directory_cmd) {
 #ifdef _WIN32
   ext::process process("cmd", {"/c", "dir", "."});
@@ -10,6 +21,7 @@ TEST(process_test, run_list_working_directory_cmd) {
 #endif
   EXPECT_TRUE(process.joinable());
   process.join();
+  EXPECT_EQ(process.exit_code(), ext::process::exit_success);
 }
 
 TEST(process_test,
@@ -27,10 +39,11 @@ TEST(process_test,
         getenv_s(&requiredCount, &systemDrive[0], requiredCount, "SystemDrive");
   }
   EXPECT_EQ(err, 0);
-  ext::process process("cmd", systemDrive.c_str(), {"/c", "dir", "."});
+  ext::process process("cmd", {"/c", "dir", "."}, systemDrive.c_str());
 #else
-  ext::process process("ls", "/", {"-al", "."});
+  ext::process process("ls", {"-al", "."}, "/");
 #endif
   EXPECT_TRUE(process.joinable());
   process.join();
+  EXPECT_EQ(process.exit_code(), ext::process::exit_success);
 }
