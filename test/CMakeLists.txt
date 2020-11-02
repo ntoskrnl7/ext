@@ -52,8 +52,7 @@ file(GLOB SOURCE_FILES ./*.cpp)
 add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
 target_link_libraries(unittest gtest gtest_main)
 
-# shared_timed_mutex를 사용하므로 C++14로 빌드되도록 지정했습니다.
-set_property(TARGET unittest PROPERTY CXX_STANDARD 14)
+set_property(TARGET unittest PROPERTY CXX_STANDARD 17)
 set_property(TARGET unittest PROPERTY CXX_STANDARD_REQUIRED ON)
 
 enable_testing()

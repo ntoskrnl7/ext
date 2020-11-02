@@ -26,26 +26,38 @@ namespace ext {
 /**
  * @brief This is a function to get the undecorated type name.
  *
- * @tparam T : Target type
+ * @param t : typeid
  * @return Undecorated type name
  */
-template <class T> static std::string get_type_name() {
+template <typename T> inline std::string get_type_name(T &t) {
   std::string result;
   char *name = nullptr;
 #ifdef _WIN32
-  char nameBuffer[1024];
-  if (::UnDecorateSymbolName(typeid(T).name(), nameBuffer, sizeof(nameBuffer),
+  char nameBuffer[1024] = {
+      0,
+  };
+  if (::UnDecorateSymbolName(t.name(), nameBuffer, sizeof(nameBuffer),
                              UNDNAME_COMPLETE) > 0)
     result = nameBuffer;
   else
-    result = typeid(T).name();
+    result = t.name();
 #else
   int status;
-  name = abi::__cxa_demangle(typeid(T).name(), 0, 0, &status);
-  result = (name) ? name : typeid(T).name();
+  name = abi::__cxa_demangle(t.name(), 0, 0, &status);
+  result = (name) ? name : t.name();
   free(name);
 #endif
   return result;
+}
+
+/**
+ * @brief This is a function to get the undecorated type name.
+ *
+ * @tparam T : Target type
+ * @return Undecorated type name
+ */
+template <typename T> inline std::string get_type_name() {
+  return get_type_name(typeid(T));
 }
 } // namespace ext
 #endif // _EXT_TYPEINFO_
