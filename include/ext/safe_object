@@ -8,6 +8,8 @@
  */
 #pragma once
 
+#include "stl_compat"
+
 #include <functional>
 #include <shared_mutex>
 #include <utility>
@@ -279,7 +281,7 @@ private:
   std::atomic<unsigned long long> lockCount_;
   std::atomic<unsigned long long> unlockCount_;
   std::atomic<unsigned long long> waitCount_;
-  std::shared_timed_mutex untrackedThreadsMutex_;
+  CXX_SHARED_MUTEX untrackedThreadsMutex_;
   std::list<std::thread::id> untrackedThreads_;
 
   // safe_object_with_trace클래스에서는 멤버에 접근할 수 있도록 정의.

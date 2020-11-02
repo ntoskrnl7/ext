@@ -402,24 +402,23 @@ TEST(base64_test, byte_vector_test) {
   EXPECT_STREQ(encoded_data_w.c_str(), L"AQIDBAU=");
 
   auto decoded_data_a = ext::base64::decode(encoded_data_a);
-  EXPECT_EQ(decoded_data_a[0], 1);
-  EXPECT_EQ(decoded_data_a[1], 2);
-  EXPECT_EQ(decoded_data_a[2], 3);
-  EXPECT_EQ(decoded_data_a[3], 4);
-  EXPECT_EQ(decoded_data_a[4], 5);
+  EXPECT_EQ(decoded_data_a[0], (std::byte)1);
+  EXPECT_EQ(decoded_data_a[1], (std::byte)2);
+  EXPECT_EQ(decoded_data_a[2], (std::byte)3);
+  EXPECT_EQ(decoded_data_a[3], (std::byte)4);
+  EXPECT_EQ(decoded_data_a[4], (std::byte)5);
 
   auto decoded_data_w = ext::base64::decode(encoded_data_w);
-  EXPECT_EQ(decoded_data_w[0], 1);
-  EXPECT_EQ(decoded_data_w[1], 2);
-  EXPECT_EQ(decoded_data_w[2], 3);
-  EXPECT_EQ(decoded_data_w[3], 4);
-  EXPECT_EQ(decoded_data_w[4], 5);
+  EXPECT_EQ(decoded_data_w[0], (std::byte)1);
+  EXPECT_EQ(decoded_data_w[1], (std::byte)2);
+  EXPECT_EQ(decoded_data_w[2], (std::byte)3);
+  EXPECT_EQ(decoded_data_w[3], (std::byte)4);
+  EXPECT_EQ(decoded_data_w[4], (std::byte)5);
 }
 
 template <typename T> class struct_wrapper {
 public:
-  struct_wrapper(std::vector<std::byte> data) { data_ = std::move(data); }
-
+  struct_wrapper(std::vector<std::byte> &&data) : data_(std::move(data)) {}
   T *operator->() { return reinterpret_cast<T *>(&data_[0]); }
 
 private:
