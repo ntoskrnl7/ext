@@ -7,10 +7,13 @@
  *
  */
 #pragma once
-#ifndef _EXT_THREAD_POOL_
-#define _EXT_THREAD_POOL_
+
 
 #include "stl_compat"
+
+#if CXX_VER >= 201103L
+#ifndef _EXT_THREAD_POOL_
+#define _EXT_THREAD_POOL_
 
 #include <condition_variable>
 #include <functional>
@@ -237,4 +240,6 @@ private:
   finalize_callback finalizer_;
 };
 } // namespace ext
+
 #endif // _EXT_THREAD_POOL_
+#endif // CXX_VER >= 201103L

@@ -10,6 +10,10 @@
 
 #include "stl_compat"
 
+#if CXX_VER >= 201103L
+#ifndef _EXT_PROCESS_
+#define _EXT_PROCESS_
+
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -37,19 +41,16 @@ private:
   typedef HANDLE native_handle_type;
   typedef DWORD native_error_code;
   typedef DWORD native_exit_code;
+  static CXX_CONSTEXPR const native_error_code no_error = 0;
+  static CXX_CONSTEXPR const native_exit_code exit_success = 0;
 #else
   typedef pid_t native_handle_type;
   typedef int native_error_code;
   typedef int native_exit_code;
+  static CXX_CONSTEXPR const native_error_code no_error = 0;
+  static CXX_CONSTEXPR const native_exit_code exit_success = 0;
 #endif
 public:
-#if defined(_WIN32)
-  static CXX_CONSTEXPR const native_error_code no_error = 0;
-  static CXX_CONSTEXPR const native_exit_code exit_success = 0;
-#else
-  static CXX_CONSTEXPR const native_error_code no_error = 0;
-  static CXX_CONSTEXPR const native_exit_code exit_success = 0;
-#endif
   class id {
   public:
 #if defined(_WIN32)
@@ -59,11 +60,11 @@ public:
 #endif
     id(native_handle_type handle) : handle_(handle) {}
 
-    friend bool operator==(process::id lhs, process::id rhs) noexcept {
+    friend bool operator==(process::id lhs, process::id rhs) CXX_NOEXCEPT {
       return lhs.handle_ == rhs.handle_;
     }
 
-    friend bool operator<(process::id lhs, process::id rhs) noexcept {
+    friend bool operator<(process::id lhs, process::id rhs) CXX_NOEXCEPT {
       return lhs.handle_ < rhs.handle_;
     }
 
@@ -92,25 +93,25 @@ public:
   }
   process(const process &) = delete;
 
-  process(process &&other) noexcept { swap(other); }
+  process(process &&other) CXX_NOEXCEPT { swap(other); }
 
   process &operator=(const process &) = delete;
 
-  process &operator=(process &&rhs) noexcept {
+  process &operator=(process &&rhs) CXX_NOEXCEPT {
     if (joinable())
       std::terminate();
     swap(rhs);
     return *this;
   }
 
-  void swap(process &p) noexcept { std::swap(id_, p.id_); }
+  void swap(process &p) CXX_NOEXCEPT { std::swap(id_, p.id_); }
 
   ~process() {
     if (joinable())
       std::terminate();
   }
 
-  bool joinable() const noexcept {
+  bool joinable() const CXX_NOEXCEPT {
     if (id_ == id())
       return false;
 #if defined(_WIN32)
@@ -166,7 +167,7 @@ public:
     id_.handle_ = id().handle_;
   }
 
-  process::id get_id() const noexcept { return id_; }
+  process::id get_id() const CXX_NOEXCEPT { return id_; }
 
   native_exit_code exit_code() const { return exit_code_; }
 
@@ -239,3 +240,6 @@ private:
   id id_;
 };
 } // namespace ext
+
+#endif // _EXT_PROCES_
+#endif // CXX_VER >= 201103L

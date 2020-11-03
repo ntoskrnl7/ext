@@ -10,6 +10,8 @@
 #ifndef _EXT_CHAIN_
 #define _EXT_CHAIN_
 
+#define CXX_USE_STD_APPLY
+#define CXX_USE_STD_REMOVE_CVREF_T
 #include "stl_compat"
 
 // Define a "chain" arguments
@@ -27,8 +29,11 @@
 #define __CHAIN_ARGS_DECLARATION__ __CHAIN_ARGS_TYPE___... __CHAIN_ARGS__
 #endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
 
+#include <stdexcept>
 #include <functional>
 #include <tuple>
+
+#include "type_traits"
 
 namespace ext {
 /**
@@ -40,9 +45,9 @@ namespace ext {
  */
 template <typename T, typename R, __TYPE_NAME_CHAIN_ARGS__> class chain {
 #ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-  typedef Arg arguments;
+  typedef typename std::remove_cvref<Arg>::type arguments;
 #else
-  typedef std::tuple<Args...> arguments;
+  typedef std::tuple<std::remove_cvref_t<Args>...> arguments;
 #endif
 
 public:
@@ -85,7 +90,7 @@ public:
 #ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
         *this = (*chain->begin_)(chain->begin_->args_);
 #else
-        *this = std::apply(std::function<result(__CHAIN_ARGS_TYPE___...)>(
+        *this = std::apply(std::function<result(std::remove_cvref_t<__CHAIN_ARGS_TYPE___>...)>(
                                [&chain](__CHAIN_ARGS_TYPE___ &&... args) {
                                  return (*chain->begin_)(args...);
                                }),
@@ -305,4 +310,5 @@ private:
   arguments args_;
 };
 } // namespace ext
+
 #endif // _EXT_CHAIN_

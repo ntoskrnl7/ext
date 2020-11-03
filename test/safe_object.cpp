@@ -5,6 +5,7 @@
 #include <ext/shared_recursive_mutex>
 #include <gtest/gtest.h>
 
+#ifdef _EXT_SAFE_OBJECT_
 class test_object {
 public:
   int value;
@@ -76,3 +77,4 @@ TEST(safe_object_test, safe_object_both) {
   EXPECT_EQ(obj_t_rw.value, obj_t_rw.value);
   EXPECT_EQ(obj_t_rw.value, obj_rw.value);
 }
+#endif // _EXT_SAFE_OBJECT_

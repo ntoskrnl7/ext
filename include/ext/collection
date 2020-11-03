@@ -7,17 +7,12 @@
  *
  */
 #pragma once
-#ifndef _EXT_COLLECTION_
-#define _EXT_COLLECTION_
 
 #include "stl_compat"
 
-// Define shared mutex to use in 'collection' class
 #ifdef CXX_SHARED_MUTEX
-#define __COLLECTION_SHARED_MUTEX__   CXX_SHARED_MUTEX
-#else
-#define __COLLECTION_SHARED_MUTEX__   std::shared_mutex
-#endif
+#ifndef _EXT_COLLECTION_
+#define _EXT_COLLECTION_
 
 #include <iterator>
 #include <list>
@@ -34,7 +29,7 @@ namespace ext {
 #ifdef _EXT_SHARED_RECURSIVE_MUTEX_
 typedef ext::shared_recursive_mutex mutex_class;
 #else
-typedef __COLLECTION_SHARED_MUTEX__ mutex_class;
+typedef CXX_SHARED_MUTEX mutex_class;
 #endif
 
 template <class T, class L> class collection_base;
@@ -263,4 +258,6 @@ public:
   }
 };
 } // namespace ext
+
 #endif // _EXT_COLLECTION_
+#endif // CXX_SHARED_MUTEX

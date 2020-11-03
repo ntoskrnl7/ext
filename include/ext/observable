@@ -10,6 +10,7 @@
 #ifndef _EXT_OBSERVABLE_
 #define _EXT_OBSERVABLE_
 
+#define CXX_USE_STD_MAKE_UNIQUE
 #include "stl_compat"
 
 // Define a "observable" arguments
@@ -21,13 +22,12 @@
 #define __TYPE_NAME__OBSERVABLE_ARGS__ typename... Args
 #define __OBSERVABLE_ARGS__ args...
 #define __OBSERVABLE_ARGS_DECLARATION__ Args... args
-#endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+#endif
 
 // Define shared mutex to use in 'observable' class
 #ifdef CXX_SHARED_MUTEX
-#define __OBSERVABLE_SHARED_MUTEX__   CXX_SHARED_MUTEX
-#else
-#define __OBSERVABLE_SHARED_MUTEX__   std::shared_mutex
+#define __OBSERVABLE_SHARED_MUTEX__ CXX_SHARED_MUTEX
+#define _EXT_OBSERVABLE_SYNC_
 #endif
 
 #include <list>
@@ -52,7 +52,7 @@ public:
      *
      * @tparam Args
      */
-    virtual void update(T &, __OBSERVABLE_ARGS_DECLARATION__) { return; }
+    virtual void update(T &, __OBSERVABLE_ARGS_DECLARATION__) = 0;
 
   public:
     ~observer() { unsubscribe(); }
@@ -79,7 +79,10 @@ public:
      * @return false
      */
     bool subscribe(observable &observable) {
-      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+#ifdef __OBSERVABLE_SHARED_MUTEX__
+      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
+          observable::global_lock_());
+#endif
       observables_.push_back(&observable);
       observables_.sort();
       observables_.unique();
@@ -95,7 +98,10 @@ public:
      * @param observable
      */
     void unsubscribe(observable &observable) {
-      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+#ifdef __OBSERVABLE_SHARED_MUTEX__
+      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
+          observable::global_lock_());
+#endif
       observables_.remove(&observable);
       observable.observers_.remove(this);
     }
@@ -105,7 +111,10 @@ public:
      *
      */
     void unsubscribe() {
-      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+#ifdef __OBSERVABLE_SHARED_MUTEX__
+      std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
+          observable::global_lock_());
+#endif
 #if defined(CXX_FOR)
       CXX_FOR(auto &observable, observables_)
 #elif defined(CXX_FOR_O)
@@ -129,7 +138,10 @@ public:
 
 public:
   ~observable() {
-    std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+#ifdef __OBSERVABLE_SHARED_MUTEX__
+    std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
+        observable::global_lock_());
+#endif
 #if defined(CXX_FOR)
     CXX_FOR(auto &observer, observers_)
 #elif defined(CXX_FOR_O)
@@ -151,7 +163,10 @@ protected:
    *
    */
   void notify(__OBSERVABLE_ARGS_DECLARATION__) {
-    std::shared_lock<__OBSERVABLE_SHARED_MUTEX__> lk(observable::global_lock_());
+#ifdef __OBSERVABLE_SHARED_MUTEX__
+    std::shared_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
+        observable::global_lock_());
+#endif
 #if defined(CXX_FOR)
     CXX_FOR(auto &observer, observers_)
 #elif defined(CXX_FOR_O)
@@ -170,6 +185,7 @@ protected:
 private:
   std::list<observer *> observers_;
 
+#ifdef __OBSERVABLE_SHARED_MUTEX__
 protected:
   /**
    * @brief
@@ -180,6 +196,7 @@ protected:
     static __OBSERVABLE_SHARED_MUTEX__ mtx_;
     return mtx_;
   }
+#endif
 };
 
 } // namespace ext

@@ -3,7 +3,7 @@
 
 #include <ext/collection>
 
-#if CXX_VER >= 201703L
+#ifdef _EXT_ANY_FUNCTION_
 TEST(any_function_test, call_operator_test) {
   ext::any_function fn_strlen(strlen);
   ext::any_function fn_lambda(
@@ -200,4 +200,4 @@ TEST(any_function_test, command_ref_test) {
     std::cerr << e.what() << '\n';
   }
 }
-#endif // CXX_VER >= 201703L
+#endif // _EXT_ANY_FUNCTION_

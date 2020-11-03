@@ -7,18 +7,51 @@
  * CXX_NOEXCEPT
  * CXX_CONSTEXPR
  * CXX_SHARED_MUTEX
+ *  - Latest supported shared mutex definitions
+ *  - C++17 : std::shared_mutex
+ *  - C++14 : std::shared_timed_mutex
  * CXX_FOR_O
  * CXX_FOR
  * CXX_INVOKE_RESULT
  *
  * std::byte
  * std::apply
- *
+ * std::move
+ * std::remove_cv
+ * std::remove_cv_t
+ * std::remove_reference
+ * std::remove_reference_t
+ * std::remove_cvref
+ * std::remove_cvref_t
+ * std::unique_ptr
+ * std::make_unique
+ * std::make_shared
+ * nullptr
+ * 
+ * CXX_USE_ALL_FEATURES
+ * CXX_USE_STD_BYTE
+ * CXX_USE_STD_UNIQUE_PTR
+ * CXX_USE_STD_MAKE_UNIQUE
+ * CXX_USE_STD_MAKE_SHARED
+ * CXX_USE_STD_APPLY
+ * CXX_USE_STD_MOVE
+ * CXX_USE_STD_REMOVE_CV
+ * CXX_USE_STD_REMOVE_CV_T (with CXX_USE_STD_REMOVE_CV)
+ * CXX_USE_STD_REMOVE_REF
+ * CXX_USE_STD_REMOVE_REF_T (with CXX_USE_STD_REMOVE_REF)
+ * CXX_USE_STD_REMOVE_CVREF
+ * CXX_USE_STD_REMOVE_CVREF_T (with CXX_USE_STD_REMOVE_CVREF)
+ * CXX_USE_STD_CSTDINT
+ * CXX_USE_UNIQUE_PTR
+ * CXX_USE_MAKE_UNIQUE (with CXX_USE_UNIQUE_PTR)
+ * CXX_USE_SHARED_PTR
+ * CXX_USE_MAKE_SHARED (with CXX_USE_SHARED_PTR)
+ * CXX_USE_NULLPTR
+ * 
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
-#pragma once
-#ifndef _EXT_STL_COMPAT_
+
 #define _EXT_STL_COMPAT_
 
 // Compiler specification definition
@@ -29,34 +62,290 @@
 #endif
 
 #if CXX_VER < 201103L
+#define CXX_CSTDINT_NOT_SUPPORTED
 #define CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
 #define CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
+#define CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+#define CXX_ALIAS_TEMPLATE_NOT_SUPPORTED
+#define CXX_NOEXCEPT_NOT_SUPPORTED
+#define CXX_CONSTEXPR_NOT_SUPPORTED
+#define CXX_STD_REMOVE_CV_NOT_SUPPORTED
+#define CXX_STD_REMOVE_REF_NOT_SUPPORTED
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
 #define CXX_LAMBDAS_NOT_SUPPORTED
+#define CXX_NULLPTR_NOT_SUPPORTED
+#define CXX_STD_MOVE_NOT_SUPPORTED
+#define CXX_STD_UNIQUE_PTR_NOT_SUPPORTED
+#define CXX_STD_MAKE_SHARED_NOT_SUPPORTED
+#endif
+#endif
+#if CXX_VER < 201402L
+#define CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED
+#define CXX_STD_REMOVE_CV_T_NOT_SUPPORTED
+#define CXX_STD_REMOVE_REF_T_NOT_SUPPORTED
+#endif
+#if CXX_VER < 201703L
+#define CXX_STD_BYTE_NOT_SUPPORTED
+#define CXX_STD_APPLY_NOT_SUPPORTED
+#define CXX_CONSTEXPR_IF_NOT_SUPPORTED
+#endif
+#if CXX_VER <= 201703L
+#define CXX_STD_REMOVE_CVREF_NOT_SUPPORTED
+#define CXX_STD_REMOVE_CVREF_T_NOT_SUPPORTED
+#endif
+
+///
+///
+///
+#ifdef CXX_USE_STD_ALL_FEATURES
+#define CXX_USE_STD_CSTDINT
+#define CXX_USE_STD_BYTE
+#define CXX_USE_STD_UNIQUE_PTR
+#define CXX_USE_STD_MAKE_UNIQUE
+#define CXX_USE_STD_MAKE_SHARED
+#define CXX_USE_STD_APPLY
+#define CXX_USE_STD_MOVE
+#define CXX_USE_STD_REMOVE_CV
+#define CXX_USE_STD_REMOVE_CV_T
+#define CXX_USE_STD_REMOVE_REF
+#define CXX_USE_STD_REMOVE_REF_T
+#define CXX_USE_STD_REMOVE_CVREF
+#define CXX_USE_STD_REMOVE_CVREF_T
+#define CXX_USE_NULLPTR
+#endif
+
+///
+///
+///
+#ifdef CXX_USE_STD_REMOVE_CV_T
+#define CXX_USE_STD_REMOVE_CV
+#endif
+
+#ifdef CXX_USE_STD_REMOVE_REF_T
+#define CXX_USE_STD_REMOVE_REF
+#endif
+
+#ifdef CXX_USE_STD_REMOVE_CVREF_T
+#define CXX_USE_STD_REMOVE_CVREF
+#endif
+
+#ifdef CXX_USE_STD_MAKE_UNIQUE
+#define CXX_USE_STD_UNIQUE_PTR
+#define CXX_USE_STD_MOVE
+#endif
+
+#ifdef CXX_USE_STD_MAKE_SHARED
+#define CXX_USE_STD_SHARED_PTR
+#define CXX_USE_STD_MOVE
+#endif
+
+///
+///
+///
+#if !defined(CXX_CSTDINT_NOT_SUPPORTED)
+#undef CXX_USE_STD_CSTDINT
+#endif
+#if !defined(CXX_STD_BYTE_NOT_SUPPORTED)
+#undef CXX_USE_STD_BYTE
+#endif
+#if !defined(CXX_STD_UNIQUE_PTR_NOT_SUPPORTED)
+#undef CXX_USE_STD_UNIQUE_PTR
+#endif
+#if !defined(CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED)
+#undef CXX_USE_STD_MAKE_UNIQUE
+#endif
+#if !defined(CXX_STD_MAKE_SHARED_NOT_SUPPORTED)
+#undef CXX_USE_STD_MAKE_SHARED
+#endif
+#if !defined(CXX_STD_MOVE_NOT_SUPPORTED)
+#undef CXX_USE_STD_MOVE
+#endif
+#if !defined(CXX_STD_APPLY_NOT_SUPPORTED) ||                                   \
+    defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED)
+#undef CXX_USE_STD_APPLY
+#endif
+#if !defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) ||                               \
+    !(defined(_MSC_VER) && _MSC_VER < 1600)
+#undef CXX_USE_STD_REMOVE_CV
+#endif
+#if defined(CXX_STD_REMOVE_CV_T_NOT_SUPPORTED) ||                              \
+    defined(CXX_ALIAS_TEMPLATE_NOT_SUPPORTED)
+#undef CXX_USE_STD_REMOVE_CV_T
+#endif
+#if !defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) ||                              \
+    !(defined(_MSC_VER) && _MSC_VER < 1600)
+#undef CXX_USE_STD_REMOVE_REF
+#endif
+#if !defined(CXX_STD_REMOVE_REF_T_NOT_SUPPORTED) ||                            \
+    defined(CXX_ALIAS_TEMPLATE_NOT_SUPPORTED)
+#undef CXX_USE_STD_REMOVE_REF_T
+#endif
+#if !defined(CXX_STD_REMOVE_CVREF_NOT_SUPPORTED)
+#undef CXX_USE_STD_REMOVE_CVREF
+#endif
+#if !defined(CXX_STD_REMOVE_CVREF_T_NOT_SUPPORTED) ||                          \
+    defined(CXX_ALIAS_TEMPLATE_NOT_SUPPORTED)
+#undef CXX_USE_STD_REMOVE_CVREF_T
+#endif
+#if !defined(CXX_NULLPTR_NOT_SUPPORTED)
+#undef CXX_USE_NULLPTR
+#endif
+
+///
+/// Boost
+///
+#if defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) &&                                \
+    defined(BOOST_TT_REMOVE_CV_HPP_INCLUDED)
+#ifndef _EXT_STD_REMOVE_CV_
+#define _EXT_STD_REMOVE_CV_
+namespace std {
+using boost::remove_cv;
+}
+#undef CXX_USE_STD_REMOVE_CV
+#endif // _EXT_STD_REMOVE_CV_
+#endif // defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) &&
+       // defined(BOOST_TT_REMOVE_CV_HPP_INCLUDED)
+
+#if defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) &&                               \
+    defined(BOOST_TT_REMOVE_REFERENCE_HPP_INCLUDED)
+#ifndef _EXT_STD_REMOVE_REF_
+#define _EXT_STD_REMOVE_REF_
+namespace std {
+using boost::remove_reference;
+}
+#undef CXX_USE_STD_REMOVE_REF
+#endif // _EXT_STD_REMOVE_REF_
+#endif // defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) &&
+       // defined(BOOST_TT_REMOVE_REFERENCE_HPP_INCLUDED)
+
+#if defined(CXX_STD_REMOVE_CVREF_NOT_SUPPORTED) &&                             \
+    defined(BOOST_TT_REMOVE_CV_REF_HPP_INCLUDED)
+#ifndef _EXT_STD_REMOVE_CVREF_
+#define _EXT_STD_REMOVE_CVREF_
+namespace std {
+template <typename T> struct remove_cvref {
+  typedef typename boost::remove_cv_ref<T>::type type;
+};
+} // namespace std
+#undef CXX_USE_STD_REMOVE_CVREF
+#endif // _EXT_STD_REMOVE_CVREF_
+#endif // defined(CXX_STD_REMOVE_CVREF_NOT_SUPPORTED) &&
+       // defined(BOOST_TT_REMOVE_CV_REF_HPP_INCLUDED)
+
+#if defined(CXX_CSTDINT_NOT_SUPPORTED) && defined(BOOST_CSTDINT_HPP)
+#undef CXX_USE_STD_CSTDINT
+#endif
+
+#if defined(CXX_STD_UNIQUE_PTR_NOT_SUPPORTED) &&                               \
+    defined(BOOST_MOVE_UNIQUE_PTR_HPP_INCLUDED)
+#ifndef _EXT_STD_UNIQUE_PTR_
+#define _EXT_STD_UNIQUE_PTR_
+namespace std {
+using boost::movelib::unique_ptr;
+} // namespace std
+#endif // _EXT_STD_UNIQUE_PTR_
+#endif
+
+#if defined(CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED) &&                              \
+    defined(BOOST_MOVE_UNIQUE_PTR_HPP_INCLUDED)
+#ifndef _EXT_STD_MAKE_UNIQUE_
+#define _EXT_STD_MAKE_UNIQUE_
+#include <boost/make_unique.hpp>
+namespace std {
+#ifndef _EXT_STD_UNIQUE_PTR_
+#define _EXT_STD_UNIQUE_PTR_
+using boost::movelib::unique_ptr;
+#undef CXX_USE_STD_UNIQUE_PTR
+#endif // _EXT_STD_UNIQUE_PTR_
+using boost::make_unique;
+} // namespace std
+#undef CXX_USE_STD_MAKE_UNIQUE
+#endif // _EXT_STD_MAKE_UNIQUE_
+#endif
+
+#if defined(CXX_STD_MAKE_SHARED_NOT_SUPPORTED) &&                              \
+    defined(BOOST_SMART_PTR_SHARED_PTR_HPP_INCLUDED)
+#ifndef _EXT_STD_MAKE_SHARED_
+#define _EXT_STD_MAKE_SHARED_
+#include <boost/make_shared.hpp>
+namespace std {
+#ifndef _EXT_STD_SHARED_PTR_
+#define _EXT_STD_SHARED_PTR_
+using boost::shared_ptr;
+#endif // _EXT_STD_SHARED_PTR_
+using boost::make_shared;
+} // namespace std
+#endif // _EXT_STD_MAKE_SHARED_
+#endif
+
+///
+/// std::tr1
+///
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#ifndef _EXT_STD_SHARED_PTR_
+#define _EXT_STD_SHARED_PTR_
+#include <memory>
+namespace std {
+using std::tr1::shared_ptr;
+} // namespace std
+#endif // _EXT_STD_SHARED_PTR_
+#endif
+
+//
+//
+//
+#ifdef CXX_STD_MOVE_NOT_SUPPORTED
+#if defined(CXX_USE_STD_MAKE_UNIQUE) || defined(_EXT_STD_MAKE_UNIQUE_)
+#define CXX_USE_STD_MOVE
+#endif
+#if defined(CXX_USE_STD_MAKE_SHARED) || defined(_EXT_STD_MAKE_SHARED_)
+#define CXX_USE_STD_MOVE
 #endif
 #endif
 
+///
+/// CXX_NOEXCEPT
+///
 #if CXX_VER < 201103L
 #define CXX_NOEXCEPT
 #else
 #define CXX_NOEXCEPT noexcept
 #endif
 
+///
+/// CXX_CONSTEXPR
+///
 #if CXX_VER < 201103L
 #define CXX_CONSTEXPR
 #else
 #define CXX_CONSTEXPR constexpr
 #endif
 
-// Latest supported shared mutex definitions
+///
+/// CXX_INVOKE_RESULT
+///
+#if CXX_VER >= 201703L
+#define CXX_INVOKE_RESULT(F, Args) std::invoke_result_t<F, Args>
+#elif CXX_VER >= 201402L
+#define CXX_INVOKE_RESULT(F, Args) std::result_of_t<F(Args)>
+#else
+#define CXX_INVOKE_RESULT(F, Args) std::result_of<F(Args)>::type
+#endif
+
+///
+/// CXX_SHARED_MUTEX
+///
 #if CXX_VER >= 201703L
 #define CXX_SHARED_MUTEX std::shared_mutex
-#else
+#elif CXX_VER >= 201402L
 #define CXX_SHARED_MUTEX std::shared_timed_mutex
 #endif
 
-// Define a "range based for loop" macro
+///
+/// CXX_FOR, CXX_FOR_O, CXX_FOR_END
+///  - Define a "range based for loop" macro
+///
 #ifdef CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
 #ifdef CXX_AUTO_TYPE_NOT_SUPPORTED
 #define __CXX_FOR_ARG__(...) __VA_ARGS__
@@ -76,13 +365,157 @@
 #define CXX_FOR(range_declaration, range_expression)                           \
   for (range_declaration : (range_expression)) {
 #define CXX_FOR_END }
+#endif // CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
+
+///
+/// nullptr
+///
+#ifdef CXX_USE_NULLPTR
+#ifndef _EXT_NULLPTR_
+#define _EXT_NULLPTR_
+const class {
+public:
+  template <class T> operator T *() const { return 0; }
+  template <class C, class T> operator T C::*() const { return 0; }
+
+private:
+  void operator&() const;
+  
+} nullptr = {};
+#endif // _EXT_NULLPTR_
+#endif // CXX_USE_NULLPTR
+
+///
+/// std::unique_ptr
+///
+#ifdef CXX_USE_STD_UNIQUE_PTR
+#ifndef _EXT_STD_UNIQUE_PTR_
+#define _EXT_STD_UNIQUE_PTR_
+namespace std {
+template <typename T> class unique_ptr {
+public:
+  unique_ptr() : ptr_(nullptr) {}
+  unique_ptr(T *ptr) : ptr_(ptr) {}
+  ~unique_ptr() {
+    if (ptr_)
+      delete ptr_;
+  }
+  void reset(T *ptr = nullptr) {
+    if (ptr_)
+      delete ptr_;
+    if (ptr)
+      ptr_ = nullptr;
+  }
+  operator bool() { return ptr_ != nullptr; }
+  T &operator*() { return *ptr_; }
+
+private:
+  T *ptr_;
+};
+} // namespace std
+#endif // _EXT_STD_UNIQUE_PTR_
 #endif
 
-#if CXX_VER >= 201703L
-#include <cstddef>
+///
+/// std::make_unique
+///
+#ifdef CXX_USE_STD_MAKE_UNIQUE
+#ifndef _EXT_STD_MAKE_UNIQUE_
+#define _EXT_STD_MAKE_UNIQUE_
+#include <memory>
+namespace std {
+#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+template <typename T> inline std::unique_ptr<T> make_unique() {
+  return std::unique_ptr<T>(new T());
+}
+#ifdef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+template <typename T> inline std::unique_ptr<T> make_unique(const T &value) {
+  return std::unique_ptr<T>(new T(std::move(value)));
+}
 #else
-#include <type_traits>
+template <typename T> inline std::unique_ptr<T> make_unique(T &&value) {
+  return std::unique_ptr<T>(new T(std::move(value)));
+}
+#endif // CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+#else
+template <typename T, typename... Args>
+inline std::unique_ptr<T> make_unique(Args &&... __args) {
+  return std::unique_ptr<T>(new T(std::forward<Args>(__args)...));
+}
+#endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+} // namespace std
+#endif // _EXT_STD_MAKE_UNIQUE_
+#endif // CXX_USE_STD_MAKE_UNIQUE
 
+#ifdef CXX_USE_STD_MAKE_SHARED
+#ifndef _EXT_STD_MAKE_SHARED_
+#define _EXT_STD_MAKE_SHARED_
+#include <memory>
+namespace std {
+#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+template <typename T> inline std::shared_ptr<T> make_shared() {
+  return std::shared_ptr<T>(new T());
+}
+#ifdef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+template <typename T> inline std::shared_ptr<T> make_shared(const T &value) {
+  return std::shared_ptr<T>(new T(std::move(value)));
+}
+#else
+template <typename T> inline std::shared_ptr<T> make_shared(T &&value) {
+  return std::shared_ptr<T>(new T(std::move(value)));
+}
+#endif // CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+#else
+template <typename T, typename... Args>
+inline std::shared_ptr<T> make_shared(Args &&... __args) {
+  return std::shared_ptr<T>(new T(std::forward<Args>(__args)...));
+}
+#endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+} // namespace std
+#endif // _EXT_STD_MAKE_SHARED_
+#endif // CXX_USE_STD_MAKE_SHARED
+
+///
+/// <cstdint>
+///
+#ifdef CXX_USE_STD_CSTDINT
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+typedef signed short int int16_t;
+typedef unsigned short int uint16_t;
+typedef signed int int32_t;
+typedef unsigned int uint32_t;
+typedef signed long long int64_t;
+typedef unsigned long long uint64_t;
+
+typedef signed char int_least8_t;
+typedef unsigned char uint_least8_t;
+typedef signed short int int_least16_t;
+typedef unsigned short int uint_least16_t;
+typedef signed int int_least32_t;
+typedef unsigned int uint_least32_t;
+typedef signed long long int_least64_t;
+typedef unsigned long long uint_least64_t;
+
+typedef signed char int_fast8_t;
+typedef unsigned char uint_fast8_t;
+typedef signed short int int_fast16_t;
+typedef unsigned short int uint_fast16_t;
+typedef signed int int_fast32_t;
+typedef unsigned int uint_fast32_t;
+typedef signed long long int_fast64_t;
+typedef unsigned long long uint_fast64_t;
+
+typedef signed long long intmax_t;
+typedef unsigned long long uintmax_t;
+#endif
+
+///
+/// std::byte
+///
+#ifdef CXX_USE_STD_BYTE
+#ifndef _EXT_STD_BYTE_
+#define _EXT_STD_BYTE_
 namespace std {
 enum byte : unsigned char {};
 
@@ -132,15 +565,15 @@ CXX_CONSTEXPR byte &operator>>=(byte &_Arg,
   return _Arg = _Arg >> _Shift;
 }
 
-CXX_CONSTEXPR byte &operator|=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
+inline byte &operator|=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
   return _Left = _Left | _Right;
 }
 
-CXX_CONSTEXPR byte &operator&=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
+inline byte &operator&=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
   return _Left = _Left & _Right;
 }
 
-CXX_CONSTEXPR byte &operator^=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
+inline byte &operator^=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
   return _Left = _Left ^ _Right;
 }
 
@@ -149,51 +582,139 @@ CXX_CONSTEXPR _IntType to_integer(const byte _Arg) CXX_NOEXCEPT {
   return static_cast<_IntType>(_Arg);
 }
 } // namespace std
-#endif
+#endif // _EXT_STD_BYTE_
+#endif // CXX_USE_STD_BYTE
 
-#if CXX_VER < 201103L
-#if defined(_MSC_VER) && (_MSC_VER < 1600)
+///
+/// std::move
+///
+#ifdef CXX_USE_STD_MOVE
+#ifndef _EXT_STD_MOVE_
+#define _EXT_STD_MOVE_
 namespace std {
-template <typename T> T &move(T &t) { return t; }
+template <typename T> inline T &move(T &t) { return t; }
 } // namespace std
-#endif
-#endif
+#endif // _EXT_STD_MOVE_
+#endif // CXX_USE_STD_MOVE
 
-#if !defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED) && CXX_VER < 201703L
+///
+/// std::apply
+///
+#ifdef CXX_USE_STD_APPLY
+#ifndef _EXT_STD_APPLY_
+#define _EXT_STD_APPLY_
 #include <functional>
 #include <tuple>
 
 namespace std {
 template <int N> struct apply_wrap {
-  template <typename R, typename... TupleArgs, typename... UnpackedArgs>
-  static R apply(std::function<R(TupleArgs...)> &f,
-                 const std::tuple<TupleArgs...> &t, UnpackedArgs... args) {
+  template <typename R, typename... Args, typename... UnpackedArgs>
+  static R apply(std::function<R(Args...)> &f, const std::tuple<Args...> &t,
+                 UnpackedArgs... args) {
     return apply_wrap<N - 1>::apply(f, t, std::get<N - 1>(t), args...);
   }
 };
 
 template <> struct apply_wrap<0> {
-  template <typename R, typename... TupleArgs, typename... UnpackedArgs>
-  static R apply(std::function<R(TupleArgs...)> &f,
-                 const std::tuple<TupleArgs...> &, UnpackedArgs... args) {
+  template <typename R, typename... Args, typename... UnpackedArgs>
+  static R apply(std::function<R(Args...)> &f, const std::tuple<Args...> &,
+                 UnpackedArgs... args) {
     return f(args...);
   }
 };
 
-template <typename R, typename... TupleArgs>
-inline R apply(std::function<R(TupleArgs...)> &&f,
-               std::tuple<TupleArgs...> const &t) {
-  return apply_wrap<sizeof...(TupleArgs)>::apply(f, t);
+template <typename R, typename... Args>
+inline R apply(std::function<R(Args...)> &&f, const std::tuple<Args...> &t) {
+  return apply_wrap<sizeof...(Args)>::apply(f, t);
 }
 } // namespace std
-#endif
+#endif // _EXT_STD_APPLY_
+#endif // CXX_USE_STD_APPLY
 
-#if CXX_VER >= 201703L
-#define CXX_INVOKE_RESULT(F, Args) std::invoke_result_t<F, Args>
-#elif CXX_VER >= 201402L
-#define CXX_INVOKE_RESULT(F, Args) std::result_of_t<F(Args)>
-#else
-#define CXX_INVOKE_RESULT(F, Args) std::result_of<F(Args)>::value
-#endif
+///
+/// std::remove_cv
+///
+#ifdef CXX_USE_STD_REMOVE_CV
+#ifndef _EXT_STD_REMOVE_CV_
+#define _EXT_STD_REMOVE_CV_
+#include <type_traits>
+namespace std {
+template <class T> struct remove_cv { typedef T type; };
+template <class T> struct remove_cv<const T> { typedef T type; };
+template <class T> struct remove_cv<volatile T> { typedef T type; };
+template <class T> struct remove_cv<const volatile T> { typedef T type; };
+} // namespace std
+#endif // _EXT_STD_REMOVE_CV_
+#endif // CXX_USE_STD_REMOVE_CV
 
-#endif // _EXT_STL_COMPAT_
+///
+/// remove_cv_t
+///
+#ifdef CXX_USE_STD_REMOVE_CV_T
+#ifndef _EXT_STD_REMOVE_CV_T_
+#define _EXT_STD_REMOVE_CV_T_
+#include <type_traits>
+namespace std {
+template <class T> using remove_cv_t = typename remove_cv<T>::type;
+} // namespace std
+#endif // _EXT_STD_REMOVE_CV_T_
+#endif // CXX_USE_STD_REMOVE_CV_T
+
+///
+/// std::remove_reference
+///
+#ifdef CXX_USE_STD_REMOVE_REF
+#ifndef _EXT_STD_REMOVE_REF_
+#define _EXT_STD_REMOVE_REF_
+#include <type_traits>
+namespace std {
+template <class T> struct remove_reference { typedef T type; };
+template <class T> struct remove_reference<T &> { typedef T type; };
+#ifndef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+template <class T> struct remove_reference < T && { typedef T type; };
+#endif // CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+} // namespace std
+#endif // _EXT_STD_REMOVE_REF_
+#endif // CXX_USE_STD_REMOVE_REF
+
+///
+/// remove_reference_t
+///
+#ifdef CXX_USE_STD_REMOVE_REF_T
+#ifndef _EXT_STD_REMOVE_REF_T_
+#define _EXT_STD_REMOVE_REF_T_
+#include <type_traits>
+namespace std {
+template <class T>
+using remove_reference_t = typename remove_reference<T>::type;
+} // namespace std
+#endif // _EXT_STD_REMOVE_REF_
+#endif // CXX_USE_STD_REMOVE_REF_T
+///
+/// std::remove_cvref
+///
+#ifdef CXX_USE_STD_REMOVE_CVREF
+#ifndef _EXT_STD_REMOVE_CVREF_
+#define _EXT_STD_REMOVE_CVREF_
+#include <type_traits>
+namespace std {
+template <class T> struct remove_cvref {
+  typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type
+      type;
+};
+} // namespace std
+#endif // _EXT_STD_REMOVE_CVREF_
+#endif // CXX_USE_STD_REMOVE_CVREF
+
+///
+///  std::remove_cvref_t
+///
+#ifdef CXX_USE_STD_REMOVE_CVREF_T
+#ifndef _EXT_STD_REMOVE_CVREF_T_
+#define _EXT_STD_REMOVE_CVREF_T_
+#include <type_traits>
+namespace std {
+template <class T> using remove_cvref_t = typename remove_cvref<T>::type;
+} // namespace std
+#endif // _EXT_STD_REMOVE_CVREF_T_
+#endif // CXX_USE_STD_REMOVE_CVREF_T

@@ -23,7 +23,7 @@ using observable_no_args =
 class object_with_observable_no_args : public object_with_name,
                                        public observable_no_args {
 public:
-  object_with_observable_no_args(const std::string name)
+  object_with_observable_no_args(const std::string &name)
       : observable_no_args(), object_with_name(name) {}
 
 public:
@@ -33,7 +33,7 @@ public:
 class observer_no_args : public object_with_name,
                          public object_with_observable_no_args::observer {
 public:
-  observer_no_args(const std::string name)
+  observer_no_args(const std::string &name)
       : observer(), object_with_name(name) {}
 
 private:
@@ -75,7 +75,7 @@ using observable_one_arg =
 class object_with_observable_one_arg : public object_with_name,
                                        public observable_one_arg {
 public:
-  object_with_observable_one_arg(const std::string name)
+  object_with_observable_one_arg(const std::string &name)
       : observable_one_arg(), object_with_name(name) {}
 
 public:
@@ -107,6 +107,7 @@ TEST(observable_test, observer_with_one_arg) {
   object_with_observable_one_arg obj_1("obj_one_arg_1");
   object_with_observable_one_arg obj_2("obj_one_arg_2");
 
+#ifdef _EXT_OBSERVABLE_SYNC_
   std::mutex mtx;
   std::condition_variable cv;
 
@@ -134,7 +135,7 @@ TEST(observable_test, observer_with_one_arg) {
     std::unique_lock<std::mutex> lk(mtx);
     cv.wait(lk, [&]() { return ready; });
   }
-
+#endif
   obsvr += obj;
   obsvr_1 += obj;
   obsvr_2 += obj;
@@ -192,10 +193,54 @@ TEST(observable_test, observer_with_one_arg) {
   obj.test(14);
   obj_1.test(15);
   obj_2.test(16);
-
+  
+#ifdef _EXT_OBSERVABLE_SYNC_
   running = false;
   if (t.joinable())
     t.join();
+#endif
+}
+
+using observable_two_args = ext::observable<class object_with_observable_two_args,
+                                           int, const std::string &>;
+
+class object_with_observable_two_args : public object_with_name,
+                                       public observable_two_args {
+public:
+  object_with_observable_two_args(const std::string &name)
+      : observable_two_args(), object_with_name(name) {}
+
+public:
+  void test(int arg) { notify(arg, std::to_string(arg + 100)); }
+};
+
+class observer_with_two_args : public object_with_name, public object_with_observable_two_args::observer {
+public:
+  observer_with_two_args(const std::string name)
+      : observer(), object_with_name(name) {}
+
+private:
+  void update(object_with_observable_two_args &item, int arg0, const std::string& arg1) {
+    if (arg0 < 0)
+      return;
+    std::cout << "[" << name() << "] " << item.name() << " "
+              << "value(arg0 - " << arg0 << ": arg1 - \"" << arg1 << "\") "
+              << "updated\n";
+  }
+};
+
+TEST(observable_test, observer_with_two_args) {
+  observer_with_two_args obsvr("obsvr_two_args");
+  observer_with_two_args obsvr_1("obsvr_two_args_1");
+
+  object_with_observable_two_args obj("obj_one_arg");
+  object_with_observable_two_args obj_1("obj_one_arg_1");
+  object_with_observable_two_args obj_2("obj_one_arg_2");
+
+  obsvr += obj;
+  obsvr_1 += obj;
+
+  obj.test(100);
 }
 
 class object_with_observable_no_args_base

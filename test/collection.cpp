@@ -4,6 +4,7 @@
 #include <ext/collection>
 #include <gtest/gtest.h>
 
+#ifdef _EXT_COLLECTION_
 class data {
 public:
   data() : id(0), value(0) {}
@@ -230,3 +231,4 @@ TEST(collection_test, no_add) {
     count++;
   EXPECT_EQ(count, global_managed_data_list_count);
 }
+#endif // _EXT_COLLECTION_

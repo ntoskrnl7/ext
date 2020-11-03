@@ -21,7 +21,7 @@ TEST(process_test, run_list_working_directory_cmd) {
 #endif
   EXPECT_TRUE(process.joinable());
   process.join();
-  EXPECT_EQ(process.exit_code(), ext::process::exit_success);
+  EXPECT_EQ(process.exit_code(), EXIT_SUCCESS);
 }
 
 TEST(process_test,
@@ -45,5 +45,5 @@ TEST(process_test,
 #endif
   EXPECT_TRUE(process.joinable());
   process.join();
-  EXPECT_EQ(process.exit_code(), ext::process::exit_success);
+  EXPECT_EQ(process.exit_code(), EXIT_SUCCESS);
 }

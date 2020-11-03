@@ -10,6 +10,10 @@
 
 #include "stl_compat"
 
+#ifdef CXX_SHARED_MUTEX
+#ifndef _EXT_SAFE_OBJECT_
+#define _EXT_SAFE_OBJECT_
+
 #include <functional>
 #include <shared_mutex>
 #include <utility>
@@ -432,3 +436,6 @@ private:
   mutex_trace_data_type(_obj_, _mutex_)::instance().unregisterUntrackedThread
 
 } // namespace ext
+
+#endif // _EXT_SAFE_OBJECT_
+#endif // CXX_SHARED_MUTEX

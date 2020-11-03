@@ -7,15 +7,17 @@
  *
  */
 #pragma once
-#ifndef _EXT_SHARED_RECURSIVE_MUTEX_
-#define _EXT_SHARED_RECURSIVE_MUTEX_
 
 #include "stl_compat"
 
+#ifdef CXX_SHARED_MUTEX
+#ifndef _EXT_SHARED_RECURSIVE_MUTEX_
+#define _EXT_SHARED_RECURSIVE_MUTEX_
+
 #include <atomic>
-#include <shared_mutex>
 #include <thread>
 #include <unordered_map>
+#include <shared_mutex>
 
 namespace ext {
 /**
@@ -121,4 +123,6 @@ private:
   std::unordered_map<std::thread::id, unsigned long> shared_lock_count_map_;
 };
 } // namespace ext
+
 #endif // _EXT_SHARED_RECURSIVE_MUTEX_
+#endif // CXX_SHARED_MUTEX

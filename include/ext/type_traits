@@ -17,14 +17,10 @@
 
 namespace ext {
 
-#if CXX_VER <= 201703L
-template <class T> struct remove_cvref {
-  typedef std::remove_cv_t<std::remove_reference_t<T>> type;
-};
-
-template <class T> using remove_cvref_t = typename remove_cvref<T>::type;
-#endif
-
+///
+/// remove_class
+///
+#if CXX_VER >= 201103L
 template <typename T> struct remove_class;
 
 template <typename R, typename C, typename... Args>
@@ -37,16 +33,18 @@ struct remove_class<R (C::*)(Args...)> {
   using type = R(Args...);
 };
 
-#if CXX_VER >= 201703L
+template <typename T> using remove_class_t = typename remove_class<T>::type;
+#endif
+
+///
+/// deduce_mem_fn
+///
+#if CXX_VER >= 201103L
 template <typename T, class = void> struct deduce_mem_fn {};
 
 template <typename T>
 struct deduce_mem_fn<T, std::void_t<decltype(&T::operator())>> {
-  using type = typename remove_class<decltype(&T::operator())>::type;
-};
-#else
-template <typename T> struct deduce_mem_fn {
-  using type = typename remove_class<decltype(&T::operator())>::type;
+  using type = remove_class_t<decltype(&T::operator())>;
 };
 #endif
 } // namespace ext

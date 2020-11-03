@@ -7,12 +7,15 @@
  *
  */
 #pragma once
-#ifndef _EXT_ANY_FUNCTION_
-#define _EXT_ANY_FUNCTION_
 
+#define CXX_USE_STD_REMOVE_CVREF_T
+#define CXX_USE_STD_APPLY
 #include "stl_compat"
 
 #if CXX_VER >= 201703L
+#ifndef _EXT_ANY_FUNCTION_
+#define _EXT_ANY_FUNCTION_
+
 #include "type_traits"
 #include "typeinfo"
 
@@ -104,7 +107,7 @@ private:
   static auto any_vector_to_tuple_helper(std::index_sequence<I...>,
                                          const std::vector<std::any> &vec) {
     return std::move(std::make_tuple(
-        std::move(cast_arg<remove_cvref_t<Args>>(vec[I], I))...));
+        std::move(cast_arg<std::remove_cvref_t<Args>>(vec[I], I))...));
   }
 
   static auto any_vector_to_tuple(const std::vector<std::any> &vec) {
@@ -174,5 +177,5 @@ any_function(T) -> any_function<typename deduce_mem_fn<T>::type>;
 
 } // namespace ext
 
-#endif // CXX_VER >= 201703L
 #endif // _EXT_ANY_FUNCTION_
+#endif // CXX_VER >= 201703L

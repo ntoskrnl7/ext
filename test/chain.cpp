@@ -13,7 +13,7 @@ private:
 };
 
 class test_chain : public object_with_name,
-                   public ext::chain<test_chain, long, int, std::string> {
+                   public ext::chain<test_chain, long, int, const std::string&> {
 public:
   test_chain(const std::string &name) : object_with_name(name), chain() {}
 };
@@ -22,7 +22,7 @@ class test_chain_impl0 : public test_chain {
   using test_chain::test_chain;
 
 private:
-  result execute(int i, std::string s) {
+  result execute(int i, const std::string &s) {
     std::cout << "test_chain_impl0 - " << name() << " : " << i << "," << s
               << std::endl;
     if (s.empty())
@@ -39,7 +39,7 @@ class test_chain_impl1 : public test_chain {
   using test_chain::test_chain;
 
 private:
-  result execute(int i, std::string s) {
+  result execute(int i, const std::string &s) {
     std::cout << "test_chain_impl1 - " << name() << " : " << i << "," << s
               << std::endl;
     if (s.empty())
@@ -56,7 +56,7 @@ class test_chain_impl2 : public test_chain {
   using test_chain::test_chain;
 
 private:
-  result execute(int i, std::string s) {
+  result execute(int i, const std::string &s) {
     std::cout << "test_chain_impl2 - " << name() << " : " << i << "," << s
               << std::endl;
     if (s.empty())
@@ -257,7 +257,7 @@ TEST(chain_test, chain_pipe_with_tuple) {
   test_chain_impl0 chain4("chain 4");
   test_chain_impl1 chain5("chain 5");
   test_chain_impl2 chain6("chain 6");
-
+  
   test_chain &current_chain = chain1;
 
   auto &last_chain = std::make_tuple(3, "test") >> chain1 | chain2 | chain3 |
