@@ -1,0 +1,111 @@
+﻿/**
+ * @file path
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements path helper features.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+#ifndef _EXT_PATH_
+#define _EXT_PATH_
+
+#include "stl_compat"
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+namespace ext {
+namespace path {
+template <typename T> inline const T seperator() {
+#ifdef _WIN32
+  return static_cast<T>('\\');
+#else
+  return static_cast<T>('/');
+#endif
+}
+#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+template <typename T, typename A0>
+std::basic_string<T> join(const std::basic_string<T> &path, const A0 &a0) {
+  std::basic_string<T> ret = path;
+  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
+    ret += seperator<T>();
+  ret += a0;
+  return std::move(ret);
+}
+
+template <typename T, typename A0>
+std::basic_string<T> join(const T *path, const A0 &a0) {
+  return std::move(join(std::basic_string<T>(path), a0));
+}
+
+template <typename T, typename A0, typename A1>
+std::basic_string<T> join(const std::basic_string<T> &path, const A0 &a0,
+                          const A1 &a1) {
+  std::basic_string<T> ret = path;
+  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
+    ret += seperator<T>();
+  ret += a0;
+  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
+    ret += seperator<T>();
+  ret += a1;
+  return std::move(ret);
+}
+
+template <typename T, typename A0, typename A1>
+std::basic_string<T> join(const T *path, const A0 &a0, const A1 &a1) {
+  return std::move(join(std::basic_string<T>(path), a0, a1));
+}
+
+template <typename T, typename A0, typename A1, typename A2>
+std::basic_string<T> join(const std::basic_string<T> &path, const A0 &a0,
+                          const A1 &a1, const A2 &a2) {
+  std::basic_string<T> ret = path;
+  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
+    ret += seperator<T>();
+  ret += a0;
+  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
+    ret += seperator<T>();
+  ret += a1;
+  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
+    ret += seperator<T>();
+  ret += a2;
+  return std::move(ret);
+}
+
+template <typename T, typename A0, typename A1, typename A2>
+std::basic_string<T> join(const T *path, const A0 &a0, const A1 &a1,
+                          const A2 &a2) {
+  return std::move(join(std::basic_string<T>(path), a0, a1, a2));
+}
+#else
+namespace internal {
+template <typename T, typename Tup, std::size_t... I>
+void join(std::basic_string<T> &ret, std::index_sequence<I...>,
+          const Tup &tup) {
+  for (auto path : std::vector<std::basic_string<T>>({std::get<I>(tup)...})) {
+    if (ret.back() != seperator<T>())
+      ret += seperator<T>();
+    ret += path;
+  }
+}
+} // namespace internal
+
+template <typename T, typename... Args>
+std::basic_string<T> join(const std::basic_string<T> &path,
+                          const Args &... args) {
+  std::basic_string<T> ret = path;
+  internal::join(ret, std::make_index_sequence<sizeof...(Args)>{},
+                 std::forward_as_tuple(args...));
+  return std::move(ret);
+}
+
+template <typename T, typename... Args>
+std::basic_string<T> join(const T *path, const Args &... args) {
+  return std::move(join(std::basic_string<T>(path), args...));
+}
+#endif
+} // namespace path
+} // namespace ext
+#endif // _EXT_PATH_
