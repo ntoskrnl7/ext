@@ -15,15 +15,18 @@
 #define _EXT_SHARED_RECURSIVE_MUTEX_
 
 #include <atomic>
+#include <shared_mutex>
 #include <thread>
 #include <unordered_map>
-#include <shared_mutex>
 
 namespace ext {
 /**
  * @brief The shared_recursive_mutex class
  */
 class shared_recursive_mutex : public CXX_SHARED_MUTEX {
+private:
+  typedef std::unordered_map<std::thread::id, unsigned long> thread_map;
+
 public:
   void lock(void) {
     std::thread::id this_id = std::this_thread::get_id();
@@ -36,10 +39,10 @@ public:
       if (owner_ == std::thread::id()) {
         bool needToUnlockShared = false;
         {
-          std::shared_lock<CXX_SHARED_MUTEX> lock(
-              shared_lock_count_map_mutex_);
-          auto iter = shared_lock_count_map_.find(this_id);
-          if (iter != shared_lock_count_map_.cend()) {
+          std::shared_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
+          thread_map::iterator iter =
+              shared_lock_count_map_.find(this_id);
+          if (iter != shared_lock_count_map_.end()) {
             iter->second = 1; // Set only one shared lock to remain unlocked
                               // when the unlock_shared method is called.
             needToUnlockShared = true;
@@ -70,11 +73,13 @@ public:
     std::thread::id this_id = std::this_thread::get_id();
     bool needToLock = false;
     {
-      std::unique_lock<CXX_SHARED_MUTEX> lock(
-          shared_lock_count_map_mutex_);
-      auto iter = shared_lock_count_map_.find(this_id);
-      if (iter == shared_lock_count_map_.cend()) {
-        shared_lock_count_map_.insert({this_id, 1});
+      std::unique_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
+      thread_map::iterator iter =
+          shared_lock_count_map_.find(this_id);
+      if (iter == shared_lock_count_map_.end()) {
+        // shared_lock_count_map_.insert({this_id, 1});
+        shared_lock_count_map_.insert(
+            std::move(std::pair<std::thread::id, unsigned long>(this_id, 1)));
         needToLock = true;
       } else {
         ++iter->second;
@@ -96,10 +101,10 @@ public:
     // shared lock, it is handled not to unlock it.
     bool needToUnlock = false;
     {
-      std::unique_lock<CXX_SHARED_MUTEX> lock(
-          shared_lock_count_map_mutex_);
-      auto iter = shared_lock_count_map_.find(this_id);
-      if (iter != shared_lock_count_map_.cend()) {
+      std::unique_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
+      thread_map::iterator iter =
+          shared_lock_count_map_.find(this_id);
+      if (iter != shared_lock_count_map_.end()) {
         if (--iter->second == 0) {
           shared_lock_count_map_.erase(iter);
           needToUnlock = true;
@@ -120,7 +125,7 @@ private:
   std::atomic<unsigned long> lock_count_;
 
   CXX_SHARED_MUTEX shared_lock_count_map_mutex_;
-  std::unordered_map<std::thread::id, unsigned long> shared_lock_count_map_;
+  thread_map shared_lock_count_map_;
 };
 } // namespace ext
 

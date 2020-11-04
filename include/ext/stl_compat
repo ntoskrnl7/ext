@@ -27,7 +27,7 @@
  * std::make_unique
  * std::make_shared
  * nullptr
- * 
+ *
  * CXX_USE_ALL_FEATURES
  * CXX_USE_STD_BYTE
  * CXX_USE_STD_UNIQUE_PTR
@@ -47,7 +47,13 @@
  * CXX_USE_SHARED_PTR
  * CXX_USE_MAKE_SHARED (with CXX_USE_SHARED_PTR)
  * CXX_USE_NULLPTR
- * 
+ *
+ * Boost only
+ * CXX_USE_STD_THREAD
+ * CXX_USE_STD_SHARED_TIMED_MUTEX
+ * CXX_USE_STD_SHARED_MUTEX
+ * CXX_USE_STD_SYSTEM_ERROR
+ *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
@@ -71,6 +77,7 @@
 #define CXX_CONSTEXPR_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CV_NOT_SUPPORTED
 #define CXX_STD_REMOVE_REF_NOT_SUPPORTED
+#define CXX_STD_THREAD_NOT_SUPPORTED
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
 #define CXX_LAMBDAS_NOT_SUPPORTED
@@ -78,16 +85,19 @@
 #define CXX_STD_MOVE_NOT_SUPPORTED
 #define CXX_STD_UNIQUE_PTR_NOT_SUPPORTED
 #define CXX_STD_MAKE_SHARED_NOT_SUPPORTED
+#define CXX_STD_SYSTEM_ERROR_NOT_SUPPORTED
 #endif
 #endif
 #if CXX_VER < 201402L
 #define CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CV_T_NOT_SUPPORTED
 #define CXX_STD_REMOVE_REF_T_NOT_SUPPORTED
+#define CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED
 #endif
 #if CXX_VER < 201703L
 #define CXX_STD_BYTE_NOT_SUPPORTED
 #define CXX_STD_APPLY_NOT_SUPPORTED
+#define CXX_STD_SHARED_MUTEX_NOT_SUPPORTED
 #define CXX_CONSTEXPR_IF_NOT_SUPPORTED
 #endif
 #if CXX_VER <= 201703L
@@ -100,12 +110,17 @@
 ///
 #ifdef CXX_USE_STD_ALL_FEATURES
 #define CXX_USE_STD_CSTDINT
+#define CXX_USE_STD_SYSTEM_ERROR
 #define CXX_USE_STD_BYTE
 #define CXX_USE_STD_UNIQUE_PTR
 #define CXX_USE_STD_MAKE_UNIQUE
 #define CXX_USE_STD_MAKE_SHARED
-#define CXX_USE_STD_APPLY
+#define CXX_USE_STD_THREAD
+#define CXX_USE_STD_SHARED_TIMED_MUTEX
+#define CXX_USE_STD_SHARED_MUTEX
+#define CXX_USE_STD_SYSTEM_ERROR
 #define CXX_USE_STD_MOVE
+#define CXX_USE_STD_APPLY
 #define CXX_USE_STD_REMOVE_CV
 #define CXX_USE_STD_REMOVE_CV_T
 #define CXX_USE_STD_REMOVE_REF
@@ -158,6 +173,9 @@
 #if !defined(CXX_STD_MAKE_SHARED_NOT_SUPPORTED)
 #undef CXX_USE_STD_MAKE_SHARED
 #endif
+#if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
+#undef CXX_USE_STD_THREAD
+#endif
 #if !defined(CXX_STD_MOVE_NOT_SUPPORTED)
 #undef CXX_USE_STD_MOVE
 #endif
@@ -195,7 +213,8 @@
 ///
 /// Boost
 ///
-#if defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) &&                                \
+#if defined(CXX_USE_STD_REMOVE_CV) &&                                          \
+    defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) &&                                \
     defined(BOOST_TT_REMOVE_CV_HPP_INCLUDED)
 #ifndef _EXT_STD_REMOVE_CV_
 #define _EXT_STD_REMOVE_CV_
@@ -207,7 +226,8 @@ using boost::remove_cv;
 #endif // defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) &&
        // defined(BOOST_TT_REMOVE_CV_HPP_INCLUDED)
 
-#if defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) &&                               \
+#if defined(CXX_USE_STD_REMOVE_REF) &&                                         \
+    defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) &&                               \
     defined(BOOST_TT_REMOVE_REFERENCE_HPP_INCLUDED)
 #ifndef _EXT_STD_REMOVE_REF_
 #define _EXT_STD_REMOVE_REF_
@@ -219,7 +239,8 @@ using boost::remove_reference;
 #endif // defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) &&
        // defined(BOOST_TT_REMOVE_REFERENCE_HPP_INCLUDED)
 
-#if defined(CXX_STD_REMOVE_CVREF_NOT_SUPPORTED) &&                             \
+#if defined(CXX_USE_STD_REMOVE_CVREF) &&                                       \
+    defined(CXX_STD_REMOVE_CVREF_NOT_SUPPORTED) &&                             \
     defined(BOOST_TT_REMOVE_CV_REF_HPP_INCLUDED)
 #ifndef _EXT_STD_REMOVE_CVREF_
 #define _EXT_STD_REMOVE_CVREF_
@@ -233,21 +254,25 @@ template <typename T> struct remove_cvref {
 #endif // defined(CXX_STD_REMOVE_CVREF_NOT_SUPPORTED) &&
        // defined(BOOST_TT_REMOVE_CV_REF_HPP_INCLUDED)
 
-#if defined(CXX_CSTDINT_NOT_SUPPORTED) && defined(BOOST_CSTDINT_HPP)
+#if defined(CXX_USE_STD_CSTDINT) && defined(CXX_CSTDINT_NOT_SUPPORTED) &&      \
+    defined(BOOST_CSTDINT_HPP)
 #undef CXX_USE_STD_CSTDINT
 #endif
 
-#if defined(CXX_STD_UNIQUE_PTR_NOT_SUPPORTED) &&                               \
+#if defined(CXX_USE_STD_UNIQUE_PTR) &&                                         \
+    defined(CXX_STD_UNIQUE_PTR_NOT_SUPPORTED) &&                               \
     defined(BOOST_MOVE_UNIQUE_PTR_HPP_INCLUDED)
 #ifndef _EXT_STD_UNIQUE_PTR_
 #define _EXT_STD_UNIQUE_PTR_
 namespace std {
 using boost::movelib::unique_ptr;
+#undef CXX_USE_STD_UNIQUE_PTR
 } // namespace std
 #endif // _EXT_STD_UNIQUE_PTR_
 #endif
 
-#if defined(CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED) &&                              \
+#if defined(CXX_USE_STD_MAKE_UNIQUE) &&                                        \
+    defined(CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED) &&                              \
     defined(BOOST_MOVE_UNIQUE_PTR_HPP_INCLUDED)
 #ifndef _EXT_STD_MAKE_UNIQUE_
 #define _EXT_STD_MAKE_UNIQUE_
@@ -259,12 +284,13 @@ using boost::movelib::unique_ptr;
 #undef CXX_USE_STD_UNIQUE_PTR
 #endif // _EXT_STD_UNIQUE_PTR_
 using boost::make_unique;
-} // namespace std
 #undef CXX_USE_STD_MAKE_UNIQUE
+} // namespace std
 #endif // _EXT_STD_MAKE_UNIQUE_
 #endif
 
-#if defined(CXX_STD_MAKE_SHARED_NOT_SUPPORTED) &&                              \
+#if defined(CXX_USE_STD_MAKE_SHARED) &&                                        \
+    defined(CXX_STD_MAKE_SHARED_NOT_SUPPORTED) &&                              \
     defined(BOOST_SMART_PTR_SHARED_PTR_HPP_INCLUDED)
 #ifndef _EXT_STD_MAKE_SHARED_
 #define _EXT_STD_MAKE_SHARED_
@@ -273,23 +299,98 @@ namespace std {
 #ifndef _EXT_STD_SHARED_PTR_
 #define _EXT_STD_SHARED_PTR_
 using boost::shared_ptr;
+#undef CXX_USE_STD_SHARED_PTR
 #endif // _EXT_STD_SHARED_PTR_
 using boost::make_shared;
+#undef CXX_USE_STD_MAKE_SHARED
 } // namespace std
 #endif // _EXT_STD_MAKE_SHARED_
+#endif
+#if defined(CXX_USE_STD_THREAD) && defined(CXX_STD_THREAD_NOT_SUPPORTED) &&    \
+    defined(BOOST_THREAD_THREAD_HPP)
+#ifndef _EXT_STD_THREAD_
+#define _EXT_STD_THREAD_
+namespace std {
+using boost::thread;
+#undef CXX_USE_STD_THREAD
+} // namespace std
+#endif // _EXT_STD_THREAD_
+#endif
+#if defined(CXX_USE_STD_SYSTEM_ERROR) &&                                       \
+    defined(CXX_STD_SYSTEM_ERROR_NOT_SUPPORTED) &&                             \
+    defined(BOOST_SYSTEM_SYSTEM_ERROR_HPP)
+#ifndef _EXT_STD_SYSTEM_ERROR_
+#define _EXT_STD_SYSTEM_ERROR_
+namespace std {
+using boost::system::error_category;
+using boost::system::error_code;
+using boost::system::error_condition;
+using boost::system::is_error_code_enum;
+using boost::system::is_error_condition_enum;
+using boost::system::system_category;
+using boost::system::system_error;
+#undef CXX_USE_STD_SYSTEM_ERROR
+} // namespace std
+#endif // _EXT_STD_SYSTEM_ERROR_
+#endif
+#if defined(CXX_USE_STD_UNORDERED_MAP) &&                                      \
+    defined(BOOST_UNORDERED_UNORDERED_MAP_HPP_INCLUDED)
+#ifndef _EXT_STD_UNORDERED_MAP_
+#define _EXT_STD_UNORDERED_MAP_
+namespace std {
+using boost::unordered::unordered_map;
+#undef CXX_USE_STD_UNORDERED_MAP
+} // namespace std
+#endif // _EXT_STD_UNORDERED_MAP_
+#endif
+
+#if defined(CXX_USE_STD_SHARED_TIMED_MUTEX) &&                                 \
+    defined(CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED) &&                       \
+    defined(BOOST_THREAD_SHARED_MUTEX_HPP)
+#ifndef _EXT_STD_SHARED_TIMED_MUTEX_
+#define _EXT_STD_SHARED_TIMED_MUTEX_
+namespace std {
+using boost::shared_timed_mutex;
+#undef CXX_USE_STD_SHARED_TIMED_MUTEX
+} // namespace std
+#endif // _EXT_STD_SHARED_TIMED_MUTEX_
+#endif
+
+#if defined(CXX_USE_STD_SHARED_MUTEX) &&                                       \
+    defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED) &&                             \
+    defined(BOOST_THREAD_SHARED_MUTEX_HPP)
+#ifndef _EXT_STD_SHARED_MUTEX_
+#define _EXT_STD_SHARED_MUTEX_
+namespace std {
+using boost::shared_mutex;
+#undef CXX_USE_STD_SHARED_MUTEX
+} // namespace std
+#endif // _EXT_STD_SHARED_MUTEX_
 #endif
 
 ///
 /// std::tr1
 ///
 #if defined(_MSC_VER) && _MSC_VER < 1600
+#ifdef _MEMORY_ // VS2008 memory
 #ifndef _EXT_STD_SHARED_PTR_
 #define _EXT_STD_SHARED_PTR_
-#include <memory>
 namespace std {
 using std::tr1::shared_ptr;
+#undef CXX_USE_STD_SHARED_PTR
 } // namespace std
 #endif // _EXT_STD_SHARED_PTR_
+#endif // _MEMORY_
+
+#ifdef _UNORDERED_MAP_ // VS2008 unordered_map
+#ifndef _EXT_STD_UNORDERED_MAP_
+#define _EXT_STD_UNORDERED_MAP_
+namespace std {
+using std::tr1::unordered_map;
+#undef CXX_USE_STD_SHARED_PTR
+} // namespace std
+#endif // _EXT_STD_UNORDERED_MAP_
+#endif // _UNORDERED_MAP_
 #endif
 
 //
@@ -380,7 +481,6 @@ public:
 
 private:
   void operator&() const;
-  
 } nullptr = {};
 #endif // _EXT_NULLPTR_
 #endif // CXX_USE_NULLPTR
