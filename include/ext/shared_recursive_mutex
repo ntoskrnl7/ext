@@ -14,9 +14,19 @@
 #ifndef _EXT_SHARED_RECURSIVE_MUTEX_
 #define _EXT_SHARED_RECURSIVE_MUTEX_
 
+#if !defined(CXX_STD_ATOMIC_NOT_SUPPORTED)
 #include <atomic>
+#endif
+
+#if !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED) ||                            \
+    !defined(CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED)
 #include <shared_mutex>
+#endif
+
+#if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #include <thread>
+#endif
+
 #include <unordered_map>
 
 namespace ext {
@@ -40,8 +50,7 @@ public:
         bool needToUnlockShared = false;
         {
           std::shared_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
-          thread_map::iterator iter =
-              shared_lock_count_map_.find(this_id);
+          thread_map::iterator iter = shared_lock_count_map_.find(this_id);
           if (iter != shared_lock_count_map_.end()) {
             iter->second = 1; // Set only one shared lock to remain unlocked
                               // when the unlock_shared method is called.
@@ -74,8 +83,7 @@ public:
     bool needToLock = false;
     {
       std::unique_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
-      thread_map::iterator iter =
-          shared_lock_count_map_.find(this_id);
+      thread_map::iterator iter = shared_lock_count_map_.find(this_id);
       if (iter == shared_lock_count_map_.end()) {
         // shared_lock_count_map_.insert({this_id, 1});
         shared_lock_count_map_.insert(
@@ -102,8 +110,7 @@ public:
     bool needToUnlock = false;
     {
       std::unique_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
-      thread_map::iterator iter =
-          shared_lock_count_map_.find(this_id);
+      thread_map::iterator iter = shared_lock_count_map_.find(this_id);
       if (iter != shared_lock_count_map_.end()) {
         if (--iter->second == 0) {
           shared_lock_count_map_.erase(iter);

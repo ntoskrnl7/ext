@@ -49,6 +49,7 @@
  * CXX_USE_NULLPTR
  *
  * Boost only
+ * CXX_USE_STD_ATOMIC
  * CXX_USE_STD_THREAD
  * CXX_USE_STD_SHARED_TIMED_MUTEX
  * CXX_USE_STD_SHARED_MUTEX
@@ -78,6 +79,7 @@
 #define CXX_STD_REMOVE_CV_NOT_SUPPORTED
 #define CXX_STD_REMOVE_REF_NOT_SUPPORTED
 #define CXX_STD_THREAD_NOT_SUPPORTED
+#define CXX_STD_ATOMIC_NOT_SUPPORTED
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
 #define CXX_LAMBDAS_NOT_SUPPORTED
@@ -106,7 +108,7 @@
 #endif
 
 ///
-///
+/// If CXX_USE_STD_ALL_FEATURES specified, enable all features.
 ///
 #ifdef CXX_USE_STD_ALL_FEATURES
 #define CXX_USE_STD_CSTDINT
@@ -115,6 +117,7 @@
 #define CXX_USE_STD_UNIQUE_PTR
 #define CXX_USE_STD_MAKE_UNIQUE
 #define CXX_USE_STD_MAKE_SHARED
+#define CXX_USE_STD_ATOMIC
 #define CXX_USE_STD_THREAD
 #define CXX_USE_STD_SHARED_TIMED_MUTEX
 #define CXX_USE_STD_SHARED_MUTEX
@@ -131,7 +134,7 @@
 #endif
 
 ///
-///
+/// Enable related features.
 ///
 #ifdef CXX_USE_STD_REMOVE_CV_T
 #define CXX_USE_STD_REMOVE_CV
@@ -156,7 +159,7 @@
 #endif
 
 ///
-///
+/// If already supported, disable feature
 ///
 #if !defined(CXX_CSTDINT_NOT_SUPPORTED)
 #undef CXX_USE_STD_CSTDINT
@@ -211,7 +214,7 @@
 #endif
 
 ///
-/// Boost
+/// When use Boost
 ///
 #if defined(CXX_USE_STD_REMOVE_CV) &&                                          \
     defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) &&                                \
@@ -306,15 +309,29 @@ using boost::make_shared;
 } // namespace std
 #endif // _EXT_STD_MAKE_SHARED_
 #endif
+
 #if defined(CXX_USE_STD_THREAD) && defined(CXX_STD_THREAD_NOT_SUPPORTED) &&    \
     defined(BOOST_THREAD_THREAD_HPP)
 #ifndef _EXT_STD_THREAD_
 #define _EXT_STD_THREAD_
 namespace std {
 using boost::thread;
+namespace this_thread {
+  using namespace boost::this_thread;
+} // namespace this_thread
 #undef CXX_USE_STD_THREAD
 } // namespace std
 #endif // _EXT_STD_THREAD_
+#endif
+#if defined(CXX_USE_STD_ATOMIC) && defined(CXX_STD_ATOMIC_NOT_SUPPORTED) &&    \
+    defined(BOOST_ATOMIC_HPP)
+#ifndef _EXT_STD_ATOMIC_
+#define _EXT_STD_ATOMIC_
+namespace std {
+using boost::atomic;
+#undef CXX_USE_STD_ATOMIC
+} // namespace std
+#endif // _EXT_STD_ATOMIC_
 #endif
 #if defined(CXX_USE_STD_SYSTEM_ERROR) &&                                       \
     defined(CXX_STD_SYSTEM_ERROR_NOT_SUPPORTED) &&                             \
@@ -322,13 +339,11 @@ using boost::thread;
 #ifndef _EXT_STD_SYSTEM_ERROR_
 #define _EXT_STD_SYSTEM_ERROR_
 namespace std {
-using boost::system::error_category;
-using boost::system::error_code;
-using boost::system::error_condition;
-using boost::system::is_error_code_enum;
-using boost::system::is_error_condition_enum;
-using boost::system::system_category;
-using boost::system::system_error;
+using namespace boost::system;
+namespace errc {
+using namespace boost::system::errc;
+typedef boost::system::errc::errc_t errc;
+} // namespace errc
 #undef CXX_USE_STD_SYSTEM_ERROR
 } // namespace std
 #endif // _EXT_STD_SYSTEM_ERROR_
@@ -351,6 +366,8 @@ using boost::unordered::unordered_map;
 #define _EXT_STD_SHARED_TIMED_MUTEX_
 namespace std {
 using boost::shared_timed_mutex;
+using boost::shared_lock;
+using boost::unique_lock;
 #undef CXX_USE_STD_SHARED_TIMED_MUTEX
 } // namespace std
 #endif // _EXT_STD_SHARED_TIMED_MUTEX_
@@ -363,6 +380,8 @@ using boost::shared_timed_mutex;
 #define _EXT_STD_SHARED_MUTEX_
 namespace std {
 using boost::shared_mutex;
+using boost::shared_lock;
+using boost::unique_lock;
 #undef CXX_USE_STD_SHARED_MUTEX
 } // namespace std
 #endif // _EXT_STD_SHARED_MUTEX_
@@ -391,18 +410,6 @@ using std::tr1::unordered_map;
 } // namespace std
 #endif // _EXT_STD_UNORDERED_MAP_
 #endif // _UNORDERED_MAP_
-#endif
-
-//
-//
-//
-#ifdef CXX_STD_MOVE_NOT_SUPPORTED
-#if defined(CXX_USE_STD_MAKE_UNIQUE) || defined(_EXT_STD_MAKE_UNIQUE_)
-#define CXX_USE_STD_MOVE
-#endif
-#if defined(CXX_USE_STD_MAKE_SHARED) || defined(_EXT_STD_MAKE_SHARED_)
-#define CXX_USE_STD_MOVE
-#endif
 #endif
 
 ///
@@ -437,9 +444,9 @@ using std::tr1::unordered_map;
 ///
 /// CXX_SHARED_MUTEX
 ///
-#if CXX_VER >= 201703L
+#if CXX_VER >= 201703L || defined(_EXT_STD_SHARED_MUTEX_)
 #define CXX_SHARED_MUTEX std::shared_mutex
-#elif CXX_VER >= 201402L
+#elif CXX_VER >= 201402L || defined(_EXT_STD_SHARED_TIMED_MUTEX_)
 #define CXX_SHARED_MUTEX std::shared_timed_mutex
 #endif
 
@@ -688,6 +695,14 @@ CXX_CONSTEXPR _IntType to_integer(const byte _Arg) CXX_NOEXCEPT {
 ///
 /// std::move
 ///
+#ifdef CXX_STD_MOVE_NOT_SUPPORTED
+#if defined(CXX_USE_STD_MAKE_UNIQUE) || defined(_EXT_STD_MAKE_UNIQUE_)
+#define CXX_USE_STD_MOVE
+#endif
+#if defined(CXX_USE_STD_MAKE_SHARED) || defined(_EXT_STD_MAKE_SHARED_)
+#define CXX_USE_STD_MOVE
+#endif
+#endif
 #ifdef CXX_USE_STD_MOVE
 #ifndef _EXT_STD_MOVE_
 #define _EXT_STD_MOVE_
@@ -818,3 +833,24 @@ template <class T> using remove_cvref_t = typename remove_cvref<T>::type;
 } // namespace std
 #endif // _EXT_STD_REMOVE_CVREF_T_
 #endif // CXX_USE_STD_REMOVE_CVREF_T
+
+///
+/// When use Boost
+///
+#if defined(_EXT_STD_ATOMIC_) && defined(CXX_STD_ATOMIC_NOT_SUPPORTED) &&      \
+    defined(BOOST_ATOMIC_HPP)
+#if !defined(CXX_STD_THREAD_NOT_SUPPORTED) || defined(_EXT_STD_THREAD_)
+#ifndef _EXT_STD_ATOMIC_THREAD_ID_
+#define _EXT_STD_ATOMIC_THREAD_ID_
+inline bool operator==(std::atomic<std::thread::id> const &lhs,
+                       std::atomic<std::thread::id> const &rhs) {
+  return (static_cast<std::thread::id>(lhs) ==
+          static_cast<std::thread::id>(rhs));
+}
+inline bool operator!=(std::atomic<std::thread::id> const &lhs,
+                       std::atomic<std::thread::id> const &rhs) {
+  return !(lhs == rhs);
+}
+#endif // _EXT_STD_ATOMIC_THREAD_ID_
+#endif
+#endif
