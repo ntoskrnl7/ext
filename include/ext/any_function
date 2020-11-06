@@ -80,20 +80,22 @@ public:
 private:
   template <typename T> static T cast_arg(std::any arg, size_t index) {
     try {
-      if constexpr (std::is_same_v<T, std::string>)
+      if constexpr (std::is_same_v<T, std::string>) {
         if (arg.type() == typeid(const char *))
           return std::move(
               std::string(std::move(std::any_cast<const char *>(arg))));
         else if (arg.type() == typeid(char *))
           return std::move(std::string(std::move(std::any_cast<char *>(arg))));
+      }
 
-      if constexpr (std::is_same_v<T, std::wstring>)
+      if constexpr (std::is_same_v<T, std::wstring>) {
         if (arg.type() == typeid(const wchar_t *))
           return std::move(
               std::wstring(std::move(std::any_cast<const wchar_t *>(arg))));
         else if (arg.type() == typeid(wchar_t *))
           return std::move(
               std::wstring(std::move(std::any_cast<wchar_t *>(arg))));
+      }
 
       return std::move(std::any_cast<T>(arg));
     } catch (const std::bad_any_cast &) {

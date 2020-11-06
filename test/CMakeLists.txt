@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 
+if (CMAKE_BUILD_TYPE STREQUAL "")
+  set(CMAKE_BUILD_TYPE Debug)
+  message("CMAKE_BUILD_TYPE (default) : " ${CMAKE_BUILD_TYPE})
+else()
+  message("CMAKE_BUILD_TYPE : " ${CMAKE_BUILD_TYPE})
+endif()
+
 project(unittest)
 
 # gtest를 다운로드 받아서 빌드합니다.
@@ -51,13 +58,6 @@ file(GLOB SOURCE_FILES ./*.cpp)
 # 실행 파일 빌드 설정
 add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
 target_link_libraries(unittest gtest gtest_main)
-
-if (CMAKE_BUILD_TYPE STREQUAL "")
-  set(CMAKE_BUILD_TYPE Debug)
-  message("CMAKE_BUILD_TYPE (default) : " ${CMAKE_BUILD_TYPE})
-else()
-  message("CMAKE_BUILD_TYPE : " ${CMAKE_BUILD_TYPE})
-endif()
 
 get_property(CXX_STANDARD_SPECIFIED TARGET unittest PROPERTY CXX_STANDARD SET)
 if (CXX_STANDARD_SPECIFIED)

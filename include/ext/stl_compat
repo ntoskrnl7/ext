@@ -72,15 +72,17 @@
 #define CXX_CSTDINT_NOT_SUPPORTED
 #define CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
 #define CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
-#define CXX_RVALUE_REFERENCES_NOT_SUPPORTED
 #define CXX_ALIAS_TEMPLATE_NOT_SUPPORTED
 #define CXX_NOEXCEPT_NOT_SUPPORTED
 #define CXX_CONSTEXPR_NOT_SUPPORTED
+#define CXX_DELETED_FUNCTIONIS_NOT_SUPOORTED
 #define CXX_STD_REMOVE_CV_NOT_SUPPORTED
 #define CXX_STD_REMOVE_REF_NOT_SUPPORTED
 #define CXX_STD_THREAD_NOT_SUPPORTED
 #define CXX_STD_ATOMIC_NOT_SUPPORTED
+#define CXX_STD_UNORDERED_MAP_NOT_SUPPORTED
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
+#define CXX_RVALUE_REFERENCES_NOT_SUPPORTED
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
 #define CXX_LAMBDAS_NOT_SUPPORTED
 #define CXX_NULLPTR_NOT_SUPPORTED
@@ -175,6 +177,9 @@
 #endif
 #if !defined(CXX_STD_MAKE_SHARED_NOT_SUPPORTED)
 #undef CXX_USE_STD_MAKE_SHARED
+#endif
+#if !defined(CXX_STD_UNORDERED_MAP_NOT_SUPPORTED)
+#undef CXX_USE_STD_UNORDERED_MAP
 #endif
 #if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #undef CXX_USE_STD_THREAD
@@ -276,16 +281,11 @@ using boost::movelib::unique_ptr;
 
 #if defined(CXX_USE_STD_MAKE_UNIQUE) &&                                        \
     defined(CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED) &&                              \
-    defined(BOOST_MOVE_UNIQUE_PTR_HPP_INCLUDED)
+    defined(BOOST_MAKE_UNIQUE_HPP_INCLUDED)
 #ifndef _EXT_STD_MAKE_UNIQUE_
 #define _EXT_STD_MAKE_UNIQUE_
 #include <boost/make_unique.hpp>
 namespace std {
-#ifndef _EXT_STD_UNIQUE_PTR_
-#define _EXT_STD_UNIQUE_PTR_
-using boost::movelib::unique_ptr;
-#undef CXX_USE_STD_UNIQUE_PTR
-#endif // _EXT_STD_UNIQUE_PTR_
 using boost::make_unique;
 #undef CXX_USE_STD_MAKE_UNIQUE
 } // namespace std
