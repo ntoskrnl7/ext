@@ -128,7 +128,7 @@ TEST(observable_test, observer_with_one_arg) {
       obj.test(-100);
       obj_1.test(-200);
       obj_2.test(-300);
-      std::this_thread::yield();
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   });
   {
