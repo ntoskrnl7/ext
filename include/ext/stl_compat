@@ -185,7 +185,8 @@
 ///
 /// If already supported, disable feature
 ///
-#if !defined(CXX_STD_VOID_T_NOT_SUPPORTED)
+#if !defined(CXX_STD_VOID_T_NOT_SUPPORTED) || defined(__cpp_lib_void_t) ||     \
+    defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED)
 #undef CXX_USE_STD_VOID_T
 #endif
 #if !defined(CXX_STD_IS_SAME_NOT_SUPPORTED)
