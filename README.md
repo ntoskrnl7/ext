@@ -78,20 +78,24 @@
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-12. stl_compat
+12. string
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-13. thread_pool
+13. stl_compat
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2008 SP1+
+14. thread_pool
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++14 or later
-14. type_traits
+15. type_traits
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-15. typeinfo
+16. typeinfo
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+

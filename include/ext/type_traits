@@ -11,6 +11,7 @@
 #ifndef _EXT_TYPE_TRAITS_
 #define _EXT_TYPE_TRAITS_
 
+#define CXX_USE_STD_VOID_T
 #include "stl_compat"
 
 #include <type_traits>

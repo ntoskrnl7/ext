@@ -25,7 +25,7 @@ template <typename T> inline const T seperator() {
   return static_cast<T>('/');
 #endif
 }
-#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+#if !defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED) || CXX_VER > 201402L
 template <typename T, typename A0>
 std::basic_string<T> join(const std::basic_string<T> &path, const A0 &a0) {
   std::basic_string<T> ret = path;

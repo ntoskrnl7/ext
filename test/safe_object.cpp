@@ -1,5 +1,3 @@
-#include <thread>
-
 #include <ext/cdbg>
 #include <ext/safe_object>
 #include <ext/shared_recursive_mutex>

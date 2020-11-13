@@ -128,7 +128,7 @@ TEST(observable_test, observer_with_one_arg) {
       obj.test(-100);
       obj_1.test(-200);
       obj_2.test(-300);
-      std::this_thread::yield();
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   });
   {
@@ -193,7 +193,7 @@ TEST(observable_test, observer_with_one_arg) {
   obj.test(14);
   obj_1.test(15);
   obj_2.test(16);
-  
+
 #ifdef _EXT_OBSERVABLE_SYNC_
   running = false;
   if (t.joinable())
@@ -201,11 +201,12 @@ TEST(observable_test, observer_with_one_arg) {
 #endif
 }
 
-using observable_two_args = ext::observable<class object_with_observable_two_args,
-                                           int, const std::string &>;
+using observable_two_args =
+    ext::observable<class object_with_observable_two_args, int,
+                    const std::string &>;
 
 class object_with_observable_two_args : public object_with_name,
-                                       public observable_two_args {
+                                        public observable_two_args {
 public:
   object_with_observable_two_args(const std::string &name)
       : observable_two_args(), object_with_name(name) {}
@@ -214,13 +215,16 @@ public:
   void test(int arg) { notify(arg, std::to_string(arg + 100)); }
 };
 
-class observer_with_two_args : public object_with_name, public object_with_observable_two_args::observer {
+class observer_with_two_args
+    : public object_with_name,
+      public object_with_observable_two_args::observer {
 public:
   observer_with_two_args(const std::string name)
       : observer(), object_with_name(name) {}
 
 private:
-  void update(object_with_observable_two_args &item, int arg0, const std::string& arg1) {
+  void update(object_with_observable_two_args &item, int arg0,
+              const std::string &arg1) {
     if (arg0 < 0)
       return;
     std::cout << "[" << name() << "] " << item.name() << " "
@@ -305,8 +309,10 @@ TEST(observable_test, observer_no_args_complex) {
   object_with_observable_no_args obj("obj");
   object_with_observable_no_args obj2("obj-2");
   object_with_observable_no_args_2 obj_2("obj_2");
+  object_with_observable_no_args_x obj_x("obj_x");
 
   obsvr += obj_;
+
   obsvr2 += obj_;
   obsvr_2 += obj_;
   obj_.signal();

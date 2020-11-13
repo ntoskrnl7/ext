@@ -1,0 +1,232 @@
+﻿/**
+ * @file string
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements string helper features.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#include <ext/stl_compat>
+
+#include <ctype.h>
+
+#include <algorithm>
+#include <string>
+
+namespace ext {
+namespace string {
+namespace internal {
+template <typename T> inline const T *trim_str() {
+  CXX_IF_CONSTEXPR(std::is_same<T, char>::value)
+  return (const T *)" \t\n\r\f\v";
+  else return (const T *)L" \t\n\r\f\v";
+}
+} // namespace internal
+
+//
+// trim functions.
+//
+
+template <typename T>
+inline std::basic_string<T> &rtrim(std::basic_string<T> &s) {
+  return s.erase(s.find_last_not_of(internal::trim_str<T>()) + 1);
+}
+
+template <typename T>
+inline std::basic_string<T> &ltrim(std::basic_string<T> &s) {
+  return s.erase(0, s.find_first_not_of(internal::trim_str<T>()));
+}
+
+template <typename T>
+inline std::basic_string<T> &trim(std::basic_string<T> &s) {
+  return ltrim<T>(rtrim<T>(s));
+}
+
+template <typename T> inline std::basic_string<T> rtrim(const T *s) {
+  std::basic_string<T> ss(s);
+  return std::move(rtrim(ss));
+}
+
+template <typename T> inline std::basic_string<T> ltrim(const T *s) {
+  std::basic_string<T> ss(s);
+  return std::move(ltrim(ss));
+}
+
+template <typename T> inline std::basic_string<T> trim(const T *s) {
+  std::basic_string<T> ss(s);
+  return std::move(trim(ss));
+}
+
+#ifndef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+template <typename T>
+inline std::basic_string<T> rtrim(std::basic_string<T> &&s) {
+  return std::move(rtrim(s));
+}
+
+template <typename T>
+inline std::basic_string<T> ltrim(std::basic_string<T> &&s) {
+  return std::move(ltrim(s));
+}
+
+template <typename T>
+inline std::basic_string<T> trim(std::basic_string<T> &&s) {
+  return std::move(trim<T>(s));
+}
+#endif // CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+
+template <typename T> inline bool compare_char(T char1, T char2) {
+  return char1 == char2;
+}
+
+template <typename T> inline bool compare_char_i(T char1, T char2) {
+  if (isascii(char1) && isascii(char2) && isalpha(char1) && isalpha(char2))
+    return tolower(char1) == tolower(char2);
+  else
+    return char1 == char2;
+}
+
+//
+//  search functions.
+//
+
+template <typename T>
+inline bool search(const std::basic_string<T> &str,
+                   const std::basic_string<T> &s_str,
+                   bool case_sensitive = false) {
+  return (std::search(str.begin(), str.end(), s_str.begin(), s_str.end(),
+                      case_sensitive ? compare_char<T> : compare_char_i<T>) !=
+          str.end());
+}
+
+template <typename T>
+inline bool search(const T *str, const T *s_str, bool case_sensitive = false) {
+  return search(std::basic_string<T>(str), std::basic_string<T>(s_str),
+                case_sensitive);
+}
+
+template <typename T>
+inline bool search(const T *str, const std::basic_string<T> &s_str,
+                   bool case_sensitive = false) {
+  return search(std::basic_string<T>(str), s_str, case_sensitive);
+}
+
+template <typename T>
+inline bool search(const std::basic_string<T> &str, const T *s_str,
+                   bool case_sensitive = false) {
+  return search(str, std::basic_string<T>(s_str), case_sensitive);
+}
+
+//
+//  equal functions.
+//
+
+template <typename T, class _InIt1>
+inline bool equal(const _InIt1 &_First1, const _InIt1 &_Last1,
+                  const std::basic_string<T> &str2,
+                  bool case_sensitive = false) {
+
+  return std::equal(_First1, _Last1, str2.begin(),
+                    case_sensitive ? compare_char<T> : compare_char_i<T>);
+}
+
+template <typename T>
+inline bool equal(const std::basic_string<T> &str1,
+                  const std::basic_string<T> &str2,
+                  bool case_sensitive = false) {
+  if (str1.size() != str2.size()) {
+    return false;
+  }
+
+  return equal(str1.begin(), str1.end(), str2, case_sensitive);
+}
+
+template <typename T>
+inline bool equal(const T *str1, const T *str2, bool case_sensitive = false) {
+  std::basic_string<T> text1 = str1;
+  std::basic_string<T> text2 = str2;
+
+  if (text1.size() != text2.size()) {
+    return false;
+  }
+
+  return equal(text1.begin(), text1.end(), text2, case_sensitive);
+}
+
+template <typename T>
+inline bool equal(const T *str1, const std::basic_string<T> &str2,
+                  bool case_sensitive = false) {
+  std::basic_string<T> text1 = str1;
+
+  if (text1.size() != str2.size()) {
+    return false;
+  }
+
+  return equal(text1.begin(), text1.end(), str2, case_sensitive);
+}
+
+template <typename T>
+inline bool equal(const std::basic_string<T> &str1, const T *str2,
+                  bool case_sensitive = false) {
+  std::basic_string<T> text2 = str2;
+
+  if (str1.size() != text2.size()) {
+    return false;
+  }
+
+  return equal(str1.begin(), str1.end(), text2, case_sensitive);
+}
+
+//
+//  replace_all functions.
+//
+
+template <typename T>
+inline std::basic_string<T> &
+replace_all(std::basic_string<T> &str, const std::basic_string<T> &old_str,
+            const std::basic_string<T> &new_str, bool case_sensitive = false) {
+  if (old_str.empty())
+    return str;
+
+  typename std::basic_string<T>::iterator it = str.begin();
+  do {
+    it = std::search(it, str.end(), old_str.begin(), old_str.end(),
+                     case_sensitive ? compare_char<T> : compare_char_i<T>);
+    if (it != str.end()) {
+      typename std::basic_string<T>::size_type pos =
+          std::distance(str.begin(), it);
+      str.replace(it, it + old_str.length(), new_str);
+      it = str.begin() + pos + new_str.length();
+    }
+  } while (it != str.end());
+
+  return str;
+}
+
+template <typename T>
+inline std::basic_string<T> &replace_all(std::basic_string<T> &str,
+                                         const T *old_str, const T *new_str,
+                                         bool case_sensitive = false) {
+  return replace_all(str, std::basic_string<T>(old_str),
+                     std::basic_string<T>(new_str), case_sensitive);
+}
+
+template <typename T>
+inline std::basic_string<T> &
+replace_all(std::basic_string<T> &str, const T *old_str,
+            const std::basic_string<T> &new_str, bool case_sensitive = false) {
+  return replace_all(str, std::basic_string<T>(old_str), new_str,
+                     case_sensitive);
+}
+
+template <typename T>
+inline std::basic_string<T> &
+replace_all(std::basic_string<T> &str, const std::basic_string<T> &old_str,
+            const T *new_str, bool case_sensitive = false) {
+  return replace_all(str, old_str, std::basic_string<T>(new_str),
+                     case_sensitive);
+}
+} // namespace string
+using namespace string;
+} // namespace ext

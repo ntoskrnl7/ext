@@ -64,11 +64,13 @@ TEST(base64_test, wcs_test) {
   EXPECT_STREQ(decoded_wcs_text_wcs.c_str(), L"1234");
 
   auto decoded_wcs_text_mbcs = ext::base64::decode_str(encoded_wcs_text_mbcs);
-  decoded_wcs_text_mbcs.push_back(0);
+  for (size_t i = 0; i < sizeof(L'\0'); ++i)
+    decoded_wcs_text_mbcs.push_back(0);
   EXPECT_STREQ((wchar_t *)decoded_wcs_text_mbcs.c_str(), L"1234");
 
   decoded_wcs_text_mbcs = ext::base64::decode_str(encoded_wcs_text_wcs);
-  decoded_wcs_text_mbcs.push_back(0);
+  for (size_t i = 0; i < sizeof(L'\0'); ++i)
+    decoded_wcs_text_mbcs.push_back(0);
   EXPECT_STREQ((wchar_t *)decoded_wcs_text_mbcs.c_str(), L"1234");
 }
 

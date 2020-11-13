@@ -6,6 +6,7 @@
  * CXX_VER
  * CXX_NOEXCEPT
  * CXX_CONSTEXPR
+ * CXX_IF_CONSTEXPR
  * CXX_SHARED_MUTEX
  *  - Latest supported shared mutex definitions
  *  - C++17 : std::shared_mutex
@@ -47,6 +48,11 @@
  * CXX_USE_SHARED_PTR
  * CXX_USE_MAKE_SHARED (with CXX_USE_SHARED_PTR)
  * CXX_USE_NULLPTR
+ * CXX_USE_STD_IS_SAME
+ * CXX_USE_STD_INTEGRAL_CONSTANT
+ * CXX_USE_STD_TRUE_TYPE
+ * CXX_USE_STD_FALSE_TYPE
+ * CXX_USE_STD_VOID_T
  *
  * Boost only
  * CXX_USE_STD_ATOMIC
@@ -90,6 +96,10 @@
 #define CXX_STD_UNIQUE_PTR_NOT_SUPPORTED
 #define CXX_STD_MAKE_SHARED_NOT_SUPPORTED
 #define CXX_STD_SYSTEM_ERROR_NOT_SUPPORTED
+#define CXX_STD_IS_SAME_NOT_SUPPORTED
+#define CXX_STD_INTEGRAL_CONSTANT_NOT_SUPPORTED
+#define CXX_STD_TRUE_TYPE_NOT_SUPPORTED
+#define CXX_STD_FALSE_TYPE_NOT_SUPPORTED
 #endif
 #endif
 #if CXX_VER < 201402L
@@ -103,6 +113,7 @@
 #define CXX_STD_APPLY_NOT_SUPPORTED
 #define CXX_STD_SHARED_MUTEX_NOT_SUPPORTED
 #define CXX_CONSTEXPR_IF_NOT_SUPPORTED
+#define CXX_STD_VOID_T_NOT_SUPPORTED
 #endif
 #if CXX_VER <= 201703L
 #define CXX_STD_REMOVE_CVREF_NOT_SUPPORTED
@@ -133,11 +144,22 @@
 #define CXX_USE_STD_REMOVE_CVREF
 #define CXX_USE_STD_REMOVE_CVREF_T
 #define CXX_USE_NULLPTR
+#define CXX_USE_STD_IS_SAME
+#define CXX_USE_STD_VOID_T
 #endif
 
 ///
 /// Enable related features.
 ///
+#ifdef CXX_USE_STD_IS_SAME
+#define CXX_USE_STD_INTEGRAL_CONSTANT
+#endif
+
+#ifdef CXX_USE_STD_INTEGRAL_CONSTANT
+#define CXX_USE_STD_TRUE_TYPE
+#define CXX_USE_STD_FALSE_TYPE
+#endif
+
 #ifdef CXX_USE_STD_REMOVE_CV_T
 #define CXX_USE_STD_REMOVE_CV
 #endif
@@ -163,6 +185,21 @@
 ///
 /// If already supported, disable feature
 ///
+#if !defined(CXX_STD_VOID_T_NOT_SUPPORTED)
+#undef CXX_USE_STD_VOID_T
+#endif
+#if !defined(CXX_STD_IS_SAME_NOT_SUPPORTED)
+#undef CXX_USE_STD_IS_SAME
+#endif
+#if !defined(CXX_STD_INTEGRAL_CONSTANT_NOT_SUPPORTED)
+#undef CXX_USE_STD_INTEGRAL_CONSTANT
+#endif
+#if !defined(CXX_STD_TRUE_TYPE_NOT_SUPPORTED)
+#undef CXX_USE_STD_TRUE_TYPE
+#endif
+#if !defined(CXX_STD_FALSE_TYPE_NOT_SUPPORTED)
+#undef CXX_USE_STD_FALSE_TYPE
+#endif
 #if !defined(CXX_CSTDINT_NOT_SUPPORTED)
 #undef CXX_USE_STD_CSTDINT
 #endif
@@ -317,7 +354,7 @@ using boost::make_shared;
 namespace std {
 using boost::thread;
 namespace this_thread {
-  using namespace boost::this_thread;
+using namespace boost::this_thread;
 } // namespace this_thread
 #undef CXX_USE_STD_THREAD
 } // namespace std
@@ -365,8 +402,8 @@ using boost::unordered::unordered_map;
 #ifndef _EXT_STD_SHARED_TIMED_MUTEX_
 #define _EXT_STD_SHARED_TIMED_MUTEX_
 namespace std {
-using boost::shared_timed_mutex;
 using boost::shared_lock;
+using boost::shared_timed_mutex;
 using boost::unique_lock;
 #undef CXX_USE_STD_SHARED_TIMED_MUTEX
 } // namespace std
@@ -379,8 +416,8 @@ using boost::unique_lock;
 #ifndef _EXT_STD_SHARED_MUTEX_
 #define _EXT_STD_SHARED_MUTEX_
 namespace std {
-using boost::shared_mutex;
 using boost::shared_lock;
+using boost::shared_mutex;
 using boost::unique_lock;
 #undef CXX_USE_STD_SHARED_MUTEX
 } // namespace std
@@ -428,6 +465,15 @@ using std::tr1::unordered_map;
 #define CXX_CONSTEXPR
 #else
 #define CXX_CONSTEXPR constexpr
+#endif
+
+///
+/// CXX_IF_CONSTEXPR
+///
+#if CXX_VER < 201703L
+#define CXX_IF_CONSTEXPR if
+#else
+#define CXX_IF_CONSTEXPR if constexpr
 #endif
 
 ///
@@ -747,6 +793,60 @@ inline R apply(std::function<R(Args...)> &&f, const std::tuple<Args...> &t) {
 #endif // CXX_USE_STD_APPLY
 
 ///
+// std::integral_constant
+//
+#ifdef CXX_USE_STD_INTEGRAL_CONSTANT
+#ifndef _EXT_STD_INTEGRAL_CONSTANT_
+#define _EXT_STD_INTEGRAL_CONSTANT_
+namespace std {
+template <class T, T v> struct integral_constant {
+  const static T value = v;
+  typedef T value_type;
+  typedef integral_constant type;
+  operator value_type() const CXX_NOEXCEPT { return value; }
+};
+} // namespace std
+#endif // _EXT_STD_INTEGRAL_CONSTANT_
+#endif // CXX_USE_STD_INTEGRAL_CONSTANT
+
+///
+// std::true_type
+//
+#ifdef CXX_USE_STD_TRUE_TYPE
+#ifndef _EXT_STD_TRUE_TYPE_
+#define _EXT_STD_TRUE_TYPE_
+namespace std {
+typedef integral_constant<bool, true> true_type;
+} // namespace std
+#endif // _EXT_STD_TRUE_TYPE_
+#endif // CXX_USE_STD_TRUE_TYPE
+
+///
+// std::false_type
+//
+#ifdef CXX_USE_STD_FALSE_TYPE
+#ifndef _EXT_STD_FALSE_TYPE_
+#define _EXT_STD_FALSE_TYPE_
+namespace std {
+typedef integral_constant<bool, false> false_type;
+} // namespace std
+#endif // _EXT_STD_FALSE_TYPE_
+#endif // CXX_USE_STD_FALSE_TYPE
+
+///
+// std::is_same
+//
+#ifdef CXX_USE_STD_IS_SAME
+#ifndef _EXT_STD_IS_SAME_
+#define _EXT_STD_IS_SAME_
+namespace std {
+template <class T, class U> struct is_same : std::false_type {};
+template <class T> struct is_same<T, T> : std::true_type {};
+} // namespace std
+#endif // _EXT_STD_IS_SAME_
+#endif // CXX_USE_STD_IS_SAME
+
+///
 /// std::remove_cv
 ///
 #ifdef CXX_USE_STD_REMOVE_CV
@@ -854,3 +954,13 @@ inline bool operator!=(std::atomic<std::thread::id> const &lhs,
 #endif // _EXT_STD_ATOMIC_THREAD_ID_
 #endif
 #endif
+
+#if defined(CXX_USE_STD_VOID_T)
+#ifndef _EXT_STD_VOID_T_
+#define _EXT_STD_VOID_T_
+namespace std {
+template <typename... Ts> struct make_void { typedef void type; };
+template <typename... Ts> using void_t = typename make_void<Ts...>::type;
+} // namespace std
+#endif // _EXT_STD_VOID_T_
+#endif // CXX_USE_STD_VOID_T
