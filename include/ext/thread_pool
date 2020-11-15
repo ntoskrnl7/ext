@@ -8,7 +8,6 @@
  */
 #pragma once
 
-
 #include "stl_compat"
 
 #if CXX_VER >= 201103L
@@ -125,9 +124,9 @@ public:
     status_ = stop_pending;
     cv_.notify_all();
 #if defined(CXX_FOR)
-    CXX_FOR(std::thread &thread, threads_)
+    CXX_FOR(std::thread & thread, threads_)
 #elif defined(CXX_FOR_O)
-    CXX_FOR_O(std::thread &thread, std::vector<std::thread>::iterator,
+    CXX_FOR_O(std::thread & thread, std::vector<std::thread>::iterator,
               threads_)
 #else
     for (auto &thread : threads_)
@@ -150,25 +149,7 @@ public:
    * @return std::future<typename CXX_INVOKE_RESULT(F, Args...)>
    */
 
-#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-  template <typename F> std::future<void> queue(F fn) {
-    if (status_ != running)
-      throw std::runtime_error("This thread pool is not running");
-
-    std::shared_ptr<std::packaged_task<void>> task =
-        std::make_shared<std::packaged_task<void>>(fn);
-    {
-      std::unique_lock<std::mutex> lock(mtx_);
-#ifdef CXX_LAMBDAS_NOT_SUPPORTED
-      queue_.push(std::bind(push_task_, task));
-#else
-      queue_.push([task]() { (*task)(); });
-#endif
-    }
-    cv_.notify_one();
-    return task->get_future();
-  }
-#else // CXX_TEMPLATE_VARIADIC_ARGS_NOT_SUPPORTED
+#if defined(__cpp_variadic_templates)
   template <typename F, typename... Args>
 #ifdef CXX_RVALUE_REF_NOT_SUPPORTED
   std::future<typename CXX_INVOKE_RESULT(F, Args...)> queue(F fn,
@@ -190,7 +171,25 @@ public:
     cv_.notify_one();
     return task->get_future();
   }
-#endif // CXX_TEMPLATE_VARIADIC_ARGS_SUPPORTED
+#else
+  template <typename F> std::future<void> queue(F fn) {
+    if (status_ != running)
+      throw std::runtime_error("This thread pool is not running");
+
+    std::shared_ptr<std::packaged_task<void>> task =
+        std::make_shared<std::packaged_task<void>>(fn);
+    {
+      std::unique_lock<std::mutex> lock(mtx_);
+#if defiend(__cpp_lambdas)
+      queue_.push([task]() { (*task)(); });
+#else
+      queue_.push(std::bind(push_task_, task));
+#endif
+    }
+    cv_.notify_one();
+    return task->get_future();
+  }
+#endif
 
   /**
    * @brief
@@ -205,12 +204,12 @@ private:
     for (;;) {
       {
         std::unique_lock<std::mutex> lk(mtx_);
-#ifdef CXX_LAMBDAS_NOT_SUPPORTED
-        cv_.wait(lk, std::bind(&thread_pool::wait_, this));
-#else  // CXX_LAMBDAS_NOT_SUPPORTED
+#if defined(__cpp_lambdas)
         cv_.wait(lk,
                  [this]() { return !queue_.empty() || status_ != running; });
-#endif // CXX_LAMBDAS_NOT_SUPPORTED
+#else
+        cv_.wait(lk, std::bind(&thread_pool::wait_, this));
+#endif
         if (status_ != running)
           return;
 
@@ -220,12 +219,12 @@ private:
       fn();
     }
   }
-#ifdef CXX_LAMBDAS_NOT_SUPPORTED
+#if !defined(__cpp_lambdas)
   bool wait_() { return !queue_.empty() || status_ != running; }
   static void push_task_(std::shared_ptr<std::packaged_task<void>> task) {
     (*task)();
   }
-#endif // CXX_LAMBDAS_NOT_SUPPORTED
+#endif
 
 private:
   enum status status_;

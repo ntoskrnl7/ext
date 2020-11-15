@@ -10,9 +10,6 @@
 #ifndef _EXT_BASE64_
 #define _EXT_BASE64_
 
-#define CXX_USE_STD_BYTE
-#include "stl_compat"
-
 #include <assert.h>
 #include <algorithm>
 #include <memory>
@@ -20,50 +17,53 @@
 #include <string>
 #include <vector>
 
+#define CXX_USE_STD_BYTE
+#include "stl_compat"
+
 namespace ext {
 namespace encoding {
 class base64 {
 public:
-#if CXX_VER >= 201103L
-  template <typename D = char, typename T>
-#else
+#ifdef CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
   template <typename D, typename T>
+#else
+  template <typename D = char, typename T>
 #endif
   static std::basic_string<D> encode(const T *data) {
     return std::move(encode<D, T>(std::basic_string<T>(data)));
   }
 
-#if CXX_VER >= 201103L
-  template <typename D = char, typename T>
-#else
+#ifdef CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
   template <typename D, typename T>
+#else
+  template <typename D = char, typename T>
 #endif
   static std::basic_string<D> encode(const std::basic_string<T> &data) {
     return std::move(encode<D>(data.c_str(), data.size() * sizeof(T)));
   }
 
-#if CXX_VER >= 201103L
-  template <typename D = char, typename T>
-#else
+#ifdef CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
   template <typename D, typename T>
+#else
+  template <typename D = char, typename T>
 #endif
   static std::basic_string<D> encode(const T &data) {
     return std::move(encode<D>(&data, sizeof(T)));
   }
 
-#if CXX_VER >= 201103L
-  template <typename D = char>
-#else
+#ifdef CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
   template <typename D>
+#else
+  template <typename D = char>
 #endif
   static std::basic_string<D> encode(const std::vector<std::byte> &data) {
     return std::move(encode<D>(&data[0], data.size()));
   }
 
-#if CXX_VER >= 201103L
-  template <typename D = char>
-#else
+#ifdef CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
   template <typename D>
+#else
+  template <typename D = char>
 #endif
   static std::basic_string<D> encode(const void *data, size_t data_size) {
     static const char encoding_table[] = {
@@ -152,19 +152,19 @@ public:
     return std::move(out);
   }
 
-#if CXX_VER >= 201103L
-  template <typename D = char, typename T>
-#else
+#ifdef CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
   template <typename D, typename T>
+#else
+  template <typename D = char, typename T>
 #endif
   static std::basic_string<D> decode_str(const T *data) {
     return std::move(decode_str<D>(std::basic_string<T>(data)));
   }
 
-#if CXX_VER >= 201103L
-  template <typename D = char, typename T>
-#else
+#ifdef CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
   template <typename D, typename T>
+#else
+  template <typename D = char, typename T>
 #endif
   static std::basic_string<D> decode_str(const std::basic_string<T> &data) {
     size_t in_len = data.size();
@@ -212,7 +212,10 @@ public:
     static const unsigned char *decoding_table = get_decodeing_table();
     size_t size = data.size();
 #if defined(CXX_FOR_O)
-
+    CXX_FOR_O(T ch, std::basic_string<T>::iterator, data)
+    if (ch != (T)'=' && decoding_table[ch] == 64)
+      size--;
+    CXX_FOR_END
 #elif defined(CXX_FOR)
     CXX_FOR(T ch, data)
     if (ch != (T)'=' && decoding_table[ch] == 64)

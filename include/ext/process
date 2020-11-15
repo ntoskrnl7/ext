@@ -8,8 +8,6 @@
  */
 #pragma once
 
-#include "stl_compat"
-
 #ifndef _EXT_PROCESS_
 #define _EXT_PROCESS_
 
@@ -27,6 +25,9 @@
 #include <list>
 #include <ostream>
 #include <string>
+
+#include "stl_compat"
+
 #if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #include <thread>
 #endif
@@ -98,7 +99,7 @@ private:
     native_handle_type handle_;
 #endif
   };
-#ifdef CXX_DELETED_FUNCTIONIS_NOT_SUPOORTED
+#ifdef CXX_DELETED_FUNCTIONS_NOT_SUPPORTED
   process &operator=(const process &) { return *this; }
   process(const process &) {}
 #else
@@ -116,7 +117,7 @@ public:
     execute_(command, working_directory, arguments);
   }
 
-#ifndef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+#ifdef __cpp_rvalue_references
   process(process &&other) CXX_NOEXCEPT { swap(other); }
 
   process &operator=(process &&rhs) CXX_NOEXCEPT {

@@ -74,23 +74,45 @@
 #define CXX_VER __cplusplus
 #endif
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1400) // >= Visual Studio 2005 version 8.0
+#if !defined(__cpp_rtti)
+#define __cpp_rtti 199711
+#endif
+#endif // >= Visual Studio 2005 version 8.0
+#if defined(_MSC_VER) &&                                                       \
+    (_MSC_VER >= 1600) // >= Visual Studio 2010 version 10.0
+#if !defined(__cpp_lambdas)
+#define __cpp_lambdas 200907
+#endif
+#if !defined(__cpp_decltype)
+#define __cpp_decltype 200707
+#endif
+#if !defined(__cpp_rvalue_references)
+#define __cpp_rvalue_references 200610
+#endif
+#endif // >= Visual Studio 2010 version 10.0
+#if defined(_MSC_VER) &&                                                       \
+    (_MSC_VER >= 1700) // >= Visual Studio 2012 version 11.0
+#if !defined(__cpp_range_based_for)
+#define __cpp_range_based_for 200907
+#endif
+#if !defined(__cpp_alias_templates)
+#define __cpp_alias_templates 200704
+#endif
+#endif // >= Visual Studio 2012 version 11.0
+
 #if CXX_VER < 201103L
 #define CXX_CSTDINT_NOT_SUPPORTED
-#define CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-#define CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
-#define CXX_ALIAS_TEMPLATE_NOT_SUPPORTED
 #define CXX_NOEXCEPT_NOT_SUPPORTED
-#define CXX_CONSTEXPR_NOT_SUPPORTED
-#define CXX_DELETED_FUNCTIONIS_NOT_SUPOORTED
+#define CXX_DELETED_FUNCTIONS_NOT_SUPPORTED
+#define CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CV_NOT_SUPPORTED
 #define CXX_STD_REMOVE_REF_NOT_SUPPORTED
 #define CXX_STD_THREAD_NOT_SUPPORTED
 #define CXX_STD_ATOMIC_NOT_SUPPORTED
 #define CXX_STD_UNORDERED_MAP_NOT_SUPPORTED
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
-#define CXX_RVALUE_REFERENCES_NOT_SUPPORTED
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
-#define CXX_LAMBDAS_NOT_SUPPORTED
 #define CXX_NULLPTR_NOT_SUPPORTED
 #define CXX_STD_MOVE_NOT_SUPPORTED
 #define CXX_STD_UNIQUE_PTR_NOT_SUPPORTED
@@ -186,7 +208,7 @@
 /// If already supported, disable feature
 ///
 #if !defined(CXX_STD_VOID_T_NOT_SUPPORTED) || defined(__cpp_lib_void_t) ||     \
-    defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED)
+    !defined(__cpp_variadic_templates)
 #undef CXX_USE_STD_VOID_T
 #endif
 #if !defined(CXX_STD_IS_SAME_NOT_SUPPORTED)
@@ -225,8 +247,7 @@
 #if !defined(CXX_STD_MOVE_NOT_SUPPORTED)
 #undef CXX_USE_STD_MOVE
 #endif
-#if !defined(CXX_STD_APPLY_NOT_SUPPORTED) ||                                   \
-    defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED)
+#if !defined(CXX_STD_APPLY_NOT_SUPPORTED) || !defined(__cpp_variadic_templates)
 #undef CXX_USE_STD_APPLY
 #endif
 #if !defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) ||                               \
@@ -234,7 +255,7 @@
 #undef CXX_USE_STD_REMOVE_CV
 #endif
 #if defined(CXX_STD_REMOVE_CV_T_NOT_SUPPORTED) ||                              \
-    defined(CXX_ALIAS_TEMPLATE_NOT_SUPPORTED)
+    !defined(__cpp_alias_templates)
 #undef CXX_USE_STD_REMOVE_CV_T
 #endif
 #if !defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) ||                              \
@@ -242,14 +263,14 @@
 #undef CXX_USE_STD_REMOVE_REF
 #endif
 #if !defined(CXX_STD_REMOVE_REF_T_NOT_SUPPORTED) ||                            \
-    defined(CXX_ALIAS_TEMPLATE_NOT_SUPPORTED)
+    !defined(__cpp_alias_templates)
 #undef CXX_USE_STD_REMOVE_REF_T
 #endif
 #if !defined(CXX_STD_REMOVE_CVREF_NOT_SUPPORTED)
 #undef CXX_USE_STD_REMOVE_CVREF
 #endif
 #if !defined(CXX_STD_REMOVE_CVREF_T_NOT_SUPPORTED) ||                          \
-    defined(CXX_ALIAS_TEMPLATE_NOT_SUPPORTED)
+    !defined(__cpp_alias_templates)
 #undef CXX_USE_STD_REMOVE_CVREF_T
 #endif
 #if !defined(CXX_NULLPTR_NOT_SUPPORTED)
@@ -501,7 +522,17 @@ using std::tr1::unordered_map;
 /// CXX_FOR, CXX_FOR_O, CXX_FOR_END
 ///  - Define a "range based for loop" macro
 ///
-#ifdef CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
+#ifdef __cpp_range_based_for
+#define CXX_FOR(range_declaration, range_expression)                           \
+  for (range_declaration : (range_expression)) {
+#define CXX_FOR_END }
+#else
+#if defined(_MSC_VER) && (_MSC_VER >= 1400) // >= Visual Studio 2005 version 8.0
+#define CXX_FOR(range_declaration, range_expression)                           \
+  for                                                                          \
+    each(range_declaration in range_expression) {
+#define CXX_FOR_END }
+#else // >= Visual Studio 2005 version 8.0
 #ifdef CXX_AUTO_TYPE_NOT_SUPPORTED
 #define __CXX_FOR_ARG__(...) __VA_ARGS__
 #define CXX_FOR_O(range_declaration, iter_type, range_expression)              \
@@ -516,11 +547,8 @@ using std::tr1::unordered_map;
     range_declaration = *it;
 #define CXX_FOR_END }
 #endif
-#else
-#define CXX_FOR(range_declaration, range_expression)                           \
-  for (range_declaration : (range_expression)) {
-#define CXX_FOR_END }
-#endif // CXX_RANGE_BASED_FOR_LOOP_NOT_SUPPORTED
+#endif // >= Visual Studio 2005 version 8.0
+#endif // __cpp_range_based_for
 
 ///
 /// nullptr
@@ -578,25 +606,25 @@ private:
 #define _EXT_STD_MAKE_UNIQUE_
 #include <memory>
 namespace std {
-#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-template <typename T> inline std::unique_ptr<T> make_unique() {
-  return std::unique_ptr<T>(new T());
-}
-#ifdef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
-template <typename T> inline std::unique_ptr<T> make_unique(const T &value) {
-  return std::unique_ptr<T>(new T(std::move(value)));
-}
-#else
-template <typename T> inline std::unique_ptr<T> make_unique(T &&value) {
-  return std::unique_ptr<T>(new T(std::move(value)));
-}
-#endif // CXX_RVALUE_REFERENCES_NOT_SUPPORTED
-#else
+#ifdef __cpp_variadic_templates
 template <typename T, typename... Args>
 inline std::unique_ptr<T> make_unique(Args &&... __args) {
   return std::unique_ptr<T>(new T(std::forward<Args>(__args)...));
 }
-#endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+#else
+template <typename T> inline std::unique_ptr<T> make_unique() {
+  return std::unique_ptr<T>(new T());
+}
+#ifdef __cpp_rvalue_references
+template <typename T> inline std::unique_ptr<T> make_unique(T &&value) {
+  return std::unique_ptr<T>(new T(std::move(value)));
+}
+#else
+template <typename T> inline std::unique_ptr<T> make_unique(const T &value) {
+  return std::unique_ptr<T>(new T(std::move(value)));
+}
+#endif // __cpp_rvalue_references
+#endif // __cpp_variadic_templates
 } // namespace std
 #endif // _EXT_STD_MAKE_UNIQUE_
 #endif // CXX_USE_STD_MAKE_UNIQUE
@@ -606,25 +634,25 @@ inline std::unique_ptr<T> make_unique(Args &&... __args) {
 #define _EXT_STD_MAKE_SHARED_
 #include <memory>
 namespace std {
-#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-template <typename T> inline std::shared_ptr<T> make_shared() {
-  return std::shared_ptr<T>(new T());
-}
-#ifdef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
-template <typename T> inline std::shared_ptr<T> make_shared(const T &value) {
-  return std::shared_ptr<T>(new T(std::move(value)));
-}
-#else
-template <typename T> inline std::shared_ptr<T> make_shared(T &&value) {
-  return std::shared_ptr<T>(new T(std::move(value)));
-}
-#endif // CXX_RVALUE_REFERENCES_NOT_SUPPORTED
-#else
+#ifdef __cpp_variadic_templates
 template <typename T, typename... Args>
 inline std::shared_ptr<T> make_shared(Args &&... __args) {
   return std::shared_ptr<T>(new T(std::forward<Args>(__args)...));
 }
-#endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
+#else
+template <typename T> inline std::shared_ptr<T> make_shared() {
+  return std::shared_ptr<T>(new T());
+}
+#ifdef __cpp_rvalue_references
+template <typename T> inline std::shared_ptr<T> make_shared(T &&value) {
+  return std::shared_ptr<T>(new T(std::move(value)));
+}
+#else
+template <typename T> inline std::shared_ptr<T> make_shared(const T &value) {
+  return std::shared_ptr<T>(new T(std::move(value)));
+}
+#endif // __cpp_rvalue_references
+#endif // __cpp_variadic_templates
 } // namespace std
 #endif // _EXT_STD_MAKE_SHARED_
 #endif // CXX_USE_STD_MAKE_SHARED
@@ -886,9 +914,9 @@ template <class T> using remove_cv_t = typename remove_cv<T>::type;
 namespace std {
 template <class T> struct remove_reference { typedef T type; };
 template <class T> struct remove_reference<T &> { typedef T type; };
-#ifndef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+#ifdef __cpp_rvalue_references
 template <class T> struct remove_reference < T && { typedef T type; };
-#endif // CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+#endif // __cpp_rvalue_references
 } // namespace std
 #endif // _EXT_STD_REMOVE_REF_
 #endif // CXX_USE_STD_REMOVE_REF

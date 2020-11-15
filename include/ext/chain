@@ -10,30 +10,29 @@
 #ifndef _EXT_CHAIN_
 #define _EXT_CHAIN_
 
+#include <functional>
+#include <stdexcept>
+#include <tuple>
+
 #define CXX_USE_STD_APPLY
 #define CXX_USE_STD_REMOVE_CVREF_T
 #include "stl_compat"
+#include "type_traits"
 
 // Define a "chain" arguments
-#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-#define __CHAIN_ARGS_TYPE___ Arg
-#define __CHAIN_ARGS__ arg
-#define __TYPE_NAME_CHAIN_ARGS__ typename __CHAIN_ARGS_TYPE___
-#define __CHAIN_ARGS_UNPACKED__ __CHAIN_ARGS__
-#define __CHAIN_ARGS_DECLARATION__ __CHAIN_ARGS_TYPE___ __CHAIN_ARGS__
-#else
+#if defined(__cpp_variadic_templates)
 #define __CHAIN_ARGS_TYPE___ Args
 #define __CHAIN_ARGS__ args
 #define __TYPE_NAME_CHAIN_ARGS__ typename... __CHAIN_ARGS_TYPE___
 #define __CHAIN_ARGS_UNPACKED__ __CHAIN_ARGS__...
 #define __CHAIN_ARGS_DECLARATION__ __CHAIN_ARGS_TYPE___... __CHAIN_ARGS__
-#endif // CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-
-#include <stdexcept>
-#include <functional>
-#include <tuple>
-
-#include "type_traits"
+#else
+#define __CHAIN_ARGS_TYPE___ Arg
+#define __CHAIN_ARGS__ arg
+#define __TYPE_NAME_CHAIN_ARGS__ typename __CHAIN_ARGS_TYPE___
+#define __CHAIN_ARGS_UNPACKED__ __CHAIN_ARGS__
+#define __CHAIN_ARGS_DECLARATION__ __CHAIN_ARGS_TYPE___ __CHAIN_ARGS__
+#endif // defined(__cpp_variadic_templates)
 
 namespace ext {
 /**
@@ -44,10 +43,10 @@ namespace ext {
  * @tparam Args or Arg
  */
 template <typename T, typename R, __TYPE_NAME_CHAIN_ARGS__> class chain {
-#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-  typedef typename std::remove_cvref<Arg>::type arguments;
-#else
+#if defined(__cpp_variadic_templates)
   typedef std::tuple<std::remove_cvref_t<Args>...> arguments;
+#else
+  typedef typename std::remove_cvref<Arg>::type arguments;
 #endif
 
 public:
@@ -87,14 +86,15 @@ public:
 
     result(const chain *chain) {
       if (chain->begin_)
-#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-        *this = (*chain->begin_)(chain->begin_->args_);
+#if defined(__cpp_variadic_templates)
+        *this = std::apply(
+            std::function<result(std::remove_cvref_t<__CHAIN_ARGS_TYPE___>...)>(
+                [&chain](__CHAIN_ARGS_TYPE___ &&... args) {
+                  return (*chain->begin_)(args...);
+                }),
+            chain->begin_->args_);
 #else
-        *this = std::apply(std::function<result(std::remove_cvref_t<__CHAIN_ARGS_TYPE___>...)>(
-                               [&chain](__CHAIN_ARGS_TYPE___ &&... args) {
-                                 return (*chain->begin_)(args...);
-                               }),
-                           chain->begin_->args_);
+        *this = (*chain->begin_)(chain->begin_->args_);
 #endif
       else if (chain->next_)
         throw std::invalid_argument("One or more arguments are required.");

@@ -10,11 +10,12 @@
 #ifndef _EXT_PATH_
 #define _EXT_PATH_
 
-#include "stl_compat"
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include "stl_compat"
 
 namespace ext {
 namespace path {
@@ -25,7 +26,33 @@ template <typename T> inline const T seperator() {
   return static_cast<T>('/');
 #endif
 }
-#if !defined(CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED) || CXX_VER > 201402L
+#if defined(__cpp_variadic_templates) && defined(__cpp_lib_integer_sequence)
+namespace internal {
+template <typename T, typename Tup, std::size_t... I>
+void join(std::basic_string<T> &ret, std::index_sequence<I...>,
+          const Tup &tup) {
+  for (auto path : std::vector<std::basic_string<T>>({std::get<I>(tup)...})) {
+    if (ret.back() != seperator<T>())
+      ret += seperator<T>();
+    ret += path;
+  }
+}
+} // namespace internal
+
+template <typename T, typename... Args>
+std::basic_string<T> join(const std::basic_string<T> &path,
+                          const Args &... args) {
+  std::basic_string<T> ret = path;
+  internal::join(ret, std::make_index_sequence<sizeof...(Args)>{},
+                 std::forward_as_tuple(args...));
+  return std::move(ret);
+}
+
+template <typename T, typename... Args>
+std::basic_string<T> join(const T *path, const Args &... args) {
+  return std::move(join(std::basic_string<T>(path), args...));
+}
+#else
 template <typename T, typename A0>
 std::basic_string<T> join(const std::basic_string<T> &path, const A0 &a0) {
   std::basic_string<T> ret = path;
@@ -79,33 +106,8 @@ std::basic_string<T> join(const T *path, const A0 &a0, const A1 &a1,
                           const A2 &a2) {
   return std::move(join(std::basic_string<T>(path), a0, a1, a2));
 }
-#else
-namespace internal {
-template <typename T, typename Tup, std::size_t... I>
-void join(std::basic_string<T> &ret, std::index_sequence<I...>,
-          const Tup &tup) {
-  for (auto path : std::vector<std::basic_string<T>>({std::get<I>(tup)...})) {
-    if (ret.back() != seperator<T>())
-      ret += seperator<T>();
-    ret += path;
-  }
-}
-} // namespace internal
-
-template <typename T, typename... Args>
-std::basic_string<T> join(const std::basic_string<T> &path,
-                          const Args &... args) {
-  std::basic_string<T> ret = path;
-  internal::join(ret, std::make_index_sequence<sizeof...(Args)>{},
-                 std::forward_as_tuple(args...));
-  return std::move(ret);
-}
-
-template <typename T, typename... Args>
-std::basic_string<T> join(const T *path, const Args &... args) {
-  return std::move(join(std::basic_string<T>(path), args...));
-}
-#endif
+#endif // defined(__cpp_variadic_templates) &&
+       // defined(__cpp_lib_integer_sequence)
 } // namespace path
 } // namespace ext
 #endif // _EXT_PATH_

@@ -14,10 +14,10 @@
 #include <streambuf>
 #include <string>
 
-#if _WIN32
+#if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#elif defined(QT_VERSION)
+#elif (QT_VERSION)
 #include <QDebug>
 #else
 #include <iostream>

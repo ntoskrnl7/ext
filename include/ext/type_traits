@@ -11,17 +11,18 @@
 #ifndef _EXT_TYPE_TRAITS_
 #define _EXT_TYPE_TRAITS_
 
+#include <type_traits>
+
 #define CXX_USE_STD_VOID_T
 #include "stl_compat"
 
-#include <type_traits>
-
 namespace ext {
-
 ///
 /// remove_class
 ///
-#if CXX_VER >= 201103L
+#ifndef _EXT_REMOVE_CLASS_
+#define _EXT_REMOVE_CLASS_
+#if defined(__cpp_variadic_templates)
 template <typename T> struct remove_class;
 
 template <typename R, typename C, typename... Args>
@@ -35,18 +36,20 @@ struct remove_class<R (C::*)(Args...)> {
 };
 
 template <typename T> using remove_class_t = typename remove_class<T>::type;
-#endif
+#endif // _EXT_REMOVE_CLASS_
 
 ///
 /// deduce_mem_fn
 ///
-#if CXX_VER >= 201103L
+#ifndef _EXT_DEDUCE_MEM_FN_
+#define _EXT_DEDUCE_MEM_FN_
 template <typename T, class = void> struct deduce_mem_fn {};
 
 template <typename T>
 struct deduce_mem_fn<T, std::void_t<decltype(&T::operator())>> {
   using type = remove_class_t<decltype(&T::operator())>;
 };
-#endif
+#endif // _EXT_DEDUCE_MEM_FN_
+#endif // defined(__cpp_variadic_templates)
 } // namespace ext
 #endif // _EXT_TYPE_TRAITS_

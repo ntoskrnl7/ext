@@ -8,12 +8,11 @@
  */
 #pragma once
 
-#include <ext/stl_compat>
-
 #include <ctype.h>
-
 #include <algorithm>
 #include <string>
+
+#include "stl_compat"
 
 namespace ext {
 namespace string {
@@ -59,7 +58,7 @@ template <typename T> inline std::basic_string<T> trim(const T *s) {
   return std::move(trim(ss));
 }
 
-#ifndef CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+#ifdef __cpp_rvalue_references
 template <typename T>
 inline std::basic_string<T> rtrim(std::basic_string<T> &&s) {
   return std::move(rtrim(s));
@@ -74,7 +73,7 @@ template <typename T>
 inline std::basic_string<T> trim(std::basic_string<T> &&s) {
   return std::move(trim<T>(s));
 }
-#endif // CXX_RVALUE_REFERENCES_NOT_SUPPORTED
+#endif // __cpp_rvalue_references
 
 template <typename T> inline bool compare_char(T char1, T char2) {
   return char1 == char2;

@@ -8,24 +8,25 @@
  */
 #pragma once
 
-#define CXX_USE_STD_REMOVE_CVREF_T
-#define CXX_USE_STD_APPLY
-#include "stl_compat"
-
-#if CXX_VER >= 201703L
-#ifndef _EXT_ANY_FUNCTION_
-#define _EXT_ANY_FUNCTION_
-
-#include "type_traits"
-#include "typeinfo"
-
-#include <any>
-#include <functional>
 #include <map>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <functional>
+
+#if defined(__cpp_lib_any) && defined(__cpp_if_constexpr)
+#ifndef _EXT_ANY_FUNCTION_
+#define _EXT_ANY_FUNCTION_
+
+#include <any>
+
+#define CXX_USE_STD_REMOVE_CVREF_T
+#define CXX_USE_STD_APPLY
+#include "stl_compat"
+
+#include "type_traits"
+#include "typeinfo"
 
 namespace ext {
 class invalid_argument_type : public std::invalid_argument {
@@ -171,13 +172,14 @@ private:
   std::vector<std::any> argv_;
 };
 
+#if defined(__cpp_deduction_guides)
 template <typename R, typename... Args>
 any_function(R (*)(Args...)) -> any_function<R(Args...)>;
 
 template <typename T>
 any_function(T) -> any_function<typename deduce_mem_fn<T>::type>;
-
+#endif // defined(__cpp_deduction_guides)
 } // namespace ext
 
 #endif // _EXT_ANY_FUNCTION_
-#endif // CXX_VER >= 201703L
+#endif // defined(__cpp_lib_any) && defined(__cpp_if_constexpr)c

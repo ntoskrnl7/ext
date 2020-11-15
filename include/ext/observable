@@ -10,18 +10,25 @@
 #ifndef _EXT_OBSERVABLE_
 #define _EXT_OBSERVABLE_
 
+#include <list>
+#include <mutex>
+
 #define CXX_USE_STD_MAKE_UNIQUE
 #include "stl_compat"
 
+#ifdef CXX_SHARED_MUTEX
+#include <shared_mutex>
+#endif
+
 // Define a "observable" arguments
-#ifdef CXX_VARIADIC_TEMPLATES_NOT_SUPPORTED
-#define __TYPE_NAME__OBSERVABLE_ARGS__ typename Arg
-#define __OBSERVABLE_ARGS__ arg
-#define __OBSERVABLE_ARGS_DECLARATION__ Arg arg
-#else
+#if defined(__cpp_variadic_templates)
 #define __TYPE_NAME__OBSERVABLE_ARGS__ typename... Args
 #define __OBSERVABLE_ARGS__ args...
 #define __OBSERVABLE_ARGS_DECLARATION__ Args... args
+#else
+#define __TYPE_NAME__OBSERVABLE_ARGS__ typename Arg
+#define __OBSERVABLE_ARGS__ arg
+#define __OBSERVABLE_ARGS_DECLARATION__ Arg arg
 #endif
 
 // Define shared mutex to use in 'observable' class
@@ -29,10 +36,6 @@
 #define __OBSERVABLE_SHARED_MUTEX__ CXX_SHARED_MUTEX
 #define _EXT_OBSERVABLE_SYNC_
 #endif
-
-#include <list>
-#include <mutex>
-#include <shared_mutex>
 
 namespace ext {
 /**
