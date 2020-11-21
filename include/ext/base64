@@ -211,13 +211,13 @@ public:
   static size_t get_size(const std::basic_string<T> &data) {
     static const unsigned char *decoding_table = get_decodeing_table();
     size_t size = data.size();
-#if defined(CXX_FOR_O)
-    CXX_FOR_O(T ch, std::basic_string<T>::iterator, data)
+#if defined(CXX_FOR)
+    CXX_FOR(T ch, data)
     if (ch != (T)'=' && decoding_table[ch] == 64)
       size--;
     CXX_FOR_END
-#elif defined(CXX_FOR)
-    CXX_FOR(T ch, data)
+#elif defined(CXX_FOR_O)
+    CXX_FOR_O(T ch, std::basic_string<T>::const_iterator, data)
     if (ch != (T)'=' && decoding_table[ch] == 64)
       size--;
     CXX_FOR_END

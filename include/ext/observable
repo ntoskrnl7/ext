@@ -119,9 +119,9 @@ public:
           observable::global_lock_());
 #endif
 #if defined(CXX_FOR)
-      CXX_FOR(auto &observable, observables_)
+      CXX_FOR(observable *observable, observables_)
 #elif defined(CXX_FOR_O)
-      CXX_FOR_O(observable * observable, std::list<observable *>::iterator,
+      CXX_FOR_O(observable *observable, std::list<observable *>::iterator,
                 observables_)
 #else
       for (auto &observable : observables_) {
@@ -146,9 +146,9 @@ public:
         observable::global_lock_());
 #endif
 #if defined(CXX_FOR)
-    CXX_FOR(auto &observer, observers_)
+    CXX_FOR(observer *observer, observers_)
 #elif defined(CXX_FOR_O)
-  CXX_FOR_O(observer * observer, std::list<observer *>::iterator, observers_)
+  CXX_FOR_O(observer *observer, std::list<observer *>::iterator, observers_)
 #else
       for (auto &observer : observers_) {
 #endif // CXX_FOR
@@ -171,9 +171,9 @@ protected:
         observable::global_lock_());
 #endif
 #if defined(CXX_FOR)
-    CXX_FOR(auto &observer, observers_)
+    CXX_FOR(observer *observer, observers_)
 #elif defined(CXX_FOR_O)
-  CXX_FOR_O(observer * observer, std::list<observer *>::iterator, observers_)
+  CXX_FOR_O(observer *observer, std::list<observer *>::iterator, observers_)
 #else
         for (auto &observer : observers_) {
 #endif // CXX_FOR
