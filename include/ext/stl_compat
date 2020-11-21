@@ -1012,3 +1012,114 @@ template <typename... Ts> using void_t = typename make_void<Ts...>::type;
 } // namespace std
 #endif // _EXT_STD_VOID_T_
 #endif // CXX_USE_STD_VOID_T
+
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
+#ifdef _STRING_
+#ifndef _EXT_STD_TO_STRING_
+#define _EXT_STD_TO_STRING_
+namespace std {
+template <class _Ty>
+inline std::string _Floating_to_string(const char *_Fmt, _Ty _Val) {
+  const int _Len = static_cast<size_t>(_CSTD _scprintf(_Fmt, _Val));
+  std::string _Str(_Len, '\0');
+  _CSTD sprintf_s(&_Str[0], _Len + 1, _Fmt, _Val);
+  return (_Str);
+}
+inline std::string to_string(float _Val) {
+  return (_Floating_to_string("%f", _Val));
+}
+
+inline std::string to_string(double _Val) {
+  return (_Floating_to_string("%f", _Val));
+}
+
+inline std::string to_string(long double _Val) {
+  return (_Floating_to_string("%Lf", _Val));
+}
+
+inline std::string to_string(long long _Val) {
+  char buffer[21] = {
+      0,
+  };
+  _ltoa_s((long)_Val, buffer, 10);
+  return std::string(buffer);
+}
+
+inline std::string to_string(long _Val) {
+  char buffer[21] = {
+      0,
+  };
+  _ltoa_s(_Val, buffer, 10);
+  return std::string(buffer);
+}
+inline std::string to_string(unsigned long long _Val) {
+  char buffer[21] = {
+      0,
+  };
+  _ultoa_s((unsigned long)_Val, buffer, 10);
+  return std::string(buffer);
+}
+
+inline std::string to_string(unsigned long _Val) {
+  char buffer[21] = {
+      0,
+  };
+  _ultoa_s(_Val, buffer, 10);
+  return std::string(buffer);
+}
+
+template <class _Ty>
+inline std::wstring _Floating_to_wstring(const wchar_t *_Fmt, _Ty _Val) {
+  const int _Len = static_cast<size_t>(_CSTD _scwprintf(_Fmt, _Val));
+  std::wstring _Str(_Len, L'\0');
+  swprintf_s(&_Str[0], _Len + 1, _Fmt, _Val);
+  return (_Str);
+}
+
+inline std::wstring to_wstring(float _Val) {
+  return (_Floating_to_wstring(L"%f", _Val));
+}
+
+inline std::wstring to_wstring(double _Val) {
+  return (_Floating_to_wstring(L"%f", _Val));
+}
+
+inline std::wstring to_wstring(long double _Val) {
+  return (_Floating_to_wstring(L"%Lf", _Val));
+}
+
+inline std::wstring to_wstring(long _Val) {
+  wchar_t buffer[21] = {
+      0,
+  };
+  _ltow_s(_Val, buffer, 10);
+  return std::wstring(buffer);
+}
+
+inline std::wstring to_wstring(long long _Val) {
+  wchar_t buffer[21] = {
+      0,
+  };
+  _ltow_s((long)_Val, buffer, 10);
+  return std::wstring(buffer);
+}
+
+inline std::wstring to_wstring(unsigned long long _Val) {
+  wchar_t buffer[21] = {
+      0,
+  };
+  _ultow_s((unsigned long)_Val, buffer, 10);
+  return std::wstring(buffer);
+}
+
+inline std::wstring to_wstring(unsigned long _Val) {
+  wchar_t buffer[21] = {
+      0,
+  };
+  _ultow_s(_Val, buffer, 10);
+  return std::wstring(buffer);
+}
+} // namespace std
+#endif // _EXT_STD_TO_STRING_
+#endif // _STRING_
+#endif // defined(_MSC_VER) && (_MSC_VER < 1600)
