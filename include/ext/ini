@@ -1,0 +1,109 @@
+﻿/**
+ * @file ini
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements ini file format helper features.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#include "stl_compat"
+#include "string"
+
+#include <istream>
+#include <map>
+
+#if !defined(CXX_STD_REGEX_NOT_SUPPORTED)
+#include <regex>
+#endif
+
+namespace ext {
+class ini {
+public:
+  typedef std::map<std::string, std::map<std::string, std::string>>::value_type
+      value_type;
+
+  typedef std::map<std::string, std::map<std::string, std::string>>::iterator
+      iterator;
+
+  ini() {}
+#ifdef __cpp_rvalue_references
+  ini(std::istream &&stream) : data_(read_ini_(stream)) {}
+#endif // __cpp_rvalue_references
+  ini(std::istream &stream) : data_(read_ini_(stream)) {}
+
+  iterator begin() { return data_.begin(); }
+  iterator end() { return data_.end(); }
+
+  std::map<std::string, std::string> &operator[](const std::string &section) {
+    return data_[section];
+  }
+
+private:
+  std::map<std::string, std::map<std::string, std::string>> data_;
+
+private:
+  static std::map<std::string, std::map<std::string, std::string>>
+  read_ini_(std::istream &stream) {
+    std::string line;
+    std::string section;
+    std::regex section_test("\\[(.*?)\\]");
+    std::regex value_test("(\\w+)=([^\\+]+(?!\\+{3}))");
+    std::map<std::string, std::map<std::string, std::string>> ini;
+    while (std::getline(stream, line)) {
+      ext::trim(line);
+      if (line.length() > 0) {
+        if (line[0] == ';')
+          continue;
+        if (line[0] == '#')
+          continue;
+        std::smatch match;
+        if (std::regex_search(line, match, section_test)) {
+          section = match[1];
+        } else if (std::regex_search(line, match, value_test)) {
+          ini[section][match[1]] = match[2];
+        }
+      }
+    }
+    return ini;
+  }
+
+#ifdef __cpp_rvalue_references
+  static std::map<std::string, std::map<std::string, std::string>>
+  read_ini_(std::istream &&stream) {
+    return read_ini_(stream);
+  }
+#endif // __cpp_rvalue_references
+
+public:
+#ifdef __cpp_rvalue_references
+  std::istream &operator<<(std::istream &&stream) { return operator<<(stream); }
+#endif
+
+  std::istream &operator<<(std::istream &stream) {
+    typedef std::pair<std::string, std::map<std::string, std::string>> section_t;
+    typedef std::pair<std::string, std::string> value_t;
+    CXX_FOR(section_t section, read_ini_(stream))
+      CXX_FOR(value_t value, section.second)
+        data_[section.first][value.first] = value.second;
+      CXX_FOR_END
+    CXX_FOR_END
+    return stream;
+  }
+};
+
+inline std::ostream &operator<<(std::ostream &stream, class ini &ini) {
+  std::string section;
+  CXX_FOR(ini::value_type &v, ini)
+    if (section != v.first) {
+      section = v.first;
+      stream << '[' << section.c_str() << "]\n";
+    }
+    CXX_FOR(ini::value_type::second_type::value_type v0, v.second)
+      stream << v0.first.c_str() << '=' << v0.second.c_str() << '\n';
+    CXX_FOR_END
+  CXX_FOR_END
+  return stream;
+}
+} // namespace ext

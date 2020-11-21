@@ -11,8 +11,8 @@
  *  - Latest supported shared mutex definitions
  *  - C++17 : std::shared_mutex
  *  - C++14 : std::shared_timed_mutex
- * CXX_FOR_O
  * CXX_FOR
+ * CXX_FOR_O
  * CXX_INVOKE_RESULT
  *
  * std::byte
@@ -60,6 +60,7 @@
  * CXX_USE_STD_SHARED_TIMED_MUTEX
  * CXX_USE_STD_SHARED_MUTEX
  * CXX_USE_STD_SYSTEM_ERROR
+ * CXX_USE_STD_REGEX
  *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
@@ -111,7 +112,7 @@
 #define CXX_STD_THREAD_NOT_SUPPORTED
 #define CXX_STD_ATOMIC_NOT_SUPPORTED
 #define CXX_STD_UNORDERED_MAP_NOT_SUPPORTED
-#if defined(_MSC_VER) && (_MSC_VER < 1600)
+#if (!defined(_MSC_VER)) || (defined(_MSC_VER) && (_MSC_VER < 1600))
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
 #define CXX_NULLPTR_NOT_SUPPORTED
 #define CXX_STD_MOVE_NOT_SUPPORTED
@@ -122,6 +123,7 @@
 #define CXX_STD_INTEGRAL_CONSTANT_NOT_SUPPORTED
 #define CXX_STD_TRUE_TYPE_NOT_SUPPORTED
 #define CXX_STD_FALSE_TYPE_NOT_SUPPORTED
+#define CXX_STD_REGEX_NOT_SUPPORTED
 #endif
 #endif
 #if CXX_VER < 201402L
@@ -168,6 +170,7 @@
 #define CXX_USE_NULLPTR
 #define CXX_USE_STD_IS_SAME
 #define CXX_USE_STD_VOID_T
+#define CXX_USE_STD_REGEX
 #endif
 
 ///
@@ -207,6 +210,9 @@
 ///
 /// If already supported, disable feature
 ///
+#if !defined(CXX_STD_REGEX_NOT_SUPPORTED)
+#undef CXX_USE_STD_REGEX
+#endif
 #if !defined(CXX_STD_VOID_T_NOT_SUPPORTED) || defined(__cpp_lib_void_t) ||     \
     !defined(__cpp_variadic_templates)
 #undef CXX_USE_STD_VOID_T
@@ -333,8 +339,8 @@ template <typename T> struct remove_cvref {
 #define _EXT_STD_UNIQUE_PTR_
 namespace std {
 using boost::movelib::unique_ptr;
-#undef CXX_USE_STD_UNIQUE_PTR
 } // namespace std
+#undef CXX_USE_STD_UNIQUE_PTR
 #endif // _EXT_STD_UNIQUE_PTR_
 #endif
 
@@ -346,8 +352,8 @@ using boost::movelib::unique_ptr;
 #include <boost/make_unique.hpp>
 namespace std {
 using boost::make_unique;
-#undef CXX_USE_STD_MAKE_UNIQUE
 } // namespace std
+#undef CXX_USE_STD_MAKE_UNIQUE
 #endif // _EXT_STD_MAKE_UNIQUE_
 #endif
 
@@ -364,8 +370,8 @@ using boost::shared_ptr;
 #undef CXX_USE_STD_SHARED_PTR
 #endif // _EXT_STD_SHARED_PTR_
 using boost::make_shared;
-#undef CXX_USE_STD_MAKE_SHARED
 } // namespace std
+#undef CXX_USE_STD_MAKE_SHARED
 #endif // _EXT_STD_MAKE_SHARED_
 #endif
 
@@ -378,8 +384,8 @@ using boost::thread;
 namespace this_thread {
 using namespace boost::this_thread;
 } // namespace this_thread
-#undef CXX_USE_STD_THREAD
 } // namespace std
+#undef CXX_USE_STD_THREAD
 #endif // _EXT_STD_THREAD_
 #endif
 #if defined(CXX_USE_STD_ATOMIC) && defined(CXX_STD_ATOMIC_NOT_SUPPORTED) &&    \
@@ -388,8 +394,8 @@ using namespace boost::this_thread;
 #define _EXT_STD_ATOMIC_
 namespace std {
 using boost::atomic;
-#undef CXX_USE_STD_ATOMIC
 } // namespace std
+#undef CXX_USE_STD_ATOMIC
 #endif // _EXT_STD_ATOMIC_
 #endif
 #if defined(CXX_USE_STD_SYSTEM_ERROR) &&                                       \
@@ -403,8 +409,8 @@ namespace errc {
 using namespace boost::system::errc;
 typedef boost::system::errc::errc_t errc;
 } // namespace errc
-#undef CXX_USE_STD_SYSTEM_ERROR
 } // namespace std
+#undef CXX_USE_STD_SYSTEM_ERROR
 #endif // _EXT_STD_SYSTEM_ERROR_
 #endif
 #if defined(CXX_USE_STD_UNORDERED_MAP) &&                                      \
@@ -413,8 +419,8 @@ typedef boost::system::errc::errc_t errc;
 #define _EXT_STD_UNORDERED_MAP_
 namespace std {
 using boost::unordered::unordered_map;
-#undef CXX_USE_STD_UNORDERED_MAP
 } // namespace std
+#undef CXX_USE_STD_UNORDERED_MAP
 #endif // _EXT_STD_UNORDERED_MAP_
 #endif
 
@@ -427,8 +433,8 @@ namespace std {
 using boost::shared_lock;
 using boost::shared_timed_mutex;
 using boost::unique_lock;
-#undef CXX_USE_STD_SHARED_TIMED_MUTEX
 } // namespace std
+#undef CXX_USE_STD_SHARED_TIMED_MUTEX
 #endif // _EXT_STD_SHARED_TIMED_MUTEX_
 #endif
 
@@ -441,9 +447,22 @@ namespace std {
 using boost::shared_lock;
 using boost::shared_mutex;
 using boost::unique_lock;
-#undef CXX_USE_STD_SHARED_MUTEX
 } // namespace std
+#undef CXX_USE_STD_SHARED_MUTEX
 #endif // _EXT_STD_SHARED_MUTEX_
+#endif
+
+#if defined(CXX_USE_STD_REGEX) && defined(CXX_STD_REGEX_NOT_SUPPORTED) &&      \
+    defined(BOOST_RE_REGEX_HPP)
+#ifndef _EXT_STD_REGEX_
+#define _EXT_STD_REGEX_
+namespace std {
+typedef boost::regex regex;
+typedef boost::smatch smatch;
+using boost::regex_search;
+} // namespace std
+#undef CXX_USE_STD_REGEX
+#endif // _EXT_STD_REGEX_
 #endif
 
 ///
