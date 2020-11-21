@@ -50,52 +50,56 @@
    - Clang 10.0+
    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
    - std::shared_mutex or std::shared_timed_mutex required
-6. observable
+6. ini
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-7. path
+7. observable
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-8. process
+8. path
+   - gcc 8.3.0+
+   - Clang 10.0+
+   - Visual Studio 2008 SP1+
+9. process
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2017+
    - C++11 or later
-9. safe_object
-   - gcc 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2017+
-   - std::shared_mutex or std::shared_timed_mutex required
-   - C++14 or later
-10. shared_recursive_mutex
+10. safe_object
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2017+
+    - std::shared_mutex or std::shared_timed_mutex required
+    - C++14 or later
+11. shared_recursive_mutex
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - std::shared_mutex or std::shared_timed_mutex required
-11. singleton
+12. singleton
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-12. string
+13. string
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-13. stl_compat
+14. stl_compat
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-14. thread_pool
+15. thread_pool
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++14 or later
-15. type_traits
+16. type_traits
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-16. typeinfo
+17. typeinfo
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
