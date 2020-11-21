@@ -1,8 +1,8 @@
-
+#include <ext/path>
 #include <ext/process>
 #include <gtest/gtest.h>
 
-TEST(process_test, run_inalid_cmd) {
+TEST(process_test, run_invalid_cmd) {
   ext::process process("_invalid_");
 #ifdef _WIN32
   EXPECT_EQ(process.last_error(), ERROR_FILE_NOT_FOUND);
@@ -46,4 +46,21 @@ TEST(process_test,
   EXPECT_TRUE(process.joinable());
   process.join();
   EXPECT_EQ(process.exit_code(), EXIT_SUCCESS);
+}
+
+TEST(process_test, this_process_test) {
+  ext::process::id pid = ext::this_process::get_id();
+#if defined(_WIN32)
+  EXPECT_EQ(pid, ext::process::id(GetCurrentProcessId()));
+#else
+  EXPECT_EQ(pid, ext::process::id(getpid()));
+#endif
+  std::string cmdline = ext::this_process::get_cmdline();
+  EXPECT_FALSE(cmdline.empty());
+  std::string name = ext::path::basename(cmdline);
+#if defined(_WIN32)
+  EXPECT_STREQ(name.c_str(), "unittest.exe");
+#else
+  EXPECT_STREQ(name.c_str(), "unittest");
+#endif
 }

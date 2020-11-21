@@ -26,6 +26,25 @@ template <typename T> inline const T seperator() {
   return static_cast<T>('/');
 #endif
 }
+
+template <typename T>
+inline std::basic_string<T> basename(const std::basic_string<T> &path) {
+  std::basic_string<T>::size_type pos =
+      path.find_last_of(ext::path::seperator<T>());
+  if (pos == std::basic_string<T>::npos)
+    return std::basic_string<T>();
+  return &path[pos + 1];
+}
+
+template <typename T>
+inline std::basic_string<T> dirname(const std::basic_string<T> &path) {
+  std::basic_string<T>::size_type pos =
+      path.find_last_of(ext::path::seperator<T>());
+  if (pos == std::basic_string<T>::npos)
+    return std::basic_string<T>();
+  return std::move(path.substr(0, pos));
+}
+
 #if defined(__cpp_variadic_templates) && defined(__cpp_lib_integer_sequence)
 namespace internal {
 template <typename T, typename Tup, std::size_t... I>

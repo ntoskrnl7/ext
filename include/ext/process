@@ -32,6 +32,10 @@
 #include <thread>
 #endif
 
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <libproc.h>
+#endif
+
 namespace ext {
 /**
  * @brief The process class
@@ -88,14 +92,14 @@ private:
   struct proc_t {
     proc_t()
         : id_(invalid_id)
-#ifdef _WIN32
+#if defined(_WIN32)
           ,
           handle_(NULL)
 #endif
     {
     }
     native_id_type id_;
-#ifdef _WIN32
+#if defined(_WIN32)
     native_handle_type handle_;
 #endif
   };
@@ -169,6 +173,7 @@ public:
 #else
     int status;
     if (waitpid(proc_.id_, &status, 0) == -1) {
+      proc_.id_ = invalid_id;
       last_error_ = errno;
       return;
     }
@@ -202,12 +207,14 @@ public:
   native_error_code last_error() const { return last_error_; }
 
   native_handle_type native_handle() {
-#ifdef _WIN32
+#if defined(_WIN32)
     return proc_.handle_;
 #else
     return proc_.id_;
 #endif
   }
+
+  const std::string &get_cmdline() { return cmdline_; }
 
 private:
   bool execute_(const std::string &command,
@@ -253,6 +260,7 @@ private:
       chdir(working_directory.c_str());
     }
     proc_.id_ = fork();
+    cmdline_ = command;
     if (proc_.id_ == invalid_id) {
       last_error_ = errno;
       if (cwd)
@@ -283,7 +291,52 @@ private:
   native_error_code last_error_;
   native_exit_code exit_code_;
   mutable proc_t proc_;
+  std::string cmdline_;
 };
-} // namespace ext
 
+namespace this_process {
+inline process::id get_id() {
+#if defined(_WIN32)
+  return process::id(GetCurrentProcessId());
+#else
+  return process::id(getpid());
+#endif
+}
+inline std::string &get_cmdline() {
+  static std::string cmdline_;
+  if (!cmdline_.empty())
+    return cmdline_;
+#if defined(_WIN32)
+  std::string fileName;
+  DWORD fileNameSize = MAX_PATH;
+
+  fileName.resize(fileNameSize);
+  DWORD returnSize =
+      GetModuleFileNameA(NULL, &fileName[0], (DWORD)fileName.size());
+
+  if (returnSize) {
+    fileName.resize(returnSize);
+    if (returnSize > fileName.size()) {
+      returnSize =
+          GetModuleFileNameA(NULL, &fileName[0], (DWORD)fileName.size());
+      cmdline_ = std::move(fileName);
+      return cmdline_;
+    }
+    if (returnSize)
+      cmdline_ = std::move(fileName);
+  }
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+  std::string path;
+  path.resize(PROC_PIDPATHINFO_MAXSIZE);
+  path.resize(proc_pidpath(getpid(), &path[0], path.size()));
+  cmdline_ = std::move(path);
+#elif defined(_GNU_SOURCE)
+  cmdline_ = program_invocation_name;
+#else
+#error Not Implemented :-(
+#endif
+  return cmdline_;
+}
+} // namespace this_process
+} // namespace ext
 #endif // _EXT_PROCES_
