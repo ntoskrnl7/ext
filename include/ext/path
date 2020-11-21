@@ -29,7 +29,7 @@ template <typename T> inline const T seperator() {
 
 template <typename T>
 inline std::basic_string<T> basename(const std::basic_string<T> &path) {
-  std::basic_string<T>::size_type pos =
+  typename std::basic_string<T>::size_type pos =
       path.find_last_of(ext::path::seperator<T>());
   if (pos == std::basic_string<T>::npos)
     return std::basic_string<T>();
@@ -38,7 +38,7 @@ inline std::basic_string<T> basename(const std::basic_string<T> &path) {
 
 template <typename T>
 inline std::basic_string<T> dirname(const std::basic_string<T> &path) {
-  std::basic_string<T>::size_type pos =
+  typename std::basic_string<T>::size_type pos =
       path.find_last_of(ext::path::seperator<T>());
   if (pos == std::basic_string<T>::npos)
     return std::basic_string<T>();
