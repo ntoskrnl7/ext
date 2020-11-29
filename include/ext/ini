@@ -35,6 +35,9 @@ public:
 
   iterator begin() { return data_.begin(); }
   iterator end() { return data_.end(); }
+  bool contains(const std::string &section) {
+    return data_.find(section) != data_.end();
+  };
 
   std::map<std::string, std::string> &operator[](const std::string &section) {
     return data_[section];
@@ -82,7 +85,8 @@ public:
 #endif
 
   std::istream &operator<<(std::istream &stream) {
-    typedef std::pair<std::string, std::map<std::string, std::string>> section_t;
+    typedef std::pair<std::string, std::map<std::string, std::string>>
+        section_t;
     typedef std::pair<std::string, std::string> value_t;
     CXX_FOR(section_t section, read_ini_(stream))
       CXX_FOR(value_t value, section.second)
