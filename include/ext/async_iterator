@@ -1,0 +1,155 @@
+﻿/**
+ * @file async_iterator
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements async_iterator template class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#include <atomic>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <queue>
+#include <thread>
+
+namespace ext {
+template <typename T> class async_iterator {
+public:
+  struct context {
+    std::mutex mtx;
+    std::condition_variable cv;
+    std::queue<T> queue;
+    std::thread thread;
+    bool stopped;
+    size_t current;
+    size_t size;
+  };
+
+public:
+  async_iterator() : ctx_(nullptr) {}
+  async_iterator(std::shared_ptr<context> context) : ctx_(context) {}
+
+public:
+  bool operator==(const async_iterator &rhs) { return ctx_ == rhs.ctx_; }
+  bool operator!=(const async_iterator &rhs) { return !(*this == rhs); }
+
+public:
+  const T &operator*() { return std::move(data_); }
+
+  async_iterator &operator++() {
+    if (!ctx_)
+      return *this; // end
+
+    auto &ctx = *ctx_;
+    std::unique_lock lk(ctx.mtx);
+    ctx.cv.wait(lk, [&ctx]() { return ctx.stopped || (!ctx.queue.empty()); });
+    if (!ctx.queue.empty()) {
+      data_ = std::move(ctx.queue.front());
+      ctx.queue.pop();
+      ++ctx.current;
+      return *this;
+    }
+
+    if (ctx.stopped)
+      ctx_ = nullptr; // end
+
+    return *this;
+  }
+
+  bool stopped() { return ctx_ == nullptr; }
+
+private:
+  std::shared_ptr<context> ctx_;
+  T data_;
+};
+
+template <typename T> class async_result {
+public:
+  using iterator = async_iterator<T>;
+
+public:
+  class context {
+  public:
+    context(async_result<T> *result) : result_(result) {}
+    ~context() { result_->finish(); }
+
+  public:
+    void push(const T &data) { result_->push(data); }
+    void push(T &&data) { result_->push(std::move(data)); }
+    template <class... Args> void emplace(Args &&... args) {
+      result_->emplace(args...);
+    }
+    void begin(size_t size) { result_->init(size); }
+    void end() { result_->finish(); }
+
+  private:
+    async_result<T> *result_;
+  };
+
+  async_result(std::function<void(async_result<T>::context &)> callback) {
+    ctx_ = std::make_shared<typename async_iterator<T>::context>();
+    ctx_->thread = std::thread([this, callback]() {
+      async_result<T>::context ctx(this);
+      callback(ctx);
+    });
+    ctx_->stopped = !ctx_->thread.joinable();
+    ctx_->current = 0;
+    ctx_->size = 0;
+    ctx_->cv.notify_all();
+  }
+
+  ~async_result() {
+    if (ctx_) {
+      if (ctx_->thread.joinable())
+        ctx_->thread.join();
+      finish();
+    }
+  }
+
+public:
+  iterator begin() {
+    iterator it(ctx_);
+    if ((++it).stopped())
+      return iterator();
+    return std::move(it);
+  }
+  iterator end() { return iterator(); }
+
+public:
+  void push(const T &data) {
+    std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    ctx_->queue.push(data);
+    ctx_->cv.notify_all();
+  }
+
+  template <class... Args> void emplace(Args &&... args) {
+    std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    ctx_->queue.emplace(std::forward<Args>(args)...);
+    ctx_->cv.notify_all();
+  }
+
+  size_t size() {
+    std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    return ctx_->size;
+  }
+
+  size_t current() {
+    std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    return ctx_->current;
+  }
+
+private:
+  void init(size_t size) { ctx_->size = size; }
+
+  void finish() {
+    ctx_->stopped = true;
+    ctx_->cv.notify_all();
+  }
+
+private:
+  std::shared_ptr<typename async_iterator<T>::context> ctx_;
+};
+} // namespace ext
