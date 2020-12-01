@@ -23,6 +23,7 @@ public:
     std::condition_variable cv;
     std::queue<T> queue;
     std::thread thread;
+    bool ready;
     bool stopped;
     size_t current;
     size_t size;
@@ -84,6 +85,7 @@ public:
     }
     void begin(size_t size) { result_->init(size); }
     void end() { result_->finish(); }
+    size_t size() { return result_->size(); }
 
   private:
     async_result<T> *result_;
@@ -121,28 +123,36 @@ public:
 public:
   void push(const T &data) {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    ctx_->ready = true;
     ctx_->queue.push(data);
     ctx_->cv.notify_all();
   }
 
   template <class... Args> void emplace(Args &&... args) {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    ctx_->ready = true;
     ctx_->queue.emplace(std::forward<Args>(args)...);
     ctx_->cv.notify_all();
   }
 
   size_t size() {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    ctx_->cv.wait(lk, [this]() { return ctx_->ready; });
     return ctx_->size;
   }
 
   size_t current() {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    ctx_->cv.wait(lk, [this]() { return ctx_->ready; });
     return ctx_->current;
   }
 
 private:
-  void init(size_t size) { ctx_->size = size; }
+  void init(size_t size) {
+    ctx_->size = size;
+    ctx_->ready = true;
+    ctx_->cv.notify_all();
+  }
 
   void finish() {
     ctx_->stopped = true;
