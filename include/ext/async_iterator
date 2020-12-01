@@ -90,13 +90,18 @@ public:
   private:
     async_result<T> *result_;
   };
+  
+  async_result &operator=(const async_result &other) {
+    if (ctx_->thread.joinable())
+      ctx_->thread.join();
+    ctx_ = other.ctx_;
+    return *this;
+  }
 
   async_result(std::function<void(async_result<T>::context &)> callback) {
     ctx_ = std::make_shared<typename async_iterator<T>::context>();
-    ctx_->thread = std::thread([this, callback]() {
-      async_result<T>::context ctx(this);
-      callback(ctx);
-    });
+    ctx_->thread =
+        std::thread(std::bind(callback, async_result<T>::context(this)));
     ctx_->stopped = !ctx_->thread.joinable();
     ctx_->current = 0;
     ctx_->size = 0;
@@ -112,13 +117,13 @@ public:
   }
 
 public:
-  iterator begin() {
+  iterator begin() const {
     iterator it(ctx_);
     if ((++it).stopped())
       return iterator();
     return std::move(it);
   }
-  iterator end() { return iterator(); }
+  iterator end() const { return iterator(); }
 
 public:
   void push(const T &data) {
@@ -135,13 +140,13 @@ public:
     ctx_->cv.notify_all();
   }
 
-  size_t size() {
+  size_t size() const {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
     ctx_->cv.wait(lk, [this]() { return ctx_->ready; });
     return ctx_->size;
   }
 
-  size_t current() {
+  size_t current() const {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
     ctx_->cv.wait(lk, [this]() { return ctx_->ready; });
     return ctx_->current;
