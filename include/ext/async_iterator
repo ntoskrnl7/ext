@@ -25,6 +25,7 @@ public:
     std::thread thread;
     bool ready;
     bool stopped;
+    std::atomic_bool cancel_requested;
     size_t current;
     size_t size;
   };
@@ -45,7 +46,7 @@ public:
       return *this; // end
 
     auto &ctx = *ctx_;
-    std::unique_lock lk(ctx.mtx);
+    std::unique_lock<decltype(ctx.mtx)> lk(ctx.mtx);
     ctx.cv.wait(lk, [&ctx]() { return ctx.stopped || (!ctx.queue.empty()); });
     if (!ctx.queue.empty()) {
       data_ = std::move(ctx.queue.front());
@@ -80,17 +81,18 @@ public:
   public:
     void push(const T &data) { result_->push(data); }
     void push(T &&data) { result_->push(std::move(data)); }
-    template <class... Args> void emplace(Args &&... args) {
+    template <class... Args> void emplace(Args &&...args) {
       result_->emplace(args...);
     }
     void begin(size_t size) { result_->init(size); }
     void end() { result_->finish(); }
-    size_t size() { return result_->size(); }
+    size_t size() const { return result_->size(); }
+    bool cancel_requested() const { return result_->cancel_requested(); }
 
   private:
     async_result<T> *result_;
   };
-  
+
   async_result &operator=(const async_result &other) {
     if (ctx_->thread.joinable())
       ctx_->thread.join();
@@ -133,11 +135,17 @@ public:
     ctx_->cv.notify_all();
   }
 
-  template <class... Args> void emplace(Args &&... args) {
+  template <class... Args> void emplace(Args &&...args) {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
     ctx_->ready = true;
     ctx_->queue.emplace(std::forward<Args>(args)...);
     ctx_->cv.notify_all();
+  }
+
+  bool cancel_requested() const { return ctx_->cancel_requested; }
+
+  void cancel() {
+    ctx_->cancel_requested = true;
   }
 
   size_t size() const {

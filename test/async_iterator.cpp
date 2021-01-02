@@ -35,21 +35,75 @@ TEST(async_iterator_test, int_thread_test) {
       ctx.push(i);
   }};
 
-  std::mutex mtx;
-  std::thread t([&res, &mtx]() {
+  std::thread t([&res]() {
     for (auto &i : res) {
-      std::unique_lock lk(mtx);
-      std::cout << "t(" << res.current() << "/" << res.size() << "):\t" << i << std::endl;
+      std::stringstream s;
+      s << "t(" << res.current() << "/" << res.size() << "):\t" << i
+        << std::endl;
+      std::cout << s.str();
       EXPECT_LT(i, res.size());
     }
   });
-  std::thread t2([&res, &mtx]() {
+  std::thread t2([&res]() {
     for (auto &i : res) {
-      std::unique_lock lk(mtx);
-      std::cout << "t2(" << res.current() << "/" << res.size() << "):\t" << i << std::endl;
+      std::stringstream s;
+      s << "t2(" << res.current() << "/" << res.size() << "):\t" << i
+        << std::endl;
+      std::cout << s.str();
       EXPECT_LT(i, res.size());
     }
   });
+  if (t.joinable())
+    t.join();
+  if (t2.joinable())
+    t2.join();
+}
+
+TEST(async_iterator_test, int_thread_cancelable_test) {
+  using int_result = ext::async_result<int>;
+  const size_t count = 100000000;
+  size_t processed = 0;
+  int_result res = {[count, &processed](int_result::context &ctx) {
+    ctx.begin(count);
+    for (int i = 0; i < count; ++i) {
+      if (ctx.cancel_requested())
+        break;
+      ctx.push(i);
+      processed = i;
+    }
+  }};
+
+  std::thread t0([&res, &processed]() {
+    std::this_thread::sleep_for(std::chrono::microseconds(500));
+    res.cancel();
+    std::stringstream s;
+    s << "processed " << processed;
+    std::cout << s.str();
+  });
+
+  std::thread t([&res, &processed]() {
+    for (auto &i : res) {
+      std::stringstream s;
+      s << "t(" << res.current() << "/" << res.size() << "):\t" << i
+        << std::endl;
+      std::cout << s.str();
+      EXPECT_LE(i, processed);
+      EXPECT_LT(i, res.size());
+    }
+  });
+  std::thread t2([&res, &processed]() {
+    for (auto &i : res) {
+      std::stringstream s;
+      s << "t2(" << res.current() << "/" << res.size() << "):\t" << i
+        << std::endl;
+      std::cout << s.str();
+      EXPECT_LE(i, processed);
+      EXPECT_LT(i, res.size());
+    }
+  });
+
+  if (t0.joinable())
+    t0.join();
   if (t.joinable())
     t.join();
   if (t2.joinable())
@@ -85,7 +139,7 @@ TEST(async_iterator_test, pair_test) {
 
   for (auto &s : res) {
     std::cout << s.first << "," << s.second << std::endl;
-    EXPECT_EQ(s.first, "str " + std::to_string(s.second) );
-    EXPECT_EQ(s.second, s.second );
+    EXPECT_EQ(s.first, "str " + std::to_string(s.second));
+    EXPECT_EQ(s.second, s.second);
   }
 }
