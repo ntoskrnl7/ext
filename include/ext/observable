@@ -32,7 +32,9 @@
 #endif
 
 // Define shared mutex to use in 'observable' class
-#ifdef CXX_SHARED_MUTEX
+#if defined(_EXT_SHARED_RECURSIVE_MUTEX_)
+#define __OBSERVABLE_SHARED_MUTEX__ ext::shared_recursive_mutex
+#elif defined(CXX_SHARED_MUTEX)
 #define __OBSERVABLE_SHARED_MUTEX__ CXX_SHARED_MUTEX
 #define _EXT_OBSERVABLE_SYNC_
 #endif

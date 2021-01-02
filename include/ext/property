@@ -1,0 +1,133 @@
+/**
+ * @file property
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements property template class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#include <any>
+#include <functional>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "observable"
+#include "shared_recursive_mutex"
+
+namespace ext {
+
+template <typename T>
+class property : public ext::observable<property<T>, T>,
+                 public ext::observable<property<T>, T>::observer {
+public:
+  class chain {
+    friend class property;
+
+  public:
+    chain() {}
+    chain(property *self, property *other) {
+      vec_.push_back(self);
+      vec_.push_back(other);
+    }
+
+    chain(property *self, const T &value) {
+      vec_.push_back(self);
+      vec_.push_back(value);
+    }
+
+    chain(const T &value, property *self) {
+      vec_.push_back(value);
+      vec_.push_back(self);
+    }
+
+    chain &operator+(chain &rhs) {
+      vec_.push_back(&rhs);
+      return *this;
+    }
+
+    chain &operator+(const T &rhs) {
+      vec_.push_back(rhs);
+      return *this;
+    }
+
+    chain &operator+(property<T> &rhs) {
+      vec_.push_back(&rhs);
+      return *this;
+    }
+
+    bool valid() const { return !vec_.empty(); }
+
+    friend chain operator+(const T &lhs, property &rhs) { return {lhs, &rhs}; }
+
+  private:
+    std::vector<std::any> vec_;
+  };
+
+  property::chain operator+(const T &rhs) { return {this, rhs}; }
+
+  property::chain operator+(property<T> &rhs) { return {this, &rhs}; }
+
+public:
+  property(std::function<bool(const T &)> fn) : fn_(fn) {}
+  property() {}
+
+  property &operator=(const T &rhs) {
+    if ((!fn_) || fn_(rhs)) {
+      value_ = rhs;
+      notify(value_);
+    }
+    return *this;
+  }
+
+  property &operator=(property<T> &other) {
+    *this += other;
+    other += *this;
+    value_ = other.value_;
+    return *this;
+  }
+
+  property &operator=(property<T>::chain &other) {
+    for (std::any &item : other.vec_) {
+      if (item.type() == typeid(property<T> *)) {
+        property<T> *c = std::any_cast<property<T> *>(item);
+        *this += *c;
+      }
+    }
+    chain_ = other;
+    return *this;
+  }
+
+  operator T() { return value_; }
+
+  const T &value() const { return value_; }
+
+private:
+  void update(ext::property<T> &self, T value) override {
+    if (value != value_) {
+      if (chain_.valid()) {
+        T val = {};
+        for (auto &item : chain_.vec_) {
+          if (item.type() == typeid(T)) {
+            val += std::any_cast<T>(item);
+          } else if (item.type() == typeid(property<T> *)) {
+            property<T> *c = std::any_cast<property<T> *>(item);
+            val += *c;
+          }
+        }
+        *this = val;
+      } else {
+        *this = value;
+      }
+    }
+  }
+
+private:
+  std::function<bool(const T &)> fn_;
+  T value_;
+
+  chain chain_;
+};
+} // namespace ext
