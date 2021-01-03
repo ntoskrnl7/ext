@@ -16,15 +16,27 @@ public:
 
   ext::property<std::string> title;
   ext::property<std::string> contents;
-  ext::property<int> total;
+  ext::property<size_t> total;
 };
+
+namespace ext {
+template <typename T> using reaction = property<T>;
+} // namespace ext
 
 class table_data {
 public:
   ext::property<std::string> id;
   ext::property<std::string> phone;
   ext::property<std::string> name;
-  ext::property<int> count;
+  ext::property<size_t> count;
+};
+
+template <typename R, typename U>
+R reduce(U &array, std::function<R(R &, typename U::value_type &)> fn) {
+  R ret = {};
+  for (typename U::value_type &item : array)
+    ret = fn(ret, item);
+  return ret;
 };
 
 TEST(property_test, table_veiwer_test) {
@@ -66,12 +78,26 @@ TEST(property_test, table_veiwer_test) {
   data.name = "haaha";
   data.phone = "010-6649-8813";
   dlg2.title = data.name;
-  data.name = "xxx";
+  data.name = "JK";
   data.name = data2.name;
-  data2.name = "yyyy";
+  data2.name = "JJ";
 
   data.count = 10;
   data2.count = 0;
+
+  std::vector<table_data> users;
+  users.push_back(data);
+  users.push_back(data2);
+  
+  dlg.total = reduce<decltype(table_data::count)::chain>(
+      users, [](auto &pre, auto &user) { return pre + user.count; });
+
+  for (auto &user : users)
+    user.count = user.id.value().size();
+
+  for (auto &user : users)
+    user.count = user.phone.value().size();
+
   dlg.total = data.count + data2.count;
 
   data2.count = 20;
