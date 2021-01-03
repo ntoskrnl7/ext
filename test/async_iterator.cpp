@@ -24,6 +24,24 @@ TEST(async_iterator_test, int_test) {
     EXPECT_TRUE(false);
     std::cout << i << std::endl;
   }
+
+  res = {[](int_result::context &ctx) {
+    ctx.begin(4);
+    ctx.push(1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ctx.emplace(2);
+    ctx.push(3);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    ctx.emplace(4);
+    ctx.end();
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+  }};
+
+  EXPECT_EQ(res.size(), 4);
+  for (auto &i : res) {
+    std::cout << i << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
 }
 
 TEST(async_iterator_test, int_thread_test) {

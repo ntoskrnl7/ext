@@ -141,6 +141,9 @@ TEST(any_function_test, command_queue_test) {
   command_queue.emplace(command_queue_item("stop", {2}));
   command_queue.emplace(command_queue_item("run", {3}));
 
+  command_queue.emplace(command_queue_item("run", {1, 2}));
+  command_queue.emplace(command_queue_item("stop", {"2"}));
+
   while (!command_queue.empty()) {
     auto &item = command_queue.front();
 
@@ -155,6 +158,13 @@ TEST(any_function_test, command_queue_test) {
           EXPECT_NO_THROW(
               auto ret = std::any_cast<decltype(cmd_stop)::result_type>(r));
       }
+    } catch (const ext::invalid_argument_type &e) {
+      std::cerr << "index : " << e.index() << "\n";
+      std::cerr << "type name : " << e.type_name() << "\n";
+      std::cerr << "what : " << e.what() << "\n";
+    } catch (const ext::argument_count_mismatch &e) {
+      std::cerr << "count : " << e.count() << "\n";
+      std::cerr << "what : " << e.what() << "\n";
     } catch (const std::exception &e) {
       std::cerr << e.what() << '\n';
     }

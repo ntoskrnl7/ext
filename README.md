@@ -67,6 +67,11 @@
    - Clang 10.0+
    - Visual Studio 2017+
    - C++11 or later
+10. property
+   - gcc 8.3.0+
+   - Clang 10.0+
+   - Visual Studio 2017+
+   - C++17 or later
 10. safe_object
     - gcc 8.3.0+
     - Clang 10.0+
