@@ -138,6 +138,7 @@
 #define CXX_STD_SHARED_MUTEX_NOT_SUPPORTED
 #define CXX_CONSTEXPR_IF_NOT_SUPPORTED
 #define CXX_STD_VOID_T_NOT_SUPPORTED
+#define CXX_STD_ANY_NOT_SUPPORTED
 #endif
 #if CXX_VER <= 201703L
 #define CXX_STD_REMOVE_CVREF_NOT_SUPPORTED
@@ -1121,5 +1122,86 @@ inline std::wstring to_wstring(unsigned long _Val) {
 }
 } // namespace std
 #endif // _EXT_STD_TO_STRING_
+
+#endif // _STRING_
+#endif // defined(_MSC_VER) && (_MSC_VER < 1600)
+
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
+#ifdef _STRING_
+#ifndef _EXT_STD_STRING_STRING_TO_
+#define _EXT_STD_STRING_STRING_TO_
+#include <stdexcept>
+#include <stdlib.h>
+
+namespace std {
+inline unsigned long stoul(const std::string &str, std::size_t *pos = 0,
+                           int base = 10) {
+  int &e = errno;
+  const char *ptr = str.c_str();
+  char *end;
+  e = 0;
+  const unsigned long ret = strtoul(ptr, &end, base);
+
+  if (ptr == end)
+    throw std::invalid_argument("invalid stoul argument");
+  if (e == ERANGE)
+    throw std::out_of_range("stoul argument out of range");
+  if (pos)
+    *pos = (size_t)(end - ptr);
+  return ret;
+}
+
+inline unsigned long stoul(const std::wstring &str, std::size_t *pos = 0,
+                           int base = 10) {
+  int &e = errno;
+  const char *ptr = str.c_str();
+  char *end;
+  e = 0;
+  const unsigned long ret = wcstoul(ptr, &end, base);
+
+  if (ptr == end)
+    throw std::invalid_argument("invalid stoul argument");
+  if (e == ERANGE)
+    throw std::out_of_range("stoul argument out of range");
+  if (pos)
+    *pos = (size_t)(end - ptr);
+  return ret;
+}
+
+inline unsigned long stoull(const std::string &str, std::size_t *pos = 0,
+                            int base = 10) {
+  int &e = errno;
+  const char *ptr = str.c_str();
+  char *end;
+  e = 0;
+  const unsigned long long ret = strtoull(ptr, &end, base);
+
+  if (ptr == end)
+    throw std::invalid_argument("invalid stoull argument");
+  if (e == ERANGE)
+    throw std::out_of_range("stoull argument out of range");
+  if (pos)
+    *pos = (size_t)(end - ptr);
+  return ret;
+}
+
+inline unsigned long stoull(const std::wstring &str, std::size_t *pos = 0,
+                            int base = 10) {
+  int &e = errno;
+  const char *ptr = str.c_str();
+  char *end;
+  e = 0;
+  const unsigned long ret = wcstoull(ptr, &end, base);
+
+  if (ptr == end)
+    throw std::invalid_argument("invalid stoul argument");
+  if (e == ERANGE)
+    throw std::out_of_range("stoul argument out of range");
+  if (pos)
+    *pos = (size_t)(end - ptr);
+  return ret;
+}
+} // namespace std
+#endif // _EXT_STD_STRING_STO_
 #endif // _STRING_
 #endif // defined(_MSC_VER) && (_MSC_VER < 1600)

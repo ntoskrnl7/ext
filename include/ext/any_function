@@ -7,21 +7,21 @@
  *
  */
 #pragma once
-#include <stdexcept>
-#include <string>
-#include <vector>
-#include <type_traits>
-#include <functional>
-
-#if defined(__cpp_lib_any) && defined(__cpp_if_constexpr)
-#ifndef _EXT_ANY_FUNCTION_
-#define _EXT_ANY_FUNCTION_
-
-#include <any>
 
 #define CXX_USE_STD_REMOVE_CVREF_T
 #define CXX_USE_STD_APPLY
 #include "stl_compat"
+
+#if !defined(CXX_STD_ANY_NOT_SUPPORTED) && defined(__cpp_if_constexpr)
+#ifndef _EXT_ANY_FUNCTION_
+#define _EXT_ANY_FUNCTION_
+
+#include <any>
+#include <functional>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <vector>
 
 #include "type_traits"
 #include "typeinfo"
@@ -42,8 +42,8 @@ public:
   const std::string &type_name() const { return type_name_; }
 
 private:
-  std::string type_name_;
   size_t index_;
+  std::string type_name_;
 };
 
 class argument_count_mismatch : public std::invalid_argument {
@@ -159,11 +159,11 @@ public:
   }
 
 public:
-  template <typename... Args> return_type call(Args... args) const {
+  template <typename... Args> return_type call(Args &&... args) const {
     if constexpr (std::is_void_v<return_type>)
-      type::operator()(args...);
+      type::operator()(std::forward<Args>(args)...);
     else
-      return type::operator()(args...);
+      return type::operator()(std::forward<Args>(args)...);
   }
 
 private:
@@ -180,4 +180,4 @@ any_function(T) -> any_function<typename deduce_mem_fn<T>::type>;
 } // namespace ext
 
 #endif // _EXT_ANY_FUNCTION_
-#endif // defined(__cpp_lib_any) && defined(__cpp_if_constexpr)c
+#endif // !defined(CXX_STD_ANY_NOT_SUPPORTED) && defined(__cpp_if_constexpr)

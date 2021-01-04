@@ -8,7 +8,9 @@
  */
 #pragma once
 
-#if defined(__cpp_lib_any)
+#include "stl_compat"
+
+#if !defined(CXX_STD_ANY_NOT_SUPPORTED)
 #ifndef _EXT_PROPERTY_
 #define _EXT_PROPERTY_
 
@@ -83,7 +85,7 @@ public:
   property &operator=(const T &rhs) {
     if ((!fn_) || fn_(rhs)) {
       value_ = rhs;
-      notify(value_);
+      this->notify(value_);
     }
     return *this;
   }
@@ -116,7 +118,7 @@ public:
   const T &value() const { return value_; }
 
 private:
-  void update(ext::property<T> &self, T value) override {
+  void update(ext::property<T> &, T value) override {
     if (chain_.valid()) {
       T val = {};
       for (auto &item : chain_.vec_) {
@@ -143,4 +145,4 @@ private:
 };
 } // namespace ext
 #endif // _EXT_PROPERTY_
-#endif
+#endif // !defined(CXX_STD_ANY_NOT_SUPPORTED)
