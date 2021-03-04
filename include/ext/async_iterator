@@ -7,6 +7,8 @@
  *
  */
 #pragma once
+#ifndef _EXT_ASYNC_ITERATOR_
+#define _EXT_ASYNC_ITERATOR_
 
 #include <atomic>
 #include <condition_variable>
@@ -81,7 +83,7 @@ public:
   public:
     void push(const T &data) { result_->push(data); }
     void push(T &&data) { result_->push(std::move(data)); }
-    template <class... Args> void emplace(Args &&...args) {
+    template <class... Args> void emplace(Args &&... args) {
       result_->emplace(args...);
     }
     void begin(size_t size) { result_->init(size); }
@@ -135,7 +137,7 @@ public:
     ctx_->cv.notify_all();
   }
 
-  template <class... Args> void emplace(Args &&...args) {
+  template <class... Args> void emplace(Args &&... args) {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
     ctx_->ready = true;
     ctx_->queue.emplace(std::forward<Args>(args)...);
@@ -144,9 +146,7 @@ public:
 
   bool cancel_requested() const { return ctx_->cancel_requested; }
 
-  void cancel() {
-    ctx_->cancel_requested = true;
-  }
+  void cancel() { ctx_->cancel_requested = true; }
 
   size_t size() const {
     std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
@@ -176,3 +176,4 @@ private:
   std::shared_ptr<typename async_iterator<T>::context> ctx_;
 };
 } // namespace ext
+#endif // _EXT_ASYNC_ITERATOR_
