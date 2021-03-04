@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-
 #define CXX_USE_STD_IS_SAME
 #include "stl_compat"
 
@@ -102,14 +101,33 @@ template <typename T> inline bool compare_char_i(T char1, T char2) {
 //
 //  search functions.
 //
+namespace internal {
+template <typename T>
+inline typename std::basic_string<T>::const_iterator
+search(const typename std::basic_string<T>::const_iterator &begin,
+       const typename std::basic_string<T>::const_iterator &end,
+       const std::basic_string<T> &s_str, bool case_sensitive = false) {
+
+#if CXX_VER >= 201703L
+  if (case_sensitive)
+    return std::search(begin, end,
+                       std::boyer_moore_searcher(s_str.begin(), s_str.end()));
+  return std::search(begin, end, s_str.begin(), s_str.end(),
+                     case_sensitive ? compare_char<T> : compare_char_i<T>);
+#else
+  return std::search(begin, end, s_str.begin(), s_str.end(),
+                     case_sensitive ? compare_char<T> : compare_char_i<T>);
+#endif
+}
+
+} // namespace internal
 
 template <typename T>
 inline bool search(const std::basic_string<T> &str,
                    const std::basic_string<T> &s_str,
                    bool case_sensitive = false) {
-  return (std::search(str.begin(), str.end(), s_str.begin(), s_str.end(),
-                      case_sensitive ? compare_char<T> : compare_char_i<T>) !=
-          str.end());
+  return internal::search(str.begin(), str.end(), s_str, case_sensitive) !=
+         str.end();
 }
 
 template <typename T>
@@ -156,12 +174,11 @@ inline bool equal(const std::basic_string<T> &str1,
 
 template <typename T>
 inline bool equal(const T *str1, const T *str2, bool case_sensitive = false) {
-  std::basic_string<T> text1 = str1;
-  std::basic_string<T> text2 = str2;
+  const std::basic_string<T> text1 = str1;
+  const std::basic_string<T> text2 = str2;
 
-  if (text1.size() != text2.size()) {
+  if (text1.size() != text2.size())
     return false;
-  }
 
   return equal(text1.begin(), text1.end(), text2, case_sensitive);
 }
@@ -169,11 +186,10 @@ inline bool equal(const T *str1, const T *str2, bool case_sensitive = false) {
 template <typename T>
 inline bool equal(const T *str1, const std::basic_string<T> &str2,
                   bool case_sensitive = false) {
-  std::basic_string<T> text1 = str1;
+  const std::basic_string<T> text1 = str1;
 
-  if (text1.size() != str2.size()) {
+  if (text1.size() != str2.size())
     return false;
-  }
 
   return equal(text1.begin(), text1.end(), str2, case_sensitive);
 }
@@ -181,11 +197,10 @@ inline bool equal(const T *str1, const std::basic_string<T> &str2,
 template <typename T>
 inline bool equal(const std::basic_string<T> &str1, const T *str2,
                   bool case_sensitive = false) {
-  std::basic_string<T> text2 = str2;
+  const std::basic_string<T> text2 = str2;
 
-  if (str1.size() != text2.size()) {
+  if (str1.size() != text2.size())
     return false;
-  }
 
   return equal(str1.begin(), str1.end(), text2, case_sensitive);
 }
@@ -201,13 +216,14 @@ replace_all(std::basic_string<T> &str, const std::basic_string<T> &old_str,
   if (old_str.empty())
     return str;
 
-  typename std::basic_string<T>::iterator it = str.begin();
+  typename std::basic_string<T>::const_iterator it = str.begin();
   do {
-    it = std::search(it, str.end(), old_str.begin(), old_str.end(),
-                     case_sensitive ? compare_char<T> : compare_char_i<T>);
+    it = internal::search(it, str.end(), old_str, case_sensitive);
     if (it != str.end()) {
-      typename std::basic_string<T>::size_type pos =
-          std::distance(str.begin(), it);
+      typename std::basic_string<T>::size_type pos = std::distance(
+          static_cast<typename std::basic_string<T>::const_iterator>(
+              str.begin()),
+          it);
       str.replace(it, it + old_str.length(), new_str);
       it = str.begin() + pos + new_str.length();
     }
