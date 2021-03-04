@@ -18,7 +18,8 @@
 #include <atomic>
 #endif
 
-#if !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED) || !defined(CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED)
+#if !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED) ||                            \
+    !defined(CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED)
 #include <shared_mutex>
 #endif
 
@@ -38,37 +39,37 @@ private:
 
 public:
   void lock(void) {
-    std::thread::id this_id = std::this_thread::get_id();
-    if (owner_ == this_id) {
+    const std::thread::id thread_id = std::this_thread::get_id();
+    if (owner_ == thread_id) {
       ++lock_count_;
     } else {
       // When an exclusive lock is in progress by the current thread,
       // if the shared lock is already locked, unlock the share and perform an
       // exclusive lock.
       if (owner_ == std::thread::id()) {
-        bool needToUnlockShared = false;
+        bool need_to_unlock_shared = false;
         {
           std::shared_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
-          thread_map::iterator iter = shared_lock_count_map_.find(this_id);
+          thread_map::iterator iter = shared_lock_count_map_.find(thread_id);
           if (iter != shared_lock_count_map_.end()) {
             iter->second = 1; // Set only one shared lock to remain unlocked
                               // when the unlock_shared method is called.
-            needToUnlockShared = true;
+            need_to_unlock_shared = true;
           }
         }
-        if (needToUnlockShared)
+        if (need_to_unlock_shared)
           unlock_shared();
       }
 
       CXX_SHARED_MUTEX::lock();
-      owner_ = this_id;
+      owner_ = thread_id;
       lock_count_ = 1;
     }
   }
 
   void unlock(void) {
-    std::thread::id this_id = std::this_thread::get_id();
-    if (owner_ != this_id)
+    const std::thread::id thread_id = std::this_thread::get_id();
+    if (owner_ != thread_id)
       throw std::system_error(std::error_code(ENOLCK, std::system_category()));
 
     if (--lock_count_ == 0) {
@@ -78,60 +79,68 @@ public:
   }
 
   void lock_shared(void) {
-    std::thread::id this_id = std::this_thread::get_id();
-    bool needToLock = false;
+    const std::thread::id thread_id = std::this_thread::get_id();
+    bool need_to_lock = false;
     {
       std::unique_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
-      thread_map::iterator iter = shared_lock_count_map_.find(this_id);
+      thread_map::iterator iter = shared_lock_count_map_.find(thread_id);
       if (iter == shared_lock_count_map_.end()) {
-        // shared_lock_count_map_.insert({this_id, 1});
         shared_lock_count_map_.insert(
-            std::move(std::pair<std::thread::id, unsigned long>(this_id, 1)));
-        needToLock = true;
+            std::pair<std::thread::id, unsigned long>(thread_id, 1));
+        need_to_lock = true;
       } else {
         ++iter->second;
       }
     }
-    if (needToLock) {
+    if (need_to_lock) {
       // If the current thread already has an exclusive lock, do not use a
       // shared lock. (Even if there is an exclusive lock, the shared lock count
       // will increase, so I handled it this way.)
-      if (owner_ != this_id)
+      if (owner_ != thread_id)
         CXX_SHARED_MUTEX::lock_shared();
     }
   }
 
   void unlock_shared(void) {
-    std::thread::id this_id = std::this_thread::get_id();
+    const std::thread::id thread_id = std::this_thread::get_id();
 
     // If the shared lock is already unlocked because it has been switched to a
     // shared lock, it is handled not to unlock it.
-    bool needToUnlock = false;
+    bool need_to_unlock = false;
     {
       std::unique_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
-      thread_map::iterator iter = shared_lock_count_map_.find(this_id);
+      thread_map::iterator iter = shared_lock_count_map_.find(thread_id);
       if (iter != shared_lock_count_map_.end()) {
         if (--iter->second == 0) {
           shared_lock_count_map_.erase(iter);
-          needToUnlock = true;
+          need_to_unlock = true;
         }
       }
     }
 
-    if (needToUnlock) {
+    if (need_to_unlock) {
       // If the current thread is exclusively locked, do not release the shared
       // lock as it has not been held.
-      if (owner_ != this_id)
+      if (owner_ != thread_id)
         CXX_SHARED_MUTEX::unlock_shared();
     }
+  }
+
+  bool has_recursion() const {
+    const std::thread::id thread_id = std::this_thread::get_id();
+    if (owner_ == thread_id)
+      return true;
+    std::unique_lock<CXX_SHARED_MUTEX> lock(shared_lock_count_map_mutex_);
+    thread_map::iterator iter = shared_lock_count_map_.find(thread_id);
+    return iter != shared_lock_count_map_.end();
   }
 
 private:
   std::atomic<std::thread::id> owner_;
   std::atomic<unsigned long> lock_count_;
 
-  CXX_SHARED_MUTEX shared_lock_count_map_mutex_;
-  thread_map shared_lock_count_map_;
+  mutable CXX_SHARED_MUTEX shared_lock_count_map_mutex_;
+  mutable thread_map shared_lock_count_map_;
 };
 } // namespace ext
 
