@@ -59,6 +59,7 @@
  * CXX_USE_STD_THREAD
  * CXX_USE_STD_SHARED_TIMED_MUTEX
  * CXX_USE_STD_SHARED_MUTEX
+ * CXX_USE_STD_MUTEX
  * CXX_USE_STD_SYSTEM_ERROR
  * CXX_USE_STD_REGEX
  *
@@ -112,6 +113,7 @@
 #define CXX_STD_THREAD_NOT_SUPPORTED
 #define CXX_STD_ATOMIC_NOT_SUPPORTED
 #define CXX_STD_UNORDERED_MAP_NOT_SUPPORTED
+#define CXX_STD_MUTEX_NOT_SUPPORTED
 #if (!defined(_MSC_VER)) || (defined(_MSC_VER) && (_MSC_VER < 1600))
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
 #define CXX_NULLPTR_NOT_SUPPORTED
@@ -159,6 +161,7 @@
 #define CXX_USE_STD_THREAD
 #define CXX_USE_STD_SHARED_TIMED_MUTEX
 #define CXX_USE_STD_SHARED_MUTEX
+#define CXX_USE_STD_MUTEX
 #define CXX_USE_STD_SYSTEM_ERROR
 #define CXX_USE_STD_MOVE
 #define CXX_USE_STD_APPLY
@@ -453,6 +456,18 @@ using boost::unique_lock;
 #endif // _EXT_STD_SHARED_MUTEX_
 #endif
 
+#if defined(CXX_USE_STD_MUTEX) && defined(CXX_STD_MUTEX_NOT_SUPPORTED) &&      \
+    defined(BOOST_THREAD_MUTEX_HPP)
+#ifndef _EXT_STD_MUTEX_
+#define _EXT_STD_MUTEX_
+namespace std {
+using boost::mutex;
+using boost::unique_lock;
+} // namespace std
+#undef CXX_USE_STD_MUTEX
+#endif // _EXT_STD_MUTEX_
+#endif
+
 #if defined(CXX_USE_STD_REGEX) && defined(CXX_STD_REGEX_NOT_SUPPORTED) &&      \
     defined(BOOST_RE_REGEX_HPP)
 #ifndef _EXT_STD_REGEX_
@@ -489,6 +504,20 @@ using std::tr1::unordered_map;
 } // namespace std
 #endif // _EXT_STD_UNORDERED_MAP_
 #endif // _UNORDERED_MAP_
+
+#ifdef _FUNCTIONAL_ // VS2008 functional
+#ifndef _EXT_STD_FUNCTIONAL_
+#define _EXT_STD_FUNCTIONAL_
+namespace std {
+using std::tr1::bind;
+using std::tr1::function;
+namespace placeholders {
+using namespace std::tr1::placeholders;
+}
+#undef _EXT_STD_FUNCTIONAL_
+} // namespace std
+#endif // _EXT_STD_FUNCTIONAL_
+#endif // _FUNCTIONAL_
 #endif
 
 ///
@@ -539,6 +568,13 @@ using std::tr1::unordered_map;
 #endif
 
 ///
+/// CXX_MUTEX
+///
+#if CXX_VER >= 201103L
+#define CXX_MUTEX std::mutex
+#endif
+
+///
 /// CXX_FOR, CXX_FOR_O, CXX_FOR_END
 ///  - Define a "range based for loop" macro
 ///
@@ -548,9 +584,10 @@ using std::tr1::unordered_map;
 #define CXX_FOR_END }
 #else
 #if defined(_MSC_VER) && (_MSC_VER >= 1400) // >= Visual Studio 2005 version 8.0
+#define __CXX_FOR_ARG__(...) __VA_ARGS__
 #define CXX_FOR(range_declaration, range_expression)                           \
   for                                                                          \
-    each(range_declaration in range_expression) {
+    each(__CXX_FOR_ARG__(range_declaration) in range_expression) {
 #define CXX_FOR_END }
 #else // >= Visual Studio 2005 version 8.0
 #ifdef CXX_AUTO_TYPE_NOT_SUPPORTED
@@ -1154,44 +1191,10 @@ inline unsigned long stoul(const std::string &str, std::size_t *pos = 0,
 inline unsigned long stoul(const std::wstring &str, std::size_t *pos = 0,
                            int base = 10) {
   int &e = errno;
-  const char *ptr = str.c_str();
-  char *end;
+  const wchar_t *ptr = str.c_str();
+  wchar_t *end;
   e = 0;
   const unsigned long ret = wcstoul(ptr, &end, base);
-
-  if (ptr == end)
-    throw std::invalid_argument("invalid stoul argument");
-  if (e == ERANGE)
-    throw std::out_of_range("stoul argument out of range");
-  if (pos)
-    *pos = (size_t)(end - ptr);
-  return ret;
-}
-
-inline unsigned long stoull(const std::string &str, std::size_t *pos = 0,
-                            int base = 10) {
-  int &e = errno;
-  const char *ptr = str.c_str();
-  char *end;
-  e = 0;
-  const unsigned long long ret = strtoull(ptr, &end, base);
-
-  if (ptr == end)
-    throw std::invalid_argument("invalid stoull argument");
-  if (e == ERANGE)
-    throw std::out_of_range("stoull argument out of range");
-  if (pos)
-    *pos = (size_t)(end - ptr);
-  return ret;
-}
-
-inline unsigned long stoull(const std::wstring &str, std::size_t *pos = 0,
-                            int base = 10) {
-  int &e = errno;
-  const char *ptr = str.c_str();
-  char *end;
-  e = 0;
-  const unsigned long ret = wcstoull(ptr, &end, base);
 
   if (ptr == end)
     throw std::invalid_argument("invalid stoul argument");
