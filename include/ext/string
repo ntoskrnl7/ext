@@ -8,10 +8,15 @@
  */
 #pragma once
 
-#include <ctype.h>
 #include <algorithm>
+#include <ctype.h>
+#include <functional>
+#include <locale>
 #include <string>
+#include <vector>
 
+
+#define CXX_USE_STD_IS_SAME
 #include "stl_compat"
 
 namespace ext {
@@ -37,6 +42,14 @@ template <typename T>
 inline std::basic_string<T> &ltrim(std::basic_string<T> &s) {
   return s.erase(0, s.find_first_not_of(internal::trim_str<T>()));
 }
+
+#if defined(_MSC_VER) && _MSC_VER > 1600
+template <typename T>
+inline std::basic_string<T> trim(const std::basic_string<T> &s) {
+  std::basic_string<T> val = s;
+  return ltrim<T>(rtrim<T>(val));
+}
+#endif
 
 template <typename T>
 inline std::basic_string<T> &trim(std::basic_string<T> &s) {
@@ -225,6 +238,138 @@ replace_all(std::basic_string<T> &str, const std::basic_string<T> &old_str,
             const T *new_str, bool case_sensitive = false) {
   return replace_all(str, old_str, std::basic_string<T>(new_str),
                      case_sensitive);
+}
+
+template <typename T>
+inline std::basic_string<T> replace_all(const std::basic_string<T> &str,
+                                        const T *old_str, const T *new_str,
+                                        bool case_sensitive = false) {
+  std::string val = str;
+  return replace_all(val, std::basic_string<T>(old_str),
+                     std::basic_string<T>(new_str), case_sensitive);
+}
+
+template <typename SRC_T, typename DST_T>
+bool convert(const std::basic_string<SRC_T> &SourceString,
+             std::basic_string<DST_T> &DestinationString,
+             const std::locale Locale = std::locale("")) {
+#if CXX_VER >= 201103
+  if (std::is_same<SRC_T, DST_T>::value)
+#else
+  if (typeid(SRC_T) == typeid(DST_T))
+#endif
+  {
+    DestinationString = (std::basic_string<DST_T> &)SourceString;
+    return true;
+  }
+
+  typedef std::codecvt<wchar_t, char, std::mbstate_t> codecvt_wchar;
+
+  const codecvt_wchar &convert = std::use_facet<codecvt_wchar>(Locale);
+
+  std::mbstate_t state = std::mbstate_t();
+  size_t sourceLength = SourceString.length();
+
+  if (sourceLength == 0) {
+    DestinationString.resize(0);
+    return true;
+  }
+
+  const SRC_T *source = SourceString.c_str();
+  const SRC_T *sourceNext = source;
+
+  size_t destinationLength =
+      sourceLength * convert.max_length() + convert.max_length();
+  std::vector<DST_T> destination(destinationLength);
+  DST_T *destinationNext = &destination[0];
+
+  codecvt_wchar::result result = codecvt_wchar::noconv;
+#if CXX_VER >= 201103
+  CXX_IF_CONSTEXPR(std::is_same<DST_T, char>::value)
+#else
+  if (typeid(DST_T) == typeid(char))
+#endif
+  {
+    result = convert.out(
+        state, (const wchar_t *)source, (const wchar_t *)&source[sourceLength],
+        (const wchar_t *&)sourceNext, (char *)&destination[0],
+        (char *)&destination[destinationLength - 1], (char *&)destinationNext);
+  }
+#if CXX_VER >= 201103
+  CXX_IF_CONSTEXPR(std::is_same<DST_T, wchar_t>::value)
+#else
+  else if (typeid(DST_T) == typeid(wchar_t))
+#endif
+  {
+    result = convert.in(state, (const char *)source,
+                        (const char *)&source[sourceLength],
+                        (const char *&)sourceNext, (wchar_t *)&destination[0],
+                        (wchar_t *)&destination[destinationLength - 1],
+                        (wchar_t *&)destinationNext);
+  }
+
+  if (result == codecvt_wchar::ok) {
+    DestinationString = std::basic_string<DST_T>(
+        (const DST_T *)&destination[0], (const DST_T *)destinationNext);
+    return true;
+  }
+
+  return false;
+}
+
+template <typename DST_T, typename SRC_T>
+std::basic_string<DST_T> convert(const std::basic_string<SRC_T> &SourceString,
+                                 const std::locale Locale = std::locale("")) {
+  std::basic_string<DST_T> destinationString;
+
+  if (convert(SourceString, destinationString, Locale)) {
+    return destinationString;
+  }
+#ifdef __cpp_exceptions
+  throw std::runtime_error("Failed to convert :-(");
+#endif
+  return std::basic_string<DST_T>();
+}
+
+inline std::wstring operator!(const std::string &rhs) {
+  return convert<wchar_t>(rhs);
+}
+
+inline std::string operator!(const std::wstring &rhs) {
+  return convert<char>(rhs);
+}
+
+template <typename T>
+inline std::vector<T> split(const std::string &str, const std::string &delim,
+                            std::function<T(const std::string &)> fn) {
+  std::vector<T> tokens;
+  size_t prev = 0, pos = 0;
+  do {
+    pos = str.find(delim, prev);
+    if (pos == std::string::npos)
+      pos = str.length();
+    std::string token = str.substr(prev, pos - prev);
+    if (!token.empty())
+      tokens.push_back(fn(token));
+    prev = pos + delim.length();
+  } while (pos < str.length() && prev < str.length());
+  return tokens;
+}
+
+inline std::vector<std::string> split(const std::string &str,
+                                      const std::string &delim) {
+  std::vector<std::string> tokens;
+  size_t prev = 0, pos = 0;
+  do {
+    pos = str.find(delim, prev);
+    if (pos == std::string::npos)
+      pos = str.length();
+    std::string token = str.substr(prev, pos - prev);
+    if (!token.empty())
+      tokens.push_back(token);
+    prev = pos + delim.length();
+  } while (pos < str.length() && prev < str.length());
+  return tokens;
 }
 } // namespace string
 using namespace string;
