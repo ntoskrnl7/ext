@@ -37,74 +37,78 @@
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-3. cdbg
+3. callback
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-4. chain
+4. cdbg
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-5. collection
+5. chain
+   - gcc 8.3.0+
+   - Clang 10.0+
+   - Visual Studio 2008 SP1+
+6. collection
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
    - std::shared_mutex or std::shared_timed_mutex required
-6. ini
+7. ini
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-7. observable
+8. observable
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-8. path
+9. path
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-9. process
-   - gcc 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2017+
-   - C++11 or later
-10. property
-   - gcc 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2017+
-   - C++17 or later
-10. safe_object
+10. process
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2017+
+    - C++11 or later
+11. property
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2017+
+    - C++17 or later
+12. safe_object
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
     - C++14 or later
-11. shared_recursive_mutex
+13. shared_recursive_mutex
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - std::shared_mutex or std::shared_timed_mutex required
-12. singleton
+14. singleton
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-13. string
+15. string
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-14. stl_compat
+16. stl_compat
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-15. thread_pool
+17. thread_pool
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++14 or later
-16. type_traits
+18. type_traits
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-17. typeinfo
+19. typeinfo
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
