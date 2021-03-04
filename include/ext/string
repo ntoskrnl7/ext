@@ -107,7 +107,6 @@ inline typename std::basic_string<T>::const_iterator
 search(const typename std::basic_string<T>::const_iterator &begin,
        const typename std::basic_string<T>::const_iterator &end,
        const std::basic_string<T> &s_str, bool case_sensitive = false) {
-
 #ifdef __cpp_lib_boyer_moore_searcher
   if (case_sensitive)
     return std::search(begin, end,
