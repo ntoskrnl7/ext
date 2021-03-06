@@ -34,19 +34,20 @@ public:
 
   public:
     chain() {}
-    chain(property *self, property *other) {
-      vec_.push_back(self);
-      vec_.push_back(other);
+
+    chain(property &self, property &other) {
+      vec_.push_back(&self);
+      vec_.push_back(&other);
     }
 
-    chain(property *self, const T &value) {
-      vec_.push_back(self);
+    chain(property &self, const T &value) {
+      vec_.push_back(&self);
       vec_.push_back(value);
     }
 
-    chain(const T &value, property *self) {
+    chain(const T &value, property &self) {
       vec_.push_back(value);
-      vec_.push_back(self);
+      vec_.push_back(&self);
     }
 
     chain &operator+(chain &rhs) {
@@ -66,15 +67,15 @@ public:
 
     bool valid() const { return !vec_.empty(); }
 
-    friend chain operator+(const T &lhs, property &rhs) { return {lhs, &rhs}; }
+    friend chain operator+(const T &lhs, property &rhs) { return {lhs, rhs}; }
 
   private:
     std::vector<std::any> vec_;
   };
 
-  property::chain operator+(const T &rhs) { return {this, rhs}; }
+  property::chain operator+(const T &rhs) { return {*this, rhs}; }
 
-  property::chain operator+(property<T> &rhs) { return {this, &rhs}; }
+  property::chain operator+(property<T> &rhs) { return {*this, rhs}; }
 
 public:
   property() {}
@@ -111,6 +112,10 @@ public:
     chain_ = other;
     *this = value;
     return *this;
+  }
+
+  property &operator=(property<T>::chain &&other) {
+    return operator=(std::forward<property<T>::chain &>(other));
   }
 
   operator T() { return value_; }

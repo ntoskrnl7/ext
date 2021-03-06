@@ -78,7 +78,12 @@ TEST(property_test, basic_test) {
   EXPECT_STREQ(dlg2.title.value().c_str(), "data2 id");
 
   data.name = "Jung-kwnag Lee";
+#if defined(_MSC_VER)
   dlg.contents = "name : " + data.name + "\tphone : " + data.phone;
+#else
+  dlg.contents = decltype(dlg.contents)::chain("name : ", data.name) +
+                 "\tphone : " + data.phone;
+#endif
   EXPECT_STREQ(dlg.contents.value().c_str(), "name : Jung-kwnag Lee\tphone : ");
 
   data.phone = "010-1234-5678";
