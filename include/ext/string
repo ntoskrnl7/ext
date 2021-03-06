@@ -42,7 +42,7 @@ inline std::basic_string<T> &ltrim(std::basic_string<T> &s) {
   return s.erase(0, s.find_first_not_of(internal::trim_str<T>()));
 }
 
-#if defined(_MSC_VER) && _MSC_VER > 1600
+#if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
 template <typename T>
 inline std::basic_string<T> trim(const std::basic_string<T> &s) {
   std::basic_string<T> val = s;
