@@ -19,3 +19,21 @@ TEST(callback_test, callback_test) {
   EXPECT_EQ(sum, 2);
 #endif
 }
+
+TEST(callback_test, callback_args_test) {
+  ext::callback<std::string, int> on_changed;
+  int sum = 0;
+  on_changed += [&sum](const std::string &a0, int a1) {
+    EXPECT_EQ(a0.size(), 3);
+    EXPECT_GE(a1, 10);
+    sum += a1;
+  };
+  on_changed += [&sum](const std::string &a0, int a1) {
+    EXPECT_EQ(a0.size(), 3);
+    EXPECT_GE(a1, 10);
+    sum += a1;
+  };
+  on_changed("aaa", 10);
+  on_changed("bbb", 20);
+  EXPECT_EQ(sum, 60);
+}

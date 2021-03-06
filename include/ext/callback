@@ -16,14 +16,16 @@
 #endif
 #include <unordered_map>
 
-#ifdef __cpp_rvalue_references
+#ifdef __cpp_variadic_templates
 #define __CALLBACK_ARGS_DECLARATION__ Args &&...
 #define __TYPE_NAME__CALLBACK_ARGS__ typename... Args
-#define __CALLBACK_ARGS__ args...
+#else
+#ifdef __cpp_rvalue_references
+#define __CALLBACK_ARGS_DECLARATION__ Args &&
 #else
 #define __CALLBACK_ARGS_DECLARATION__ Args
+#endif
 #define __TYPE_NAME__CALLBACK_ARGS__ typename Args
-#define __CALLBACK_ARGS__ args
 #endif
 
 namespace ext {
@@ -36,11 +38,15 @@ public:
     std::unique_lock<std::mutex> lk(mtx_);
     typedef std::pair<cookie, std::shared_ptr<context>> type;
     CXX_FOR(type item, data_)
-#ifdef __cpp_rvalue_references
-    item.second->callback_(std::forward<Args &&...>(__CALLBACK_ARGS__));
+#ifdef __cpp_variadic_templates
+      item.second->callback_(std::forward<Args &&>(args)...);
 #else
-    item.second->callback_(__CALLBACK_ARGS__);
-#endif
+#ifdef __cpp_rvalue_references
+      item.second->callback_(std::forward<Args>(args));
+#else
+      item.second->callback_(args);
+#endif // __cpp_rvalue_references
+#endif // __cpp_variadic_templates
     CXX_FOR_END
   }
 
