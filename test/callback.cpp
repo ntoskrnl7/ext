@@ -35,5 +35,8 @@ TEST(callback_test, callback_args_test) {
   };
   on_changed("aaa", 10);
   on_changed("bbb", 20);
-  EXPECT_EQ(sum, 60);
+
+  std::string test = "ccc";
+  on_changed(test, 10);
+  EXPECT_EQ(sum, 80);
 }
