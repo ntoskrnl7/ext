@@ -108,7 +108,7 @@ private:
 
 template <typename T>
 class command : public command_item, public ext::any_function<T> {
-  using type = ext::any_function<T>;
+  using type = ext::any_function<T>;\
 
 public:
   command(const command_desc &desc, T f)
