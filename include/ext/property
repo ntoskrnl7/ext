@@ -8,6 +8,12 @@
  */
 #pragma once
 
+#include "stl_compat"
+
+#if !defined(CXX_STD_ANY_NOT_SUPPORTED)
+#ifndef _EXT_PROPERTY_
+#define _EXT_PROPERTY_
+
 #include <any>
 #include <functional>
 #include <iostream>
@@ -28,19 +34,20 @@ public:
 
   public:
     chain() {}
-    chain(property *self, property *other) {
-      vec_.push_back(self);
-      vec_.push_back(other);
+
+    chain(property &self, property &other) {
+      vec_.push_back(&self);
+      vec_.push_back(&other);
     }
 
-    chain(property *self, const T &value) {
-      vec_.push_back(self);
+    chain(property &self, const T &value) {
+      vec_.push_back(&self);
       vec_.push_back(value);
     }
 
-    chain(const T &value, property *self) {
+    chain(const T &value, property &self) {
       vec_.push_back(value);
-      vec_.push_back(self);
+      vec_.push_back(&self);
     }
 
     chain &operator+(chain &rhs) {
@@ -60,24 +67,26 @@ public:
 
     bool valid() const { return !vec_.empty(); }
 
-    friend chain operator+(const T &lhs, property &rhs) { return {lhs, &rhs}; }
+    friend chain operator+(const T &lhs, property &rhs) { return {lhs, rhs}; }
 
   private:
     std::vector<std::any> vec_;
   };
 
-  property::chain operator+(const T &rhs) { return {this, rhs}; }
+  property::chain operator+(const T &rhs) { return {*this, rhs}; }
 
-  property::chain operator+(property<T> &rhs) { return {this, &rhs}; }
+  property::chain operator+(property<T> &rhs) { return {*this, rhs}; }
 
 public:
-  property(std::function<bool(const T &)> fn) : fn_(fn) {}
   property() {}
+  property(std::function<bool(const T &)> fn) : fn_(fn) {}
+  property(const T &value, std::function<bool(const T &)> fn = nullptr)
+      : value_(value), fn_(fn) {}
 
   property &operator=(const T &rhs) {
     if ((!fn_) || fn_(rhs)) {
       value_ = rhs;
-      notify(value_);
+      this->notify(value_);
     }
     return *this;
   }
@@ -93,16 +102,20 @@ public:
     T value = {};
     for (std::any &item : other.vec_) {
       if (item.type() == typeid(T)) {
-        value += std::any_cast<T>(item); 
+        value += std::any_cast<T>(item);
       } else if (item.type() == typeid(property<T> *)) {
         property<T> *c = std::any_cast<property<T> *>(item);
         *this += *c;
-        value += *c; 
+        value += *c;
       }
     }
     chain_ = other;
-    *this = value;    
+    *this = value;
     return *this;
+  }
+
+  property &operator=(property<T>::chain &&other) {
+    return operator=(std::forward<property<T>::chain &>(other));
   }
 
   operator T() { return value_; }
@@ -110,7 +123,7 @@ public:
   const T &value() const { return value_; }
 
 private:
-  void update(ext::property<T> &self, T value) override {
+  void update(ext::property<T> &, T value) override {
     if (chain_.valid()) {
       T val = {};
       for (auto &item : chain_.vec_) {
@@ -136,3 +149,5 @@ private:
   chain chain_;
 };
 } // namespace ext
+#endif // _EXT_PROPERTY_
+#endif // !defined(CXX_STD_ANY_NOT_SUPPORTED)

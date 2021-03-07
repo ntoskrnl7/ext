@@ -1,0 +1,90 @@
+/**
+ * @file url
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements url helper features.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+#ifndef _EXT_URL_
+#define _EXT_URL_
+
+#include <algorithm>
+#include <ctype.h>
+#include <functional>
+#include <iomanip>
+#include <sstream>
+#include <string>
+
+#include "stl_compat"
+#include "string"
+
+namespace ext {
+using ext::string::operator!;
+
+struct url {
+  url(const std::wstring &url_s) { *this = url(!url_s); }
+
+  url(const std::string &url_s) : port(0) {
+    value = url_s;
+    const std::string prot_end("://");
+    std::string::const_iterator prot_i = std::search(
+        url_s.begin(), url_s.end(), prot_end.begin(), prot_end.end());
+    protocol.reserve(distance(url_s.begin(), prot_i));
+    std::transform(url_s.begin(), prot_i, back_inserter(protocol), tolower);
+    if (prot_i == url_s.end())
+      return;
+    advance(prot_i, prot_end.length());
+    std::string::const_iterator path_i = find(prot_i, url_s.end(), '/');
+    host.reserve(distance(prot_i, path_i));
+    std::transform(prot_i, path_i, back_inserter(host), tolower);
+    std::string::const_iterator query_i = find(path_i, url_s.end(), '?');
+    path.assign(path_i, query_i);
+    if (query_i != url_s.end())
+      ++query_i;
+    query.assign(query_i, url_s.end());
+
+    std::string::size_type pos = host.find(':');
+    if (pos != std::string::npos) {
+      port = (unsigned short)std::stoul(host.substr(pos + 1));
+      host = host.substr(0, pos);
+    }
+  }
+
+  std::string protocol_host_port() {
+    std::string::size_type pos =
+        value.find('/', protocol.size() + sizeof("://"));
+    if (pos == std::string::npos)
+      return value;
+    return value.substr(0, pos);
+  }
+
+  std::string value;
+  std::string protocol;
+  std::string host;
+  unsigned short port;
+  std::string path;
+  std::string query;
+
+public:
+  static std::string encode(const std::string &value) {
+    std::ostringstream escaped;
+    escaped.fill('0');
+    escaped << std::hex;
+    for (std::string::const_iterator i = value.begin(), n = value.end(); i != n;
+         ++i) {
+      std::string::value_type c = (*i);
+      if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+        escaped << c;
+        continue;
+      }
+      escaped << std::uppercase;
+      escaped << '%' << std::setw(2) << int((unsigned char)c);
+      escaped << std::nouppercase;
+    }
+    return escaped.str();
+  }
+};
+} // namespace ext
+#endif // _EXT_URL_

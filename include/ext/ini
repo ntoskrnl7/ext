@@ -35,8 +35,16 @@ public:
 
   iterator begin() { return data_.begin(); }
   iterator end() { return data_.end(); }
+
   bool contains(const std::string &section) {
     return data_.find(section) != data_.end();
+  };
+
+  bool contains(const std::string &section, const std::string &name) {
+    if (!contains(section))
+      return false;
+    const std::map<std::string, std::string> &s = data_[section];
+    return s.find(name) != s.end();
   };
 
   std::map<std::string, std::string> &operator[](const std::string &section) {
@@ -52,7 +60,7 @@ private:
     std::string line;
     std::string section;
     std::regex section_test("\\[(.*?)\\]");
-    std::regex value_test("(\\w+)=([^\\+]+(?!\\+{3}))");
+    std::regex value_test("([\\w]+)[ |\t]*=([^\\+]+(?!\\+{3}))");
     std::map<std::string, std::map<std::string, std::string>> ini;
     while (std::getline(stream, line)) {
       ext::trim(line);

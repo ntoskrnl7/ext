@@ -1,0 +1,77 @@
+/**
+ * @file callback
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements callback template class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+#include "stl_compat"
+#if defined(CXX_MUTEX) || defined(_EXT_STD_MUTEX_)
+#include <functional>
+#include <memory>
+#ifndef _EXT_STD_MUTEX_
+#include <mutex>
+#endif
+#include <unordered_map>
+
+#ifdef __cpp_variadic_templates
+#define __CALLBACK_ARGS_DECLARATION__ Args &&...
+#define __TYPE_NAME__CALLBACK_ARGS__ typename... Args
+#else
+#ifdef __cpp_rvalue_references
+#define __CALLBACK_ARGS_DECLARATION__ Args &&
+#else
+#define __CALLBACK_ARGS_DECLARATION__ Args
+#endif
+#define __TYPE_NAME__CALLBACK_ARGS__ typename Args
+#endif
+
+namespace ext {
+template <__TYPE_NAME__CALLBACK_ARGS__> class callback {
+public:
+  typedef void *cookie;
+  typedef std::function<void(__CALLBACK_ARGS_DECLARATION__)> function;
+
+  void operator()(__CALLBACK_ARGS_DECLARATION__ args) {
+    std::unique_lock<std::mutex> lk(mtx_);
+    typedef std::pair<cookie, std::shared_ptr<context>> type;
+    CXX_FOR(type item, data_)
+#ifdef __cpp_variadic_templates
+      item.second->callback_(std::forward<Args &&>(args)...);
+#else
+#ifdef __cpp_rvalue_references
+      item.second->callback_(std::forward<Args>(args));
+#else
+      item.second->callback_(args);
+#endif // __cpp_rvalue_references
+#endif // __cpp_variadic_templates
+    CXX_FOR_END
+  }
+
+  cookie operator+=(function callback) {
+    std::unique_lock<std::mutex> lk(mtx_);
+    std::shared_ptr<context> ctx = std::make_shared<context>(callback);
+    data_.insert(std::pair<cookie, std::shared_ptr<context>>(ctx->id_, ctx));
+    return ctx->id_;
+  }
+
+  void operator-=(cookie cookie) {
+    std::unique_lock<std::mutex> lk(mtx_);
+    data_.erase(cookie);
+  }
+
+private:
+  struct context {
+    context(function callback) : callback_(callback) { id_ = (cookie)this; }
+    cookie id_;
+    function callback_;
+  };
+
+private:
+  std::mutex mtx_;
+  std::unordered_map<cookie, std::shared_ptr<context>> data_;
+};
+} // namespace ext
+#endif // CXX_MUTEX
