@@ -10,11 +10,19 @@
 #ifndef _EXT_OBSERVABLE_
 #define _EXT_OBSERVABLE_
 
-#include <list>
-#include <mutex>
+#ifdef CXX_USE_BOOST
+#define CXX_USE_STD_MUTEX
+#include <boost/thread/mutex.hpp>
+#endif
 
 #define CXX_USE_STD_MAKE_UNIQUE
 #include "stl_compat"
+
+#ifndef _EXT_STD_MUTEX_
+#include <mutex>
+#endif
+
+#include <list>
 
 #ifdef CXX_SHARED_MUTEX
 #include <shared_mutex>
@@ -120,20 +128,8 @@ public:
       std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
           observable::global_lock_());
 #endif
-#if defined(CXX_FOR)
-      CXX_FOR(observable *observable, observables_)
-#elif defined(CXX_FOR_O)
-      CXX_FOR_O(observable *observable, std::list<observable *>::iterator,
-                observables_)
-#else
-      for (auto &observable : observables_) {
-#endif // CXX_FOR
-      observable->observers_.remove(this);
-#ifdef CXX_FOR_END
-      CXX_FOR_END
-#else
-    }
-#endif
+      CXX_FOR(observable * observable, observables_)
+        observable->observers_.remove(this);
       observables_.clear();
     }
 
@@ -147,19 +143,8 @@ public:
     std::unique_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
         observable::global_lock_());
 #endif
-#if defined(CXX_FOR)
-    CXX_FOR(observer *observer, observers_)
-#elif defined(CXX_FOR_O)
-  CXX_FOR_O(observer *observer, std::list<observer *>::iterator, observers_)
-#else
-      for (auto &observer : observers_) {
-#endif // CXX_FOR
-    observer->observables_.remove(this);
-#ifdef CXX_FOR_END
-    CXX_FOR_END
-#else
-}
-#endif
+    CXX_FOR(observer * observer, observers_)
+      observer->observables_.remove(this);
   } // namespace ext
 
 protected:
@@ -172,19 +157,8 @@ protected:
     std::shared_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
         observable::global_lock_());
 #endif
-#if defined(CXX_FOR)
-    CXX_FOR(observer *observer, observers_)
-#elif defined(CXX_FOR_O)
-  CXX_FOR_O(observer *observer, std::list<observer *>::iterator, observers_)
-#else
-        for (auto &observer : observers_) {
-#endif // CXX_FOR
-    observer->update(static_cast<T &>(*this), __OBSERVABLE_ARGS__);
-#ifdef CXX_FOR_END
-    CXX_FOR_END
-#else
-}
-#endif
+    CXX_FOR(observer * observer, observers_)
+      observer->update(static_cast<T &>(*this), __OBSERVABLE_ARGS__);
   }
 
 private:

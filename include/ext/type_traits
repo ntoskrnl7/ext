@@ -39,7 +39,7 @@ template <typename T> using remove_class_t = typename remove_class<T>::type;
 #endif // _EXT_REMOVE_CLASS_
 #endif // defined(__cpp_variadic_templates)
 
-#if defined(__cpp_decltype)
+#if defined(__cpp_decltype) && (defined(_EXT_STD_VOID_T_) || !defined(CXX_STD_VOID_T_NOT_SUPPORTED))
 //
 /// deduce_mem_fn
 ///

@@ -7,6 +7,17 @@
  *
  */
 #pragma once
+#ifdef CXX_USE_BOOST
+#define CXX_USE_STD_MUTEX
+#include <boost/thread/mutex.hpp>
+
+#define CXX_USE_STD_UNORDERED_MAP
+#include <boost/unordered/unordered_map.hpp>
+
+#define CXX_USE_STD_MAKE_SHARED
+#include <boost/shared_ptr.hpp>
+#endif // CXX_USE_BOOST
+
 #include "stl_compat"
 #if defined(CXX_MUTEX) || defined(_EXT_STD_MUTEX_)
 #include <functional>
@@ -19,11 +30,11 @@
 #ifdef __cpp_variadic_templates
 #define __CALLBACK_ARGS_DECLARATION__ const Args &...
 #define __TYPE_NAME__CALLBACK_ARGS__ typename... Args
-#define __CALLBACK_ARGS__   args...
+#define __CALLBACK_ARGS__ args...
 #else
 #define __CALLBACK_ARGS_DECLARATION__ const Args &
 #define __TYPE_NAME__CALLBACK_ARGS__ typename Args
-#define __CALLBACK_ARGS__   args
+#define __CALLBACK_ARGS__ args
 #endif // __cpp_variadic_templates
 
 namespace ext {
@@ -37,7 +48,6 @@ public:
     typedef std::pair<cookie, std::shared_ptr<context>> type;
     CXX_FOR(type item, data_)
       item.second->callback_(__CALLBACK_ARGS__);
-    CXX_FOR_END
   }
 
   cookie operator+=(function callback) {

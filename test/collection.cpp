@@ -1,10 +1,11 @@
 #include <iostream>
 
-#include <ext/shared_recursive_mutex>
 #include <ext/collection>
+#include <ext/shared_recursive_mutex>
 #include <gtest/gtest.h>
 
 #ifdef _EXT_COLLECTION_
+
 class data {
 public:
   data() : id(0), value(0) {}

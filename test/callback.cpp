@@ -20,6 +20,7 @@ TEST(callback_test, callback_test) {
 #endif
 }
 
+#ifdef __cpp_variadic_templates
 TEST(callback_test, callback_args_test) {
   ext::callback<std::string, int> on_changed;
   int sum = 0;
@@ -40,3 +41,4 @@ TEST(callback_test, callback_args_test) {
   on_changed(test, 10);
   EXPECT_EQ(sum, 80);
 }
+#endif

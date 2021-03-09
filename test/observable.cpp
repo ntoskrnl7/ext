@@ -1,12 +1,35 @@
 ﻿#include <gtest/gtest.h>
 
+#if CXX_USE_BOOST
+#define CXX_USE_STD_MAKE_UNIQUE
+#include <boost/move/unique_ptr.hpp>
+
+#define CXX_USE_STD_THREAD
+#include <boost/thread.hpp>
+
+#define CXX_USE_NULLPTR
+#endif
+
 #include <ext/observable>
 
 #include <iostream>
 
+#ifdef _EXT_OBSERVABLE_SYNC_
 #include <condition_variable>
 #include <mutex>
+#endif
+
+#if defined(CXX_THREAD) || defined(_EXT_STD_THREAD_)
+#ifndef _EXT_STD_THREAD_
 #include <thread>
+#endif
+#endif
+
+#if defined(CXX_MUTEX) || defined(_EXT_STD_MUTEX_)
+#ifndef _EXT_STD_MUTEX_
+#include <mutex>
+#endif
+#endif
 
 class object_with_name {
 public:
@@ -17,6 +40,7 @@ private:
   std::string name_;
 };
 
+#ifdef __cpp_variadic_templates
 using observable_no_args =
     ext::observable<class object_with_observable_no_args>;
 
@@ -68,9 +92,10 @@ TEST(observable_test, observer_no_args) {
   obj_1.test();
   obj_2.test();
 }
+#endif
 
-using observable_one_arg =
-    ext::observable<class object_with_observable_one_arg, int>;
+typedef ext::observable<class object_with_observable_one_arg, int>
+    observable_one_arg;
 
 class object_with_observable_one_arg : public object_with_name,
                                        public observable_one_arg {
@@ -168,7 +193,7 @@ TEST(observable_test, observer_with_one_arg) {
 
   std::cout << "begin obj_one_arg_ptr\n";
   std::unique_ptr<object_with_observable_one_arg> obj_ptr =
-      std::make_unique<object_with_observable_one_arg>("obj_one_arg_ptr");
+      std::make_unique<object_with_observable_one_arg>(std::string("obj_one_arg_ptr"));
   obsvr += *obj_ptr;
   obsvr_1 += *obj_ptr;
   obsvr_2 += *obj_ptr;
@@ -178,7 +203,7 @@ TEST(observable_test, observer_with_one_arg) {
 
   std::cout << "begin obsvr_one_arg_ptr test\n";
   std::unique_ptr<observer_with_one_arg> obsvr_ptr =
-      std::make_unique<observer_with_one_arg>("obsvr_one_arg_ptr");
+      std::make_unique<observer_with_one_arg>(std::string("obsvr_one_arg_ptr"));
   *obsvr_ptr += obj;
   *obsvr_ptr += obj_1;
   *obsvr_ptr += obj_2;
@@ -201,6 +226,7 @@ TEST(observable_test, observer_with_one_arg) {
 #endif
 }
 
+#ifdef __cpp_variadic_templates
 using observable_two_args =
     ext::observable<class object_with_observable_two_args, int,
                     const std::string &>;
@@ -341,3 +367,4 @@ TEST(observable_test, observer_no_args_complex) {
   obj.test();
   obj2.test();
 }
+#endif

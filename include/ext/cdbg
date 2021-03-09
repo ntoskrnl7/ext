@@ -23,6 +23,13 @@
 #include <iostream>
 #endif
 
+#define CXX_USE_STD_INTEGRAL_CONSTANT
+#define CXX_USE_STD_TRUE_TYPE
+#define CXX_USE_STD_FALSE_TYPE
+#define CXX_USE_STD_IS_SAME
+#define CXX_USE_STD_ENABLE_IF
+#include "stl_compat"
+
 namespace ext {
 /**
  * @brief The debug stream buffer class
@@ -40,13 +47,15 @@ public:
       char_type;
 
   std::streamsize xsputn(const char_type *__s, std::streamsize __n) {
-    buffer_.assign(__s, __n);
+    buffer_.assign(__s, (std::basic_string<T>::size_type)__n);
     sync();
     return __n;
   }
 
-  template <class Q = T>
-  typename std::enable_if<std::is_same<Q, char>::value, int>::type sync() {
+  inline int sync() { return sync_<T>(); }
+
+  template <class Q>
+  typename std::enable_if<std::is_same<Q, char>::value, int>::type sync_() {
     int result = -1;
 #if defined(_WIN32)
     OutputDebugStringA((PCSTR)buffer_.c_str());
@@ -62,8 +71,8 @@ public:
     return result;
   }
 
-  template <class Q = T>
-  typename std::enable_if<std::is_same<Q, wchar_t>::value, int>::type sync() {
+  template <class Q>
+  typename std::enable_if<std::is_same<Q, wchar_t>::value, int>::type sync_() {
     int result = -1;
 #if defined(_WIN32)
     OutputDebugStringW((PCWSTR)buffer_.c_str());

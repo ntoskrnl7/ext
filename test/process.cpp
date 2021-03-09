@@ -1,5 +1,7 @@
 #include <ext/path>
 #include <ext/process>
+
+#define GTEST_HAS_TR1_TUPLE 0
 #include <gtest/gtest.h>
 
 TEST(process_test, run_invalid_cmd) {
@@ -15,7 +17,15 @@ TEST(process_test, run_invalid_cmd) {
 
 TEST(process_test, run_list_working_directory_cmd) {
 #ifdef _WIN32
+#ifdef __cpp_initializer_lists
   ext::process process("cmd", {"/c", "dir", "."});
+#else
+  std::list<std::string> args;
+  args.push_back("/c");
+  args.push_back("dir");
+  args.push_back(".");
+  ext::process process("cmd", args);
+#endif // __cpp_initializer_lists
 #else
   ext::process process("ls", {"-al", "."});
 #endif
@@ -33,13 +43,21 @@ TEST(process_test,
   errno_t err =
       getenv_s(&requiredCount, &systemDrive[0], requiredCount, "SystemDrive");
   if (err == ERANGE) {
-    puts(std::to_string(requiredCount).c_str());
+    puts(std::to_string((long long)requiredCount).c_str());
     systemDrive.resize(requiredCount);
     err =
         getenv_s(&requiredCount, &systemDrive[0], requiredCount, "SystemDrive");
   }
   EXPECT_EQ(err, 0);
+#ifdef __cpp_initializer_lists
   ext::process process("cmd", {"/c", "dir", "."}, systemDrive.c_str());
+#else
+  std::list<std::string> args;
+  args.push_back("/c");
+  args.push_back("dir");
+  args.push_back(".");
+  ext::process process("cmd", args, systemDrive.c_str());
+#endif // __cpp_initializer_lists
 #else
   ext::process process("ls", {"-al", "."}, "/");
 #endif

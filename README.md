@@ -33,86 +33,90 @@
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2017+
-2. base64
+2. async_iterator
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-3. callback
+3. base64
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-4. cdbg
+4. callback
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-5. chain
+5. cdbg
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-6. collection
+6. chain
+   - gcc 8.3.0+
+   - Clang 10.0+
+   - Visual Studio 2008 SP1+
+7. collection
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
    - std::shared_mutex or std::shared_timed_mutex required
-7. ini
+8. ini
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-8. observable
+9. observable
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-9. path
-   - gcc 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2008 SP1+
-10. process
+10. path
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2008 SP1+
+11. process
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++11 or later
-11. property
+12. property
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++17 or later
-12. safe_object
+13. safe_object
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
     - C++14 or later
-13. shared_recursive_mutex
+14. shared_recursive_mutex
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - std::shared_mutex or std::shared_timed_mutex required
-14. singleton
+15. singleton
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-15. string
+16. string
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-16. stl_compat
+17. stl_compat
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-17. thread_pool
+18. thread_pool
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++14 or later
-18. type_traits
+19. type_traits
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-19. typeinfo
+20. typeinfo
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-20. url
+21. url
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
@@ -127,10 +131,11 @@
    - default
      - CMAKE_CXX_STANDARD=17
      - CMAKE_BUILD_TYPE=Debug
-   - ex
+   - ex))
      - cmake -DCMAKE_CXX_STANDARD=11  ..
      - cmake -DCMAKE_CXX_STANDARD=14  ..
      - cmake -DCMAKE_CXX_STANDARD=17  ..
+     - cmake -G "Visual Studio 10 2010" -DCXX_USE_BOOST=On ..
 4. cmake --build .
 5. execute a unittest
    - macOS or Linux : ./unittest

@@ -1,7 +1,10 @@
-﻿#include <gtest/gtest.h>
+﻿#include <string>
+#include <tuple>
 
 #include <ext/chain>
-#include <string>
+
+#define GTEST_HAS_TR1_TUPLE 0
+#include <gtest/gtest.h>
 
 class object_with_name {
 public:
@@ -12,6 +15,7 @@ private:
   std::string name_;
 };
 
+#ifdef __cpp_variadic_templates
 class test_chain
     : public object_with_name,
       public ext::chain<test_chain, long, int, const std::string &> {
@@ -213,7 +217,8 @@ TEST(chain_test, prepare_next_test_with_throw) {
   }
 #endif
 
-  EXPECT_THROW(long result = current_chain(3, "test"), test_chain::end_of_chain);
+  EXPECT_THROW(long result = current_chain(3, "test"),
+               test_chain::end_of_chain);
 
   //
   // Starting from chain 4
@@ -347,8 +352,8 @@ TEST(chain_test, chain_result_test) {
   EXPECT_THROW(long result = current_chain, test_chain::invalid_chain);
   EXPECT_THROW(test_chain::result result = current_chain,
                test_chain::invalid_chain);
-  EXPECT_NO_THROW(long result = (chain1.start(0, "test") | chain2 | chain3 | chain4 |
-                         chain5 | chain6));
+  EXPECT_NO_THROW(long result = (chain1.start(0, "test") | chain2 | chain3 |
+                                 chain4 | chain5 | chain6));
   EXPECT_NO_THROW(long result = current_chain);
   EXPECT_NO_THROW(test_chain::result result = current_chain);
 
@@ -387,3 +392,58 @@ TEST(chain_test, chain_next_method_test) {
   EXPECT_STREQ(chain1.next().name().c_str(), "chain 6");
   EXPECT_THROW(chain6.next(), test_chain::invalid_chain);
 }
+#else
+class test_chain : public object_with_name,
+                   public ext::chain<test_chain, long, const std::string &> {
+public:
+  test_chain(const std::string &name) : object_with_name(name), chain() {}
+};
+
+class test_chain_impl0 : public test_chain {
+  using test_chain::test_chain;
+
+private:
+  result execute(const std::string &s) {
+    std::cout << "test_chain_impl0 - " << name() << " : " << s << std::endl;
+    if (s.empty())
+      throw std::runtime_error("String argument is empty :-(");
+    if (s.size() == 1) {
+      std::cout << "done : " << name() << std::endl;
+      return chain::done(1);
+    }
+    return chain::next(s);
+  }
+};
+
+class test_chain_impl1 : public test_chain {
+  using test_chain::test_chain;
+
+private:
+  result execute(const std::string &s) {
+    std::cout << "test_chain_impl1 - " << name() << " : " << s << std::endl;
+    if (s.empty())
+      throw std::runtime_error("String argument is empty :-(");
+    if (s.size() == 2) {
+      std::cout << "done : " << name() << std::endl;
+      return chain::done(2);
+    }
+    return chain::next(s);
+  }
+};
+
+class test_chain_impl2 : public test_chain {
+  using test_chain::test_chain;
+
+private:
+  result execute(int i, const std::string &s) {
+    std::cout << "test_chain_impl2 - " << name() << " : " << s << std::endl;
+    if (s.empty())
+      throw std::runtime_error("String argument is empty :-(");
+    if (s.size() == 3) {
+      std::cout << "done : " << name() << std::endl;
+      return chain::done(3);
+    }
+    return chain::next(s);
+  }
+};
+#endif // __cpp_variadic_templates

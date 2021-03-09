@@ -34,11 +34,13 @@ TEST(string_test, trim_test) {
   EXPECT_STREQ(ext::rtrim(" test ").c_str(), " test");
   EXPECT_STREQ(ext::rtrim(L" test ").c_str(), L" test");
 
+#if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
   const std::string const_str = "  test  ";
   EXPECT_STREQ(ext::trim(const_str).c_str(), "test");
 
   const std::wstring const_wstr = L"  test  ";
   EXPECT_STREQ(ext::trim(const_wstr).c_str(), L"test");
+#endif
 }
 
 TEST(string_test, search_test) {

@@ -1,6 +1,4 @@
-﻿// #define CXX_USE_STD_REGEX
-// #include <boost/regex.hpp>
-#include <ext/ini>
+﻿#include <ext/ini>
 
 #include <gtest/gtest.h>
 
@@ -26,6 +24,12 @@ TEST(ini_test, istringstream_test) {
     EXPECT_STREQ(ss.str().c_str(), "[TEST]\nX=10\nY=20\n[TEST1]\nZ=30\n[TEST2]"
                                    "\nX=40\nY=50\n[TEST3]\nZ=60\n");
   }
+
+  EXPECT_TRUE(ini.contains("TEST"));
+  EXPECT_TRUE(ini.contains("TEST", "X"));
+
+  EXPECT_FALSE(ini.contains("TEST5"));
+  EXPECT_FALSE(ini.contains("TEST", "A"));
 }
 
 #include <fstream>

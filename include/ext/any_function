@@ -8,6 +8,8 @@
  */
 #pragma once
 
+#define CXX_USE_STD_REMOVE_CV
+#define CXX_USE_STD_REMOVE_REF
 #define CXX_USE_STD_REMOVE_CVREF_T
 #define CXX_USE_STD_APPLY
 #include "stl_compat"

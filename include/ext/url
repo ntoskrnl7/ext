@@ -15,6 +15,7 @@
 #include <functional>
 #include <iomanip>
 #include <sstream>
+#include <iterator>
 #include <string>
 
 #include "stl_compat"

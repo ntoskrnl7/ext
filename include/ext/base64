@@ -10,13 +10,15 @@
 #ifndef _EXT_BASE64_
 #define _EXT_BASE64_
 
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#define CXX_USE_STD_CSTDINT
+#define CXX_USE_STD_MOVE
 #define CXX_USE_STD_BYTE
 #include "stl_compat"
 
@@ -212,20 +214,22 @@ public:
     static const unsigned char *decoding_table = get_decodeing_table();
     size_t size = data.size();
 #if defined(CXX_FOR)
-    CXX_FOR(T ch, data)
-    if (ch != (T)'=' && decoding_table[ch] == 64)
-      size--;
-    CXX_FOR_END
-#elif defined(CXX_FOR_O)
-    CXX_FOR_O(T ch, std::basic_string<T>::const_iterator, data)
-    if (ch != (T)'=' && decoding_table[ch] == 64)
-      size--;
-    CXX_FOR_END
-#else
-    for (auto ch : data) {
+    CXX_FOR(T ch, data) {
       if (ch != (T)'=' && decoding_table[ch] == 64)
         size--;
     }
+#elif defined(CXX_FOR_)
+    CXX_FOR_(T ch, data) {
+      if (ch != (T)'=' && decoding_table[ch] == 64)
+        size--;
+    }
+    CXX_FOR_END
+#elif defined(CXX_FOR_O)
+    CXX_FOR_O(T ch, std::basic_string<T>::const_iterator, data) {
+      if (ch != (T)'=' && decoding_table[ch] == 64)
+        size--;
+    }
+    CXX_FOR_END
 #endif
     return size;
   }

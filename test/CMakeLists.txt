@@ -10,7 +10,12 @@ endif()
 project(unittest)
 
 # gtest를 다운로드 받아서 빌드합니다.
+if (MSVC_VERSION LESS_EQUAL 1600)
+configure_file(CMakeLists.1.7.0.txt.in googletest-download/CMakeLists.txt)
+else()
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
+endif()
+
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
   RESULT_VARIABLE result
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
@@ -58,6 +63,17 @@ file(GLOB SOURCE_FILES ./*.cpp)
 # 실행 파일 빌드 설정
 add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
 target_link_libraries(unittest gtest gtest_main)
+
+if (MSVC_VERSION LESS_EQUAL 1600)
+add_definitions("/EHsc")
+endif()
+
+if (CXX_USE_BOOST)
+add_definitions(-DCXX_USE_BOOST)
+find_package(Boost 1.69.0 REQUIRED COMPONENTS thread system chrono)
+include_directories(${Boost_INCLUDE_DIRS})
+target_link_directories(unittest PRIVATE ${Boost_LIBRARY_DIRS})
+endif()
 
 get_property(CXX_STANDARD_SPECIFIED TARGET unittest PROPERTY CXX_STANDARD SET)
 if (CXX_STANDARD_SPECIFIED)

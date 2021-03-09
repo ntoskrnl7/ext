@@ -1,7 +1,6 @@
 #include <ext/url>
 #include <gtest/gtest.h>
 
-
 TEST(url_test, invalid_url_test) {
   ext::url u("");
   EXPECT_STREQ(u.protocol.c_str(), "");

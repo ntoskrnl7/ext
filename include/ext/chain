@@ -15,7 +15,10 @@
 #include <tuple>
 
 #define CXX_USE_STD_APPLY
+#define CXX_USE_STD_REMOVE_CV
+#define CXX_USE_STD_REMOVE_REF
 #define CXX_USE_STD_REMOVE_CVREF_T
+#define CXX_USE_NULLPTR
 #include "stl_compat"
 #include "type_traits"
 
@@ -131,7 +134,7 @@ public:
     }
 
     operator R() { return get(); }
-
+  
     std::tuple<R, T &> tuple() {
       if (chain_ == nullptr)
         throw invalid_chain();

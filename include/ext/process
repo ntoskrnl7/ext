@@ -228,20 +228,9 @@ private:
     si.cb = sizeof(si);
 
     std::string cmd = command;
-#if defined(CXX_FOR)
     CXX_FOR(const std::string &argument, arguments)
-    cmd += " " + argument;
-    CXX_FOR_END
-#elif defined(CXX_FOR_O)
-    CXX_FOR_O(const std::string &argument,
-              std::list<std::string>::const_iterator, arguments)
-    cmd += " " + argument;
-    CXX_FOR_END
-#else
-    for (auto &argument : arguments)
       cmd += " " + argument;
-#endif
-    if (!CreateProcessA(nullptr, &cmd[0], NULL, NULL, FALSE,
+    if (!CreateProcessA(NULL, &cmd[0], NULL, NULL, FALSE,
                         NORMAL_PRIORITY_CLASS | CREATE_SEPARATE_WOW_VDM, NULL,
                         working_directory.empty() ? NULL
                                                   : working_directory.c_str(),

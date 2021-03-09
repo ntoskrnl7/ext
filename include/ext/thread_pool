@@ -123,19 +123,10 @@ public:
 
     status_ = stop_pending;
     cv_.notify_all();
-#if defined(CXX_FOR)
-    CXX_FOR(std::thread & thread, threads_)
-#elif defined(CXX_FOR_O)
-    CXX_FOR_O(std::thread & thread, std::vector<std::thread>::iterator,
-              threads_)
-#else
-    for (auto &thread : threads_)
-#endif
-    if (thread.joinable())
-      thread.join();
-#if defined(CXX_FOR_END)
-    CXX_FOR_END
-#endif
+    CXX_FOR(std::thread & thread, threads_) {
+      if (thread.joinable())
+        thread.join();
+    }
     status_ = stopped;
   }
 

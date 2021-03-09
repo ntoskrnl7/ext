@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#define CXX_USE_STD_MOVE
 #include "stl_compat"
 
 namespace ext {

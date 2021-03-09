@@ -12,7 +12,8 @@
  *  - C++17 : std::shared_mutex
  *  - C++14 : std::shared_timed_mutex
  * CXX_FOR
- * CXX_FOR_O
+ * CXX_FOR_, CXX_FOR_END
+ * CXX_FOR_O, CXX_FOR_END
  * CXX_INVOKE_RESULT
  *
  * std::byte
@@ -49,6 +50,7 @@
  * CXX_USE_MAKE_SHARED (with CXX_USE_SHARED_PTR)
  * CXX_USE_NULLPTR
  * CXX_USE_STD_IS_SAME
+ * CXX_USE_STD_ENABLE_IF
  * CXX_USE_STD_INTEGRAL_CONSTANT
  * CXX_USE_STD_TRUE_TYPE
  * CXX_USE_STD_FALSE_TYPE
@@ -56,6 +58,8 @@
  *
  * Boost only
  * CXX_USE_STD_ATOMIC
+ * CXX_USE_STD_CHRONO
+ * CXX_USE_STD_CONDITION_VARIABLE
  * CXX_USE_STD_THREAD
  * CXX_USE_STD_SHARED_TIMED_MUTEX
  * CXX_USE_STD_SHARED_MUTEX
@@ -112,9 +116,12 @@
 #define CXX_STD_REMOVE_REF_NOT_SUPPORTED
 #define CXX_STD_THREAD_NOT_SUPPORTED
 #define CXX_STD_ATOMIC_NOT_SUPPORTED
-#define CXX_STD_UNORDERED_MAP_NOT_SUPPORTED
+#define CXX_STD_CHRONO_NOT_SUPPORTED
+#define CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED
 #define CXX_STD_MUTEX_NOT_SUPPORTED
 #if (!defined(_MSC_VER)) || (defined(_MSC_VER) && (_MSC_VER < 1600))
+#define CXX_STDINT_NOT_SUPPORTED
+#define CXX_STD_UNORDERED_MAP_NOT_SUPPORTED
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
 #define CXX_NULLPTR_NOT_SUPPORTED
 #define CXX_STD_MOVE_NOT_SUPPORTED
@@ -122,6 +129,7 @@
 #define CXX_STD_MAKE_SHARED_NOT_SUPPORTED
 #define CXX_STD_SYSTEM_ERROR_NOT_SUPPORTED
 #define CXX_STD_IS_SAME_NOT_SUPPORTED
+#define CXX_STD_ENABLE_IF_NOT_SUPPORTED
 #define CXX_STD_INTEGRAL_CONSTANT_NOT_SUPPORTED
 #define CXX_STD_TRUE_TYPE_NOT_SUPPORTED
 #define CXX_STD_FALSE_TYPE_NOT_SUPPORTED
@@ -158,6 +166,8 @@
 #define CXX_USE_STD_MAKE_UNIQUE
 #define CXX_USE_STD_MAKE_SHARED
 #define CXX_USE_STD_ATOMIC
+#define CXX_USE_STD_CHRONO
+#define CXX_USE_STD_CONDITION_VARIABLE
 #define CXX_USE_STD_THREAD
 #define CXX_USE_STD_SHARED_TIMED_MUTEX
 #define CXX_USE_STD_SHARED_MUTEX
@@ -173,6 +183,7 @@
 #define CXX_USE_STD_REMOVE_CVREF_T
 #define CXX_USE_NULLPTR
 #define CXX_USE_STD_IS_SAME
+#define CXX_USE_STD_ENABLE_IF
 #define CXX_USE_STD_VOID_T
 #define CXX_USE_STD_REGEX
 #endif
@@ -223,6 +234,9 @@
 #endif
 #if !defined(CXX_STD_IS_SAME_NOT_SUPPORTED)
 #undef CXX_USE_STD_IS_SAME
+#endif
+#if !defined(CXX_STD_ENABLE_IF_NOT_SUPPORTED)
+#undef CXX_USE_STD_ENABLE_IF
 #endif
 #if !defined(CXX_STD_INTEGRAL_CONSTANT_NOT_SUPPORTED)
 #undef CXX_USE_STD_INTEGRAL_CONSTANT
@@ -286,6 +300,43 @@
 #if !defined(CXX_NULLPTR_NOT_SUPPORTED)
 #undef CXX_USE_NULLPTR
 #endif
+
+///
+/// <cstdint> or <stdint.h>
+///
+#ifdef CXX_USE_STD_CSTDINT
+#define _EXT_STD_CSTDINT_
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+typedef signed short int int16_t;
+typedef unsigned short int uint16_t;
+typedef signed int int32_t;
+typedef unsigned int uint32_t;
+typedef signed long long int64_t;
+typedef unsigned long long uint64_t;
+
+typedef signed char int_least8_t;
+typedef unsigned char uint_least8_t;
+typedef signed short int int_least16_t;
+typedef unsigned short int uint_least16_t;
+typedef signed int int_least32_t;
+typedef unsigned int uint_least32_t;
+typedef signed long long int_least64_t;
+typedef unsigned long long uint_least64_t;
+
+typedef signed char int_fast8_t;
+typedef unsigned char uint_fast8_t;
+typedef signed short int int_fast16_t;
+typedef unsigned short int uint_fast16_t;
+typedef signed int int_fast32_t;
+typedef unsigned int uint_fast32_t;
+typedef signed long long int_fast64_t;
+typedef unsigned long long uint_fast64_t;
+
+typedef signed long long intmax_t;
+typedef unsigned long long uintmax_t;
+#undef CXX_USE_STD_CSTDINT
+#endif // CXX_USE_STD_CSTDINT
 
 ///
 /// When use Boost
@@ -392,16 +443,104 @@ using namespace boost::this_thread;
 #undef CXX_USE_STD_THREAD
 #endif // _EXT_STD_THREAD_
 #endif
+
+#if defined(CXX_USE_STD_CHRONO) && defined(CXX_STD_CHRONO_NOT_SUPPORTED) &&    \
+    defined(BOOST_CHRONO_HPP)
+#ifndef _EXT_STD_CHRONO_
+#define _EXT_STD_CHRONO_
+namespace std {
+namespace chrono {
+using namespace boost::chrono;
+}
+} // namespace std
+#undef CXX_USE_STD_CHRONO
+#endif // _EXT_STD_CHRONO_
+#endif
+
+#if defined(CXX_USE_STD_CONDITION_VARIABLE) &&                                 \
+    defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED) &&                       \
+    defined(BOOST_THREAD_CONDITION_VARIABLE_HPP)
+#ifndef _EXT_STD_CONDITION_VARIABLE_
+#define _EXT_STD_CONDITION_VARIABLE_
+namespace std {
+using boost::condition_variable;
+} // namespace std
+#undef CXX_USE_STD_CONDITION_VARIABLE
+#endif // _EXT_STD_CONDITION_VARIABLE_
+#endif
+
 #if defined(CXX_USE_STD_ATOMIC) && defined(CXX_STD_ATOMIC_NOT_SUPPORTED) &&    \
     defined(BOOST_ATOMIC_HPP)
 #ifndef _EXT_STD_ATOMIC_
 #define _EXT_STD_ATOMIC_
 namespace std {
 using boost::atomic;
+typedef boost::atomic<bool> atomic_bool;
+typedef boost::atomic<char> atomic_char;
+typedef boost::atomic<signed char> atomic_schar;
+typedef boost::atomic<unsigned char> atomic_uchar;
+typedef boost::atomic<short> atomic_short;
+typedef boost::atomic<unsigned short> atomic_ushort;
+typedef boost::atomic<int> atomic_int;
+typedef boost::atomic<unsigned int> atomic_uint;
+typedef boost::atomic<long> atomic_long;
+typedef boost::atomic<unsigned long> atomic_ulong;
+typedef boost::atomic<long long> atomic_llong;
+typedef boost::atomic<unsigned long long> atomic_ullong;
+
+#if !defined(CXX_STDINT_NOT_SUPPORTED) || !defined(CXX_CSTDINT_NOT_SUPPORTED)
+#ifdef __cpp_lib_char8_t
+typedef boost::atomic<char8_t> atomic_char8_t;
+#endif // __cpp_lib_char8_t
+
+#ifdef __cpp_unicode_characters
+typedef boost::atomic<char16_t> atomic_char16_t;
+typedef boost::atomic<char32_t> atomic_char32_t;
+#endif // __cpp_unicode_characters
+
+typedef boost::atomic<wchar_t> atomic_wchar_t;
+
+typedef boost::atomic<int8_t> atomic_int8_t;
+typedef boost::atomic<uint8_t> atomic_uint8_t;
+typedef boost::atomic<int16_t> atomic_int16_t;
+typedef boost::atomic<uint16_t> atomic_uint16_t;
+typedef boost::atomic<int32_t> atomic_int32_t;
+typedef boost::atomic<uint32_t> atomic_uint32_t;
+typedef boost::atomic<int64_t> atomic_int64_t;
+typedef boost::atomic<uint64_t> atomic_uint64_t;
+
+typedef boost::atomic<int_least8_t> atomic_int_least8_t;
+typedef boost::atomic<uint_least8_t> atomic_uint_least8_t;
+typedef boost::atomic<int_least16_t> atomic_int_least16_t;
+typedef boost::atomic<uint_least16_t> atomic_uint_least16_t;
+typedef boost::atomic<int_least32_t> atomic_int_least32_t;
+typedef boost::atomic<uint_least32_t> atomic_uint_least32_t;
+typedef boost::atomic<int_least64_t> atomic_int_least64_t;
+typedef boost::atomic<uint_least64_t> atomic_uint_least64_t;
+
+typedef boost::atomic<int_fast8_t> atomic_int_fast8_t;
+typedef boost::atomic<uint_fast8_t> atomic_uint_fast8_t;
+typedef boost::atomic<int_fast16_t> atomic_int_fast16_t;
+typedef boost::atomic<uint_fast16_t> atomic_uint_fast16_t;
+typedef boost::atomic<int_fast32_t> atomic_int_fast32_t;
+typedef boost::atomic<uint_fast32_t> atomic_uint_fast32_t;
+typedef boost::atomic<int_fast64_t> atomic_int_fast64_t;
+typedef boost::atomic<uint_fast64_t> atomic_uint_fast64_t;
+
+typedef boost::atomic<intptr_t> atomic_intptr_t;
+typedef boost::atomic<uintptr_t> atomic_uintptr_t;
+typedef boost::atomic<size_t> atomic_size_t;
+typedef boost::atomic<ptrdiff_t> atomic_ptrdiff_t;
+typedef boost::atomic<intmax_t> atomic_intmax_t;
+typedef boost::atomic<uintmax_t> atomic_uintmax_t;
+#endif // !defined(CXX_STDINT_NOT_SUPPORTED) ||
+       // !defined(CXX_CSTDINT_NOT_SUPPORTED)
+
 } // namespace std
 #undef CXX_USE_STD_ATOMIC
 #endif // _EXT_STD_ATOMIC_
 #endif
+
 #if defined(CXX_USE_STD_SYSTEM_ERROR) &&                                       \
     defined(CXX_STD_SYSTEM_ERROR_NOT_SUPPORTED) &&                             \
     defined(BOOST_SYSTEM_SYSTEM_ERROR_HPP)
@@ -417,6 +556,7 @@ typedef boost::system::errc::errc_t errc;
 #undef CXX_USE_STD_SYSTEM_ERROR
 #endif // _EXT_STD_SYSTEM_ERROR_
 #endif
+
 #if defined(CXX_USE_STD_UNORDERED_MAP) &&                                      \
     defined(BOOST_UNORDERED_UNORDERED_MAP_HPP_INCLUDED)
 #ifndef _EXT_STD_UNORDERED_MAP_
@@ -485,6 +625,15 @@ using boost::regex_search;
 /// std::tr1
 ///
 #if defined(_MSC_VER) && _MSC_VER < 1600
+#ifdef _TUPLE_
+#ifndef _EXT_STD_TUPLE_
+#define _EXT_STD_TUPLE_
+namespace std {
+using std::tr1::tuple;
+#undef _EXT_STD_TUPLE_
+} // namespace std
+#endif // _EXT_STD_TUPLE_
+#endif
 #ifdef _MEMORY_ // VS2008 memory
 #ifndef _EXT_STD_SHARED_PTR_
 #define _EXT_STD_SHARED_PTR_
@@ -575,20 +724,18 @@ using namespace std::tr1::placeholders;
 #endif
 
 ///
-/// CXX_FOR, CXX_FOR_O, CXX_FOR_END
+/// CXX_FOR, CXX_FOR_, CXX_FOR_O, CXX_FOR_END
 ///  - Define a "range based for loop" macro
 ///
 #ifdef __cpp_range_based_for
 #define CXX_FOR(range_declaration, range_expression)                           \
-  for (range_declaration : (range_expression)) {
-#define CXX_FOR_END }
+  for (range_declaration : (range_expression))
 #else
 #if defined(_MSC_VER) && (_MSC_VER >= 1400) // >= Visual Studio 2005 version 8.0
 #define __CXX_FOR_ARG__(...) __VA_ARGS__
 #define CXX_FOR(range_declaration, range_expression)                           \
   for                                                                          \
-    each(__CXX_FOR_ARG__(range_declaration) in range_expression) {
-#define CXX_FOR_END }
+  each(__CXX_FOR_ARG__(range_declaration) in range_expression)
 #else // >= Visual Studio 2005 version 8.0
 #ifdef CXX_AUTO_TYPE_NOT_SUPPORTED
 #define __CXX_FOR_ARG__(...) __VA_ARGS__
@@ -598,7 +745,7 @@ using namespace std::tr1::placeholders;
     __CXX_FOR_ARG__(range_declaration) = *it;
 #define CXX_FOR_END }
 #else
-#define CXX_FOR(range_declaration, range_expression)                           \
+#define CXX_FOR_(range_declaration, range_expression)                          \
   for (auto it = (range_expression).begin(); it != (range_expression).end();   \
        ++it) {                                                                 \
     range_declaration = *it;
@@ -643,7 +790,7 @@ public:
     if (ptr_)
       delete ptr_;
     if (ptr)
-      ptr_ = nullptr;
+      ptr_ = ptr;
   }
   operator bool() { return ptr_ != nullptr; }
   T &operator*() { return *ptr_; }
@@ -713,41 +860,6 @@ template <typename T> inline std::shared_ptr<T> make_shared(const T &value) {
 } // namespace std
 #endif // _EXT_STD_MAKE_SHARED_
 #endif // CXX_USE_STD_MAKE_SHARED
-
-///
-/// <cstdint>
-///
-#ifdef CXX_USE_STD_CSTDINT
-typedef signed char int8_t;
-typedef unsigned char uint8_t;
-typedef signed short int int16_t;
-typedef unsigned short int uint16_t;
-typedef signed int int32_t;
-typedef unsigned int uint32_t;
-typedef signed long long int64_t;
-typedef unsigned long long uint64_t;
-
-typedef signed char int_least8_t;
-typedef unsigned char uint_least8_t;
-typedef signed short int int_least16_t;
-typedef unsigned short int uint_least16_t;
-typedef signed int int_least32_t;
-typedef unsigned int uint_least32_t;
-typedef signed long long int_least64_t;
-typedef unsigned long long uint_least64_t;
-
-typedef signed char int_fast8_t;
-typedef unsigned char uint_fast8_t;
-typedef signed short int int_fast16_t;
-typedef unsigned short int uint_fast16_t;
-typedef signed int int_fast32_t;
-typedef unsigned int uint_fast32_t;
-typedef signed long long int_fast64_t;
-typedef unsigned long long uint_fast64_t;
-
-typedef signed long long intmax_t;
-typedef unsigned long long uintmax_t;
-#endif
 
 ///
 /// std::byte
@@ -931,6 +1043,19 @@ template <class T> struct is_same<T, T> : std::true_type {};
 } // namespace std
 #endif // _EXT_STD_IS_SAME_
 #endif // CXX_USE_STD_IS_SAME
+
+///
+// std::enable_if
+//
+#ifdef CXX_USE_STD_ENABLE_IF
+#ifndef _EXT_STD_ENABLE_IF_
+#define _EXT_STD_ENABLE_IF_
+namespace std {
+template <bool B, class T = void> struct enable_if {};
+template <class T> struct enable_if<true, T> { typedef T type; };
+} // namespace std
+#endif // _EXT_STD_ENABLE_IF_
+#endif // CXX_USE_STD_ENABLE_IF
 
 ///
 /// std::remove_cv
@@ -1167,6 +1292,7 @@ inline std::wstring to_wstring(unsigned long _Val) {
 #ifdef _STRING_
 #ifndef _EXT_STD_STRING_STRING_TO_
 #define _EXT_STD_STRING_STRING_TO_
+#include <errno.h>
 #include <stdexcept>
 #include <stdlib.h>
 

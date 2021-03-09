@@ -10,17 +10,51 @@
 #ifndef _EXT_ASYNC_ITERATOR_
 #define _EXT_ASYNC_ITERATOR_
 
-#include <atomic>
-#include <condition_variable>
+#ifdef CXX_USE_BOOST
+#define CXX_USE_STD_MUTEX
+#include <boost/thread/mutex.hpp>
+
+#define CXX_USE_STD_THREAD
+#include <boost/thread/thread.hpp>
+
+#define CXX_USE_STD_ATOMIC
+#include <boost/atomic.hpp>
+
+#define CXX_USE_STD_CONDITION_VARIABLE
+#include <boost/thread/condition_variable.hpp>
+
+#define CXX_USE_STD_MAKE_SHARED
+#include <boost/shared_ptr.hpp>
+#endif // CXX_USE_BOOST
+
+#define CXX_USE_NULLPTR
+#include "stl_compat"
+
 #include <functional>
-#include <mutex>
 #include <queue>
+
+#ifndef _EXT_STD_ATOMIC_
+#include <atomic>
+#endif
+
+#ifndef _EXT_STD_CONDITION_VARIABLE_
+#include <condition_variable>
+#endif
+
+#ifndef _EXT_STD_MUTEX_
+#include <mutex>
+#endif
+#ifndef _EXT_STD_THREAD_
 #include <thread>
+#endif
 
 namespace ext {
 template <typename T> class async_iterator {
 public:
   struct context {
+    context()
+        : ready(false), stopped(false), cancel_requested(false), current(0),
+          size(0) {}
     std::mutex mtx;
     std::condition_variable cv;
     std::queue<T> queue;
@@ -33,7 +67,7 @@ public:
   };
 
 public:
-  async_iterator() : ctx_(nullptr) {}
+  async_iterator() {}
   async_iterator(std::shared_ptr<context> context) : ctx_(context) {}
 
 public:
@@ -41,15 +75,19 @@ public:
   bool operator!=(const async_iterator &rhs) { return !(*this == rhs); }
 
 public:
-  const T &operator*() { return std::move(data_); }
+  T &operator*() { return data_; }
 
   async_iterator &operator++() {
     if (!ctx_)
       return *this; // end
 
-    auto &ctx = *ctx_;
-    std::unique_lock<decltype(ctx.mtx)> lk(ctx.mtx);
+    context &ctx = *ctx_;
+    std::unique_lock<std::mutex> lk(ctx.mtx);
+#ifdef __cpp_lambdas
     ctx.cv.wait(lk, [&ctx]() { return ctx.stopped || (!ctx.queue.empty()); });
+#else
+    ctx.cv.wait(lk, std::bind(&async_iterator::wait_for_data, this));
+#endif
     if (!ctx.queue.empty()) {
       data_ = std::move(ctx.queue.front());
       ctx.queue.pop();
@@ -58,21 +96,26 @@ public:
     }
 
     if (ctx.stopped)
-      ctx_ = nullptr; // end
+      ctx_.reset(); // ctx_ = nullptr; // end
 
     return *this;
   }
 
-  bool stopped() { return ctx_ == nullptr; }
+  bool stopped() { return !ctx_; }
 
 private:
   std::shared_ptr<context> ctx_;
   T data_;
+
+#ifndef __cpp_lambdas
+  bool wait_for_data() { return ctx_->stopped || (!ctx_->queue.empty()); }
+#endif
 };
 
 template <typename T> class async_result {
 public:
-  using iterator = async_iterator<T>;
+  typedef typename async_iterator<T> iterator;
+  typedef typename T type;
 
 public:
   class context {
@@ -82,10 +125,18 @@ public:
 
   public:
     void push(const T &data) { result_->push(data); }
+#ifdef __cpp_rvalue_references
     void push(T &&data) { result_->push(std::move(data)); }
+#endif
+#ifdef __cpp_variadic_templates
     template <class... Args> void emplace(Args &&... args) {
       result_->emplace(args...);
     }
+#else
+#ifdef __cpp_rvalue_references
+    template <class Arg> void emplace(Arg &&arg) { result_->emplace(arg); }
+#endif
+#endif
     void begin(size_t size) { result_->init(size); }
     void end() { result_->finish(); }
     size_t size() const { return result_->size(); }
@@ -102,13 +153,24 @@ public:
     return *this;
   }
 
-  async_result(std::function<void(async_result<T>::context &)> callback) {
+  async_result(
+      std::function<void(typename async_result<T>::context &)> callback) {
     ctx_ = std::make_shared<typename async_iterator<T>::context>();
+#if defined(_MSC_VER) && (_MSC_VER > 1600) // > Visual Studio 2010 version 10.0
     ctx_->thread =
         std::thread(std::bind(callback, async_result<T>::context(this)));
+#else
+#ifdef __cpp_lambdas
+    ctx_->thread = std::thread([this, callback]() {
+      async_result<T>::context ctx(this);
+      callback(ctx);
+    });
+#else
+    ctx_->thread =
+        std::thread(std::bind(&async_result::on_callback, this, callback));
+#endif // __cpp_lambdas
+#endif
     ctx_->stopped = !ctx_->thread.joinable();
-    ctx_->current = 0;
-    ctx_->size = 0;
     ctx_->cv.notify_all();
   }
 
@@ -131,32 +193,60 @@ public:
 
 public:
   void push(const T &data) {
-    std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    std::unique_lock<std::mutex> lk(ctx_->mtx);
     ctx_->ready = true;
     ctx_->queue.push(data);
+    if (ctx_->size < ctx_->queue.size())
+      ctx_->size = ctx_->queue.size();
     ctx_->cv.notify_all();
   }
 
+#ifdef __cpp_variadic_templates
   template <class... Args> void emplace(Args &&... args) {
-    std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    std::unique_lock<std::mutex> lk(ctx_->mtx);
     ctx_->ready = true;
     ctx_->queue.emplace(std::forward<Args>(args)...);
+    if (ctx_->size < ctx_->queue.size())
+      ctx_->size = ctx_->queue.size();
     ctx_->cv.notify_all();
   }
+#else
+#ifdef __cpp_rvalue_references
+  template <class Arg> void emplace(Arg &&arg) {
+    std::unique_lock<std::mutex> lk(ctx_->mtx);
+    ctx_->ready = true;
+    ctx_->queue.emplace(std::forward<Arg>(arg));
+    if (ctx_->size < ctx_->queue.size())
+      ctx_->size = ctx_->queue.size();
+    ctx_->cv.notify_all();
+  }
+#endif
+#endif
 
   bool cancel_requested() const { return ctx_->cancel_requested; }
 
-  void cancel() { ctx_->cancel_requested = true; }
+  void cancel() {
+    ctx_->cancel_requested = true;
+    ctx_->cv.notify_all();
+  }
 
   size_t size() const {
-    std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    std::unique_lock<std::mutex> lk(ctx_->mtx);
+#ifdef __cpp_lambdas
     ctx_->cv.wait(lk, [this]() { return ctx_->ready; });
+#else
+    ctx_->cv.wait(lk, std::bind(&async_result::wait_for_ready, this));
+#endif
     return ctx_->size;
   }
 
   size_t current() const {
-    std::unique_lock<decltype(ctx_->mtx)> lk(ctx_->mtx);
+    std::unique_lock<std::mutex> lk(ctx_->mtx);
+#ifdef __cpp_lambdas
     ctx_->cv.wait(lk, [this]() { return ctx_->ready; });
+#else
+    ctx_->cv.wait(lk, std::bind(&async_result::wait_for_ready, this));
+#endif
     return ctx_->current;
   }
 
@@ -174,6 +264,15 @@ private:
 
 private:
   std::shared_ptr<typename async_iterator<T>::context> ctx_;
+#ifndef __cpp_lambdas
+  bool wait_for_ready() { return ctx_->ready; }
+
+  void on_callback(
+      std::function<void(typename async_result<T>::context &)> callback) {
+    async_result<T>::context ctx(this);
+    callback(ctx);
+  }
+#endif
 };
 } // namespace ext
 #endif // _EXT_ASYNC_ITERATOR_

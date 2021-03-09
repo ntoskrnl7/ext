@@ -1,12 +1,14 @@
 #include <ext/path>
+
+#define GTEST_HAS_TR1_TUPLE 0
 #include <gtest/gtest.h>
 
 TEST(path_test, test) {
 #ifdef _WIN32
-  auto r = ext::path::join("c:", "dir");
+  std::string r = ext::path::join("c:", "dir");
   EXPECT_STREQ(r.c_str(), "c:\\dir");
 #else
-  auto r = ext::path::join("/home", "dir");
+  std::string r = ext::path::join("/home", "dir");
   EXPECT_STREQ(r.c_str(), "/home/dir");
 #endif
 #ifdef _WIN32
