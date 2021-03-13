@@ -31,7 +31,9 @@
 #include "stl_compat"
 
 #include <functional>
+#include <memory>
 #include <queue>
+
 
 #ifndef _EXT_STD_ATOMIC_
 #include <atomic>
@@ -52,9 +54,11 @@ namespace ext {
 template <typename T> class async_iterator {
 public:
   struct context {
-    context()
-        : ready(false), stopped(false), cancel_requested(false), current(0),
-          size(0) {}
+    context() : current(0), size(0) {
+      ready = false;
+      stopped = false;
+      cancel_requested = false;
+    }
     std::mutex mtx;
     std::condition_variable cv;
     std::queue<T> queue;

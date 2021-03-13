@@ -1,4 +1,5 @@
 #include <ext/callback>
+#include <functional>
 #include <gtest/gtest.h>
 
 void sum_fn(int *sum, int val) { *sum += val; }

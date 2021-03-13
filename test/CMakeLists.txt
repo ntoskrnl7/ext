@@ -10,7 +10,10 @@ endif()
 project(unittest)
 
 # gtest를 다운로드 받아서 빌드합니다.
-if (MSVC_VERSION LESS_EQUAL 1600)
+if (MSVC_VERSION LESS_EQUAL 1700)
+if (MSVC_VERSION GREATER_EQUAL 1600)
+add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
+endif()
 configure_file(CMakeLists.1.7.0.txt.in googletest-download/CMakeLists.txt)
 else()
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
