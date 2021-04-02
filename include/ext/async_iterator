@@ -118,8 +118,8 @@ private:
 
 template <typename T> class async_result {
 public:
-  typedef typename async_iterator<T> iterator;
-  typedef typename T type;
+  typedef async_iterator<T> iterator;
+  typedef T type;
 
 public:
   class context {
