@@ -56,6 +56,8 @@ public:
     return data_[section];
   }
 
+  void erase(const std::string &section) { data_.erase(section); }
+
 private:
   std::map<std::string, std::map<std::string, std::string>> data_;
 
@@ -103,7 +105,7 @@ public:
     typedef std::pair<std::string, std::string> value_t;
     CXX_FOR(section_t section, read_ini_(stream)) {
       CXX_FOR(value_t value, section.second)
-        data_[section.first][value.first] = value.second;
+      data_[section.first][value.first] = value.second;
     }
     return stream;
   }
@@ -117,7 +119,7 @@ inline std::ostream &operator<<(std::ostream &stream, class ini &ini) {
       stream << '[' << section.c_str() << "]\n";
     }
     CXX_FOR(ini::value_type::second_type::value_type v0, v.second)
-      stream << v0.first.c_str() << '=' << v0.second.c_str() << '\n';
+    stream << v0.first.c_str() << '=' << v0.second.c_str() << '\n';
   }
   return stream;
 }

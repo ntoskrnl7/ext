@@ -25,7 +25,10 @@
 #ifndef _EXT_STD_MUTEX_
 #include <mutex>
 #endif
+
+#if !defined(_EXT_STD_UNORDERED_MAP_)
 #include <unordered_map>
+#endif
 
 #ifdef __cpp_variadic_templates
 #define __CALLBACK_ARGS_DECLARATION__ const Args &...

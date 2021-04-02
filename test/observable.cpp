@@ -4,32 +4,38 @@
 #define CXX_USE_STD_MAKE_UNIQUE
 #include <boost/move/unique_ptr.hpp>
 
+#define CXX_USE_STD_CHRONO
+#include <boost/chrono.hpp>
+
 #define CXX_USE_STD_THREAD
 #include <boost/thread.hpp>
+
+#define CXX_USE_STD_CONDITION_VARIABLE
+#include <boost/thread/condition_variable.hpp>
+
+#define CXX_USE_STD_MUTEX
+#include <boost/thread/mutex.hpp>
 
 #define CXX_USE_NULLPTR
 #endif
 
+#include <ext/shared_recursive_mutex>
 #include <ext/observable>
 
-#include <iostream>
-
-#ifdef _EXT_OBSERVABLE_SYNC_
-#include <condition_variable>
-#include <mutex>
+#ifndef _EXT_STD_CHRONO_
+#include <chrono>
 #endif
-
-#if defined(CXX_THREAD) || defined(_EXT_STD_THREAD_)
-#ifndef _EXT_STD_THREAD_
+#if !defined(_EXT_STD_THREAD_) && !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #include <thread>
 #endif
+#ifndef _EXT_STD_CONDITION_VARIABLE_
+#include <condition_variable>
 #endif
-
-#if defined(CXX_MUTEX) || defined(_EXT_STD_MUTEX_)
-#ifndef _EXT_STD_MUTEX_
+#if !defined(_EXT_STD_MUTEX_) && !defined(CXX_STD_MUTEX_NOT_SUPPORTED)
 #include <mutex>
 #endif
-#endif
+
+#include <iostream>
 
 class object_with_name {
 public:
@@ -132,7 +138,7 @@ TEST(observable_test, observer_with_one_arg) {
   object_with_observable_one_arg obj_1("obj_one_arg_1");
   object_with_observable_one_arg obj_2("obj_one_arg_2");
 
-#ifdef _EXT_OBSERVABLE_SYNC_
+#if defined(__cpp_lambdas) && defined(OBSERVABLE_WITH_LOCK)
   std::mutex mtx;
   std::condition_variable cv;
 
@@ -193,7 +199,8 @@ TEST(observable_test, observer_with_one_arg) {
 
   std::cout << "begin obj_one_arg_ptr\n";
   std::unique_ptr<object_with_observable_one_arg> obj_ptr =
-      std::make_unique<object_with_observable_one_arg>(std::string("obj_one_arg_ptr"));
+      std::make_unique<object_with_observable_one_arg>(
+          std::string("obj_one_arg_ptr"));
   obsvr += *obj_ptr;
   obsvr_1 += *obj_ptr;
   obsvr_2 += *obj_ptr;
@@ -219,7 +226,7 @@ TEST(observable_test, observer_with_one_arg) {
   obj_1.test(15);
   obj_2.test(16);
 
-#ifdef _EXT_OBSERVABLE_SYNC_
+#if defined(__cpp_lambdas) && defined(OBSERVABLE_WITH_LOCK)
   running = false;
   if (t.joinable())
     t.join();

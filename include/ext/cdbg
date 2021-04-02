@@ -47,7 +47,8 @@ public:
       char_type;
 
   std::streamsize xsputn(const char_type *__s, std::streamsize __n) {
-    buffer_.assign(__s, (std::basic_string<T>::size_type)__n);
+    buffer_.assign(__s,
+                   static_cast<typename std::basic_string<T>::size_type>(__n));
     sync();
     return __n;
   }
@@ -58,7 +59,7 @@ public:
   typename std::enable_if<std::is_same<Q, char>::value, int>::type sync_() {
     int result = -1;
 #if defined(_WIN32)
-    OutputDebugStringA((PCSTR)buffer_.c_str());
+    OutputDebugStringA(static_cast<PCSTR>(buffer_.c_str()));
     result = 0;
 #elif defined(QT_VERSION)
     qDebug().noquote() << QString::fromStdString(buffer_);
@@ -75,7 +76,7 @@ public:
   typename std::enable_if<std::is_same<Q, wchar_t>::value, int>::type sync_() {
     int result = -1;
 #if defined(_WIN32)
-    OutputDebugStringW((PCWSTR)buffer_.c_str());
+    OutputDebugStringW(static_cast<PCWSTR>(buffer_.c_str()));
     result = 0;
 #elif defined(QT_VERSION)
     qDebug().noquote() << QString::fromStdWString(buffer_);

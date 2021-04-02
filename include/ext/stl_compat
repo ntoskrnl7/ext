@@ -266,7 +266,9 @@
 #undef CXX_USE_STD_MAKE_SHARED
 #endif
 #if !defined(CXX_STD_UNORDERED_MAP_NOT_SUPPORTED)
+#if defined(BOOST_UNORDERED_UNORDERED_MAP_HPP_INCLUDED) && (defined(_MSC_VER) && (_MSC_VER > 1600))
 #undef CXX_USE_STD_UNORDERED_MAP
+#endif
 #endif
 #if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #undef CXX_USE_STD_THREAD
@@ -577,8 +579,11 @@ using boost::unordered::unordered_map;
 #ifndef _EXT_STD_SHARED_TIMED_MUTEX_
 #define _EXT_STD_SHARED_TIMED_MUTEX_
 namespace std {
+using boost::adopt_lock;
+using boost::defer_lock;
 using boost::shared_lock;
 using boost::shared_timed_mutex;
+using boost::try_to_lock;
 using boost::unique_lock;
 } // namespace std
 #undef CXX_USE_STD_SHARED_TIMED_MUTEX
@@ -591,8 +596,11 @@ using boost::unique_lock;
 #ifndef _EXT_STD_SHARED_MUTEX_
 #define _EXT_STD_SHARED_MUTEX_
 namespace std {
+using boost::adopt_lock;
+using boost::defer_lock;
 using boost::shared_lock;
 using boost::shared_mutex;
+using boost::try_to_lock;
 using boost::unique_lock;
 } // namespace std
 #undef CXX_USE_STD_SHARED_MUTEX
@@ -604,7 +612,10 @@ using boost::unique_lock;
 #ifndef _EXT_STD_MUTEX_
 #define _EXT_STD_MUTEX_
 namespace std {
+using boost::adopt_lock;
+using boost::defer_lock;
 using boost::mutex;
+using boost::try_to_lock;
 using boost::unique_lock;
 } // namespace std
 #undef CXX_USE_STD_MUTEX
