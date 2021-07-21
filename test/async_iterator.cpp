@@ -10,7 +10,7 @@
 #ifdef __cpp_lambdas
 TEST(async_iterator_test, int_test) {
   typedef ext::async_result<int> int_result;
-  int_result res = [](int_result::context &ctx) {
+  int_result res([](int_result::context &ctx) {
     ctx.begin(4);
     ctx.push(1);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -20,7 +20,7 @@ TEST(async_iterator_test, int_test) {
     ctx.push(4);
     ctx.end();
     std::this_thread::sleep_for(std::chrono::seconds(3));
-  };
+  });
 
   CXX_FOR(auto &i, res) {
     std::cout << i << std::endl;
@@ -59,11 +59,11 @@ TEST(async_iterator_test, int_test) {
 TEST(async_iterator_test, int_thread_test) {
   typedef ext::async_result<int> int_result;
   const int count = 1000;
-  int_result res = [count](int_result::context &ctx) {
+  int_result res([count](int_result::context &ctx) {
     ctx.begin(count);
     for (int i = 0; i < count; ++i)
       ctx.push(i);
-  };
+  });
 
   std::thread t([&res]() {
     CXX_FOR(auto &i, res) {
@@ -93,7 +93,7 @@ TEST(async_iterator_test, int_thread_cancelable_test) {
   typedef ext::async_result<int> int_result;
   const int count = 1000000;
   int processed = 0;
-  int_result res = [count, &processed](int_result::context &ctx) {
+  int_result res([count, &processed](int_result::context &ctx) {
     ctx.begin(count);
     for (int i = 0; i < count; ++i) {
       if (ctx.cancel_requested())
@@ -101,7 +101,7 @@ TEST(async_iterator_test, int_thread_cancelable_test) {
       ctx.push(i);
       processed = i;
     }
-  };
+  });
 
   std::thread t0([&res, &processed]() {
     std::this_thread::sleep_for(std::chrono::microseconds(500));
@@ -142,21 +142,21 @@ TEST(async_iterator_test, int_thread_cancelable_test) {
 
 TEST(async_iterator_test, string_test) {
   typedef ext::async_result<std::string> str_result;
-  str_result res = [](str_result::context &ctx) {
+  str_result res([](str_result::context &ctx) {
     ctx.push("str 1");
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ctx.push("str 2");
     ctx.push("str 3");
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ctx.push("str 4");
-  };
+  });
   CXX_FOR(auto &s, res)
   std::cout << s << std::endl;
 }
 
 TEST(async_iterator_test, pair_test) {
   typedef ext::async_result<std::pair<std::string, size_t>> pair_result;
-  pair_result res = [](pair_result::context &ctx) {
+  pair_result res([](pair_result::context &ctx) {
     typedef ext::async_result<std::pair<std::string, size_t>> pair_result;
 #ifdef __cpp_variadic_templates
     ctx.emplace("str 1", 1);
@@ -176,7 +176,7 @@ TEST(async_iterator_test, pair_test) {
 #else
     ctx.push(pair_result::type("str 4", 4));
 #endif
-  };
+  });
 
   CXX_FOR(auto &s, res) {
     std::cout << s.first << "," << s.second << std::endl;
