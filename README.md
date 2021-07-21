@@ -1,5 +1,7 @@
 # C++ Extended Template Library
 
+[![CMake](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml/badge.svg)](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml)
+
 ## Requirements
 
 - gcc 8.3.0+
