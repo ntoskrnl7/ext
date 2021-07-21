@@ -246,19 +246,19 @@ private:
     if (!working_directory.empty()) {
       char buf[PATH_MAX];
       cwd = getcwd(buf, sizeof(buf));
-      chdir(working_directory.c_str());
+      (void)chdir(working_directory.c_str());
     }
     proc_.id_ = fork();
     cmdline_ = command;
     if (proc_.id_ == invalid_id) {
       last_error_ = errno;
       if (cwd)
-        chdir(cwd);
+        (void)chdir(cwd);
       return false;
     }
     if (proc_.id_) {
       if (cwd)
-        chdir(cwd);
+        (void)chdir(cwd);
       return true;
     }
     setsid();
