@@ -89,6 +89,12 @@ else()
 endif()
 set_property(TARGET unittest PROPERTY CXX_STANDARD_REQUIRED ON)
 
+if (WIN32)
+elseif(APPLE)
+elseif(UNIX)
+target_link_libraries(unittest rt)
+endif()
+
 enable_testing()
 
 # macOS의 경우 LC_ALL=C으로 테스트가 실행되어 문자열 변환이 안되는 현상이 있습니다.
