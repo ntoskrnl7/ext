@@ -6,7 +6,7 @@
 
 TEST(process_test, run_invalid_cmd) {
   ext::process process("_invalid_");
-#ifdef _WIN32
+#if defined(_WIN32)
   EXPECT_EQ(process.last_error(), ERROR_FILE_NOT_FOUND);
   EXPECT_FALSE(process.joinable());
 #else
@@ -16,7 +16,7 @@ TEST(process_test, run_invalid_cmd) {
 }
 
 TEST(process_test, run_list_working_directory_cmd) {
-#ifdef _WIN32
+#if defined(_WIN32)
 #ifdef __cpp_initializer_lists
   ext::process process("cmd", {"/c", "dir", "."});
 #else
@@ -36,7 +36,7 @@ TEST(process_test, run_list_working_directory_cmd) {
 
 TEST(process_test,
      run_list_working_directory_cmd_with_working_directory_set_to_root) {
-#ifdef _WIN32
+#if defined(_WIN32)
   std::string systemDrive;
   size_t requiredCount = sizeof("C:");
   systemDrive.resize(requiredCount);

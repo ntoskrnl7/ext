@@ -21,7 +21,7 @@
 namespace ext {
 namespace path {
 template <typename T> inline const T seperator() {
-#ifdef _WIN32
+#if defined(_WIN32)
   return static_cast<T>('\\');
 #else
   return static_cast<T>('/');

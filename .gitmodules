@@ -1,0 +1,3 @@
+[submodule "include/ext/platforms/windows/win32-ex"]
+	path = include/ext/platforms/windows/win32-ex
+	url = https://github.com/ntoskrnl7/win32-ex

@@ -93,32 +93,36 @@
     - Clang 10.0+
     - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - std::shared_mutex or std::shared_timed_mutex required
-15. singleton
+15. shared_mem
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-16. string
+16. singleton
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-17. stl_compat
+17. string
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-18. thread_pool
+18. stl_compat
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2008 SP1+
+19. thread_pool
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++14 or later
-19. type_traits
+20. type_traits
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-20. typeinfo
+21. typeinfo
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-21. url
+22. url
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+

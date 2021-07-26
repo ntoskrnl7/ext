@@ -1,0 +1,542 @@
+﻿#pragma once
+
+#if defined(_WIN32)
+#include "platforms/windows/perm.h"
+#include "platforms/windows/win32-ex/include/Security/Token.h"
+#include "platforms/windows/win32-ex/include/System/Object.h"
+#endif
+
+#include <sys/types.h>
+
+#if defined(__linux__) | defined(__APPLE__)
+#include "platforms/posix/perm.h"
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
+#include <string>
+
+#if defined(_WIN32)
+size_t get_page_size(void) {
+  SYSTEM_INFO si;
+  GetNativeSystemInfo(&si);
+  return (size_t)si.dwPageSize;
+}
+#elif defined(__linux__)
+size_t get_page_size(void) { return (size_t)sysconf(_SC_PAGESIZE); }
+#elif defined(__APPLE__)
+size_t get_page_size(void) { return (size_t)getpagesize(); }
+#endif
+
+//
+//  공유 메모리 접근 마스크 열거형 상수.
+//
+enum shared_mem_access_mask : int {
+  shared_mem_unspecified = 0,
+  shared_mem_read_access = 1,
+  shared_mem_write_access = 2,
+  shared_mem_read_write_access =
+      shared_mem_read_access | shared_mem_write_access,
+  shared_mem_execute_access = 4,
+  shared_mem_delete_access = 8,
+  shared_mem_all_access = shared_mem_read_write_access |
+                          shared_mem_execute_access | shared_mem_delete_access
+};
+
+#if __cplusplus
+inline void operator|=(shared_mem_access_mask &lhs,
+                       shared_mem_access_mask rhs) {
+  lhs = static_cast<shared_mem_access_mask>(static_cast<int>(lhs) |
+                                            static_cast<int>(rhs));
+}
+#endif
+
+//
+//  공유 메모리 접근 마스크 변환를 운영체제에 맞는 값으로 변환하는 함수.
+//
+
+#if defined(_WIN32)
+FORCEINLINE DWORD
+SharedMemoryAccessMaskToPageProtection(shared_mem_access_mask access_mask) {
+  DWORD pageProtection = PAGE_NOACCESS;
+
+  if (BooleanFlagOn(access_mask, shared_mem_execute_access)) {
+    pageProtection = PAGE_EXECUTE;
+
+    if (BooleanFlagOn(access_mask, shared_mem_read_access)) {
+      pageProtection = PAGE_EXECUTE_READ;
+    }
+
+    if (BooleanFlagOn(access_mask, shared_mem_write_access)) {
+      pageProtection = PAGE_EXECUTE_READWRITE;
+    }
+  } else {
+    if (BooleanFlagOn(access_mask, shared_mem_read_access)) {
+      pageProtection = PAGE_READONLY;
+    }
+
+    if (BooleanFlagOn(access_mask, shared_mem_write_access)) {
+      pageProtection = PAGE_READWRITE;
+    }
+  }
+
+  return pageProtection;
+}
+
+FORCEINLINE DWORD
+SharedMemoryAccessMaskToDesireAccess(shared_mem_access_mask access_mask) {
+  DWORD desireAccess = 0;
+
+  if (BooleanFlagOn(access_mask, shared_mem_read_access)) {
+    SetFlag(desireAccess, FILE_MAP_READ);
+  }
+
+  if (BooleanFlagOn(access_mask, shared_mem_write_access)) {
+    SetFlag(desireAccess, FILE_MAP_WRITE);
+  }
+
+  if (BooleanFlagOn(access_mask, shared_mem_execute_access)) {
+    SetFlag(desireAccess, FILE_MAP_EXECUTE);
+  }
+
+  if (BooleanFlagOn(access_mask, shared_mem_delete_access)) {
+    SetFlag(desireAccess, DELETE);
+  }
+
+  return desireAccess;
+}
+#else
+inline int shared_mem_access_mask_to_oflag(shared_mem_access_mask access_mask) {
+  int oflag = 0;
+
+  if (BooleanFlagOn(access_mask, shared_mem_read_access) &&
+      BooleanFlagOn(access_mask, shared_mem_write_access)) {
+    oflag = O_RDWR;
+  } else if (BooleanFlagOn(access_mask, shared_mem_read_access)) {
+    oflag = O_RDONLY;
+  } else if (BooleanFlagOn(access_mask, shared_mem_write_access)) {
+    oflag = O_WRONLY;
+  }
+
+  return oflag & O_ACCMODE;
+}
+
+inline int shared_mem_access_mask_to_prot(shared_mem_access_mask access_mask) {
+  int prot = 0;
+
+  if (BooleanFlagOn(access_mask, shared_mem_read_access)) {
+    SetFlag(prot, PROT_READ);
+  }
+
+  if (BooleanFlagOn(access_mask, shared_mem_write_access)) {
+    SetFlag(prot, PROT_WRITE);
+  }
+
+  if (BooleanFlagOn(access_mask, shared_mem_execute_access)) {
+#if defined(__linux__)
+    SetFlag(prot, PROT_EXEC);
+#endif
+  }
+
+  return prot;
+}
+#endif
+
+//
+//  공유 메모리 핸들.
+//
+
+#if defined(_WIN32)
+typedef HANDLE shared_mem_handle;
+#define shared_mem_handle_null ((HANDLE)NULL)
+#else
+typedef int shared_mem_handle;
+#define shared_mem_handle_null ((int)-1)
+#endif
+#define shared_mem_handle_is_valid(handle) ((handle) != shared_mem_handle_null)
+
+inline shared_mem_handle open_shared_mem(const char *name,
+                                         shared_mem_access_mask access_mask) {
+#if defined(_WIN32)
+  return OpenFileMappingA(SharedMemoryAccessMaskToDesireAccess(access_mask),
+                          FALSE, name);
+#else
+  return shm_open(name, shared_mem_access_mask_to_oflag(access_mask), 0);
+#endif
+}
+
+inline shared_mem_handle create_shared_mem(const char *name,
+                                           shared_mem_access_mask access_mask,
+                                           size_t length, perm permission) {
+#if defined(_WIN32)
+  HANDLE sectionHandle = NULL;
+
+  PCTSTR privilegeNames[] = {SE_CREATE_GLOBAL_NAME};
+  PREVIOUS_TOKEN_PRIVILEGES oldState;
+
+  PSECURITY_DESCRIPTOR securityDescriptor =
+      SECURITY_DESCRIPTOR_FROM_PERM(permission);
+  SECURITY_ATTRIBUTES securityAttributes;
+  LARGE_INTEGER sectionSize;
+
+  BOOL isPrivilegeAcquired = FALSE;
+  BOOL isGlobalName = FALSE;
+
+  //
+  //  기존 공유 섹션이 존재한다면 해당 섹션을 반환합니다.
+  //
+
+  if (access_mask == shared_mem_unspecified)
+    access_mask = shared_mem_all_access;
+
+  sectionHandle = open_shared_mem(name, access_mask);
+
+  if (sectionHandle)
+    return sectionHandle;
+
+  isGlobalName =
+      (_strnicmp(name, "Global\\",
+                 __min(sizeof("Global\\") - sizeof(char), strlen(name))) == 0);
+  if (isGlobalName) {
+    //
+    //  현재 프로세스에 전역 이름을 생성하는 권한을 설정합니다.
+    //
+
+    isPrivilegeAcquired = EnablePrivileges(TRUE, _countof(privilegeNames),
+                                           privilegeNames, &oldState, NULL);
+    if (isPrivilegeAcquired) {
+      if (GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+        //
+        // 로컬 정책 -> 사용자 권한 할당 -> 전역 개체 만들기는 관리자 계정 그룹,
+        // 서비스 관련 계정에 할당 가능하도록 설정되어있으나, 해당 계정이
+        // 아니거나 시스템 설정을 변경하는 경우, 할당이 실패할 수 있습니다.
+        // 그런한 경우가 발생한다면, 해당 권한을 할당받은 토큰을 획득하여
+        // 작업해주십시오.
+        //
+
+        RevertPrivileges(&oldState);
+        isPrivilegeAcquired = FALSE;
+      }
+    }
+  }
+
+  //
+  //  공유 섹션을 생성합니다.
+  //
+
+  securityAttributes.nLength = sizeof(SECURITY_ATTRIBUTES);
+  securityAttributes.lpSecurityDescriptor = securityDescriptor;
+  securityAttributes.bInheritHandle = FALSE;
+
+  sectionSize.QuadPart = (LONGLONG)length;
+
+  sectionHandle = CreateFileMappingA(
+      INVALID_HANDLE_VALUE,
+      (permission == perm_unspecified) ? NULL : &securityAttributes,
+      SharedMemoryAccessMaskToPageProtection(access_mask), sectionSize.HighPart,
+      sectionSize.LowPart, name);
+
+  if (isPrivilegeAcquired)
+    RevertPrivileges(&oldState);
+
+  if (sectionHandle == NULL)
+    return shared_mem_handle_null;
+
+  //
+  //  전역 객체라면 영구 전역 객체로 설정합니다.
+  //
+
+  if (isGlobalName) {
+    if (!MakePermanentObject(sectionHandle)) {
+      CloseHandle(sectionHandle);
+      return shared_mem_handle_null;
+    }
+  }
+
+  return sectionHandle;
+#else
+  int handle = shm_open(
+      name, O_EXCL | O_CREAT | shared_mem_access_mask_to_oflag(access_mask),
+      mode_t_from_perm(permission));
+  if (handle == -1)
+    return shared_mem_handle_null;
+  if (ftruncate(handle, length) == -1) {
+    shm_unlink(name);
+    return shared_mem_handle_null;
+  }
+  return handle;
+#endif
+}
+
+inline bool close_shared_mem(shared_mem_handle handle) {
+#if defined(_WIN32)
+  return (CloseHandle(handle) ? true : false);
+#else
+  return close(handle) == 0;
+#endif
+}
+
+inline bool delete_shared_mem(const char *name) {
+#if defined(_WIN32)
+  BOOL result;
+  shared_mem_handle handle = open_shared_mem(name, shared_mem_delete_access);
+  if (handle == shared_mem_handle_null)
+    return false;
+
+  result = MakeTemporaryObject(handle);
+
+  close_shared_mem(handle);
+
+  return (result ? true : false);
+#else
+  return shm_unlink(name) == 0;
+#endif
+}
+
+inline void *map_shared_mem(shared_mem_handle handle, off_t offset,
+                            size_t length, shared_mem_access_mask access_mask,
+                            void *address) {
+#if defined(_WIN32)
+  LARGE_INTEGER offset_;
+  offset_.QuadPart = (LONGLONG)offset;
+  return MapViewOfFileEx(handle,
+                         SharedMemoryAccessMaskToDesireAccess(access_mask),
+                         offset_.HighPart, offset_.LowPart, length, address);
+#else
+  struct stat st;
+  fstat(handle, &st);
+  void *result =
+      mmap(address, length, shared_mem_access_mask_to_prot(access_mask),
+           MAP_SHARED, handle, offset);
+  if (result == MAP_FAILED)
+    return nullptr;
+  return result;
+#endif
+}
+
+inline bool unmap_shared_mem(void *address, size_t length) {
+#if defined(_WIN32)
+  UNREFERENCED_PARAMETER(length);
+  return (UnmapViewOfFile(address) ? true : false);
+#else
+  return munmap(address, length) == 0;
+#endif
+}
+
+#ifdef __cplusplus
+class shared_mem_base {
+public:
+  shared_mem_base(const char *Name)
+      : name_(Name), handle_(shared_mem_handle_null),
+        accessMask_(shared_mem_unspecified)
+#if defined(_WIN32)
+        ,
+        lastErrorCode_(ERROR_SUCCESS)
+#endif
+  {
+#if defined(_WIN32)
+    if (_strnicmp(Name, "Global\\",
+                  __min(sizeof("Global\\") - sizeof(char), strlen(Name))) !=
+        0) {
+      if (IsUserAdmin()) {
+        name_.insert(0, "Global\\");
+      }
+    }
+#else
+    if (name_.at(0) != '/')
+      name_.insert(0, "/");
+#endif
+  }
+
+  ~shared_mem_base() { close(); }
+
+  std::string &name() { return name_; }
+
+  bool create(size_t length,
+              shared_mem_access_mask access_mask = shared_mem_all_access,
+              perm permission = perm_unspecified) {
+    if (!BooleanFlagOn(access_mask, shared_mem_write_access))
+      SetFlag(access_mask, shared_mem_write_access);
+    if (shared_mem_handle_is_valid(handle_))
+      close();
+
+    bool needToFree = false;
+    if (permission == perm_unspecified) {
+      permission = alloc_everyone_perm();
+      needToFree = (permission != perm_unspecified);
+    }
+
+    handle_ = create_shared_mem(name_.c_str(), access_mask, length, permission);
+
+    if (needToFree)
+      free_perm(permission);
+
+    if (shared_mem_handle_is_valid(handle_)) {
+      accessMask_ = access_mask;
+      return true;
+    } else {
+#if defined(_WIN32)
+      lastErrorCode_ = GetLastError();
+#endif
+      return false;
+    }
+  }
+
+  bool open(shared_mem_access_mask access_mask = shared_mem_read_access) {
+    if ((accessMask_ == access_mask) && shared_mem_handle_is_valid(handle_))
+      return handle_ != shared_mem_handle_null;
+
+    shared_mem_handle handle = open_shared_mem(name_.c_str(), access_mask);
+    if (shared_mem_handle_is_valid(handle)) {
+      if (shared_mem_handle_is_valid(handle_))
+        close();
+      handle_ = handle;
+      accessMask_ = access_mask;
+    } else {
+#if defined(_WIN32)
+      lastErrorCode_ = GetLastError();
+#endif
+    }
+    return (handle_ != shared_mem_handle_null);
+  }
+
+  void close() {
+    if (shared_mem_handle_is_valid(handle_)) {
+      close_shared_mem(handle_);
+      handle_ = shared_mem_handle_null;
+    }
+  }
+
+  bool exists() {
+    if (shared_mem_handle_is_valid(handle_))
+      return true;
+    return open(shared_mem_read_access);
+  }
+
+  void *map(off_t Offset, size_t Size,
+            shared_mem_access_mask AccessMask = shared_mem_read_access,
+            void *BaseAddress = nullptr) {
+    if ((accessMask_ | AccessMask) != accessMask_) {
+      if (!open(AccessMask))
+        return nullptr;
+    }
+    return map_shared_mem(handle_, Offset, Size, AccessMask, BaseAddress);
+  }
+
+  bool unmap(void *MappedAddress, size_t Size) {
+    return unmap_shared_mem(MappedAddress, Size);
+  }
+
+  bool destroy() {
+    bool result;
+#if defined(_WIN32)
+    // Windows 10 19042.1052에서 기존 핸들로 임시객체를 만드는것이 실패하여,
+    // 무조건 새로 한들을 열어서 임시객체로 만들도록 변경.
+    result = delete_shared_mem(name_.c_str());
+    close();
+
+    return result;
+#else
+    return delete_shared_mem(name_.c_str());
+#endif
+  }
+
+protected:
+  std::string name_;
+  shared_mem_handle handle_;
+  shared_mem_access_mask accessMask_;
+#if defined(_WIN32)
+  DWORD lastErrorCode_;
+#endif
+};
+
+template <typename T> class shared_mem : shared_mem_base {
+public:
+  shared_mem(const char *name,
+             shared_mem_access_mask access_mask = shared_mem_unspecified,
+             perm permission = perm_unspecified, size_t length = 0)
+      : shared_mem_base(name), data_(nullptr),
+        size_(length ? length : sizeof(T)),
+        alignedSize_(ROUND_TO_SIZE(size_, get_page_size())) {
+    if (exists()) {
+      if (access_mask == shared_mem_unspecified)
+        access_mask = (accessMask_ == shared_mem_unspecified)
+                          ? shared_mem_read_access
+                          : accessMask_;
+      opened_ = open(access_mask);
+      created_ = false;
+    } else {
+      accessMask_ = (access_mask == shared_mem_unspecified)
+                        ? shared_mem_all_access
+                        : access_mask;
+      created_ = create(accessMask_, permission);
+      opened_ = false;
+    }
+  }
+
+  ~shared_mem() {
+    if (data_)
+      unmap(data_, alignedSize_);
+  }
+
+  bool create(shared_mem_access_mask access_mask = shared_mem_unspecified,
+              perm permission = perm_unspecified) {
+    return shared_mem_base::create(alignedSize_, access_mask, permission);
+  }
+
+  bool open(shared_mem_access_mask access_mask = shared_mem_unspecified) {
+    return shared_mem_base::open(access_mask);
+  }
+
+  bool created() const { return created_; }
+
+  bool opened() const { return opened_; }
+
+  size_t size() const { return size_; }
+
+  bool exists() { return shared_mem_base::exists(); }
+
+  bool destroy() { return shared_mem_base::destroy(); }
+
+  T *operator()(shared_mem_access_mask AccessMask = shared_mem_unspecified,
+                void *BaseAddress = nullptr) {
+    if (AccessMask == shared_mem_unspecified)
+      AccessMask = accessMask_;
+
+    if ((AccessMask != accessMask_) || (data_ == nullptr)) {
+      accessMask_ = AccessMask;
+#if defined(_WIN32)
+      T *oldData = (T *)InterlockedExchangePointer(
+          (void **)&data_, map(0, alignedSize_, accessMask_, BaseAddress));
+#else
+      T *oldData = data_;
+      data_ = (T *)map(0, alignedSize_, accessMask_, BaseAddress);
+#endif
+      if (oldData)
+        unmap(oldData, alignedSize_);
+#if defined(_WIN32)
+      if (data_ == nullptr)
+        InterlockedExchangePointer(
+            (void **)&data_, map(0, alignedSize_, accessMask_, BaseAddress));
+#else
+      if (data_ == nullptr)
+        data_ = (T *)map(0, alignedSize_, accessMask_, BaseAddress);
+#endif
+    }
+
+    return data_;
+  }
+
+  T *operator->() { return operator()(); }
+
+private:
+  size_t size_;
+  size_t alignedSize_;
+  T *data_;
+  bool created_;
+  bool opened_;
+};
+
+#endif
