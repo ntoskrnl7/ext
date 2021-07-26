@@ -23,7 +23,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
+      with:
+        submodules: true
+
     - name: Make build directory
       run: mkdir build && cd build
       working-directory: test
