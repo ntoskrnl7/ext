@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "platforms/misc.h"
+
 #if defined(_WIN32)
 #include "platforms/windows/perm.h"
 #include "platforms/windows/win32-ex/include/Security/Token.h"
@@ -90,19 +92,19 @@ SharedMemoryAccessMaskToDesireAccess(shared_mem_access_mask access_mask) {
   DWORD desireAccess = 0;
 
   if (BooleanFlagOn(access_mask, shared_mem_read_access)) {
-    SetFlag(desireAccess, FILE_MAP_READ);
+    SET_FLAG(desireAccess, FILE_MAP_READ);
   }
 
   if (BooleanFlagOn(access_mask, shared_mem_write_access)) {
-    SetFlag(desireAccess, FILE_MAP_WRITE);
+    SET_FLAG(desireAccess, FILE_MAP_WRITE);
   }
 
   if (BooleanFlagOn(access_mask, shared_mem_execute_access)) {
-    SetFlag(desireAccess, FILE_MAP_EXECUTE);
+    SET_FLAG(desireAccess, FILE_MAP_EXECUTE);
   }
 
   if (BooleanFlagOn(access_mask, shared_mem_delete_access)) {
-    SetFlag(desireAccess, DELETE);
+    SET_FLAG(desireAccess, DELETE);
   }
 
   return desireAccess;
@@ -111,12 +113,12 @@ SharedMemoryAccessMaskToDesireAccess(shared_mem_access_mask access_mask) {
 inline int shared_mem_access_mask_to_oflag(shared_mem_access_mask access_mask) {
   int oflag = 0;
 
-  if (BooleanFlagOn(access_mask, shared_mem_read_access) &&
-      BooleanFlagOn(access_mask, shared_mem_write_access)) {
+  if (BOOLEAN_FLAG_ON(access_mask, shared_mem_read_access) &&
+      BOOLEAN_FLAG_ON(access_mask, shared_mem_write_access)) {
     oflag = O_RDWR;
-  } else if (BooleanFlagOn(access_mask, shared_mem_read_access)) {
+  } else if (BOOLEAN_FLAG_ON(access_mask, shared_mem_read_access)) {
     oflag = O_RDONLY;
-  } else if (BooleanFlagOn(access_mask, shared_mem_write_access)) {
+  } else if (BOOLEAN_FLAG_ON(access_mask, shared_mem_write_access)) {
     oflag = O_WRONLY;
   }
 
@@ -126,20 +128,19 @@ inline int shared_mem_access_mask_to_oflag(shared_mem_access_mask access_mask) {
 inline int shared_mem_access_mask_to_prot(shared_mem_access_mask access_mask) {
   int prot = 0;
 
-  if (BooleanFlagOn(access_mask, shared_mem_read_access)) {
-    SetFlag(prot, PROT_READ);
+  if (BOOLEAN_FLAG_ON(access_mask, shared_mem_read_access)) {
+    SET_FLAG(prot, PROT_READ);
   }
 
-  if (BooleanFlagOn(access_mask, shared_mem_write_access)) {
-    SetFlag(prot, PROT_WRITE);
+  if (BOOLEAN_FLAG_ON(access_mask, shared_mem_write_access)) {
+    SET_FLAG(prot, PROT_WRITE);
   }
 
-  if (BooleanFlagOn(access_mask, shared_mem_execute_access)) {
+  if (BOOLEAN_FLAG_ON(access_mask, shared_mem_execute_access)) {
 #if defined(__linux__)
-    SetFlag(prot, PROT_EXEC);
+    SET_FLAG(prot, PROT_EXEC);
 #endif
   }
-
   return prot;
 }
 #endif
@@ -357,8 +358,8 @@ public:
   bool create(size_t length,
               shared_mem_access_mask access_mask = shared_mem_all_access,
               perm permission = perm_unspecified) {
-    if (!BooleanFlagOn(access_mask, shared_mem_write_access))
-      SetFlag(access_mask, shared_mem_write_access);
+    if (!BOOLEAN_FLAG_ON(access_mask, shared_mem_write_access))
+      SET_FLAG(access_mask, shared_mem_write_access);
     if (shared_mem_handle_is_valid(handle_))
       close();
 
