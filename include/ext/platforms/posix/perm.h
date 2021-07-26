@@ -35,5 +35,5 @@ inline perm alloc_perm(access_mask owner, access_mask group,
   return ((owner << 6) | (group << 3) | (other & 0x7));
 }
 
-inline void free_acl(perm permission) { (void)permission; }
+inline void free_perm(perm permission) { (void)permission; }
 #endif
