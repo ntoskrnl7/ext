@@ -273,7 +273,7 @@ inline shared_mem_handle create_shared_mem(const char *name,
 
 inline bool close_shared_mem(shared_mem_handle handle) {
 #if defined(_WIN32)
-  return (CloseHandle(handle) ? true : false);
+  return CloseHandle(handle) == TRUE;
 #else
   return close(handle) == 0;
 #endif
@@ -290,7 +290,7 @@ inline bool delete_shared_mem(const char *name) {
 
   close_shared_mem(handle);
 
-  return (result ? true : false);
+  return result == TRUE;
 #else
   return shm_unlink(name) == 0;
 #endif
@@ -320,7 +320,7 @@ inline void *map_shared_mem(shared_mem_handle handle, off_t offset,
 inline bool unmap_shared_mem(void *address, size_t length) {
 #if defined(_WIN32)
   UNREFERENCED_PARAMETER(length);
-  return (UnmapViewOfFile(address) ? true : false);
+  return UnmapViewOfFile(address) == TRUE;
 #else
   return munmap(address, length) == 0;
 #endif
