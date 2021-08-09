@@ -55,74 +55,78 @@
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-7. collection
+7. debug_utils
+   - gcc 8.3.0+
+   - Clang 10.0+
+   - Visual Studio 2008 SP1+
+8. collection
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
    - std::shared_mutex or std::shared_timed_mutex required
-8. ini
+9. ini
    - gcc 8.3.0+
    - Clang 10.0+
    - Visual Studio 2008 SP1+
-9. observable
-   - gcc 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2008 SP1+
-10. path
+10. observable
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-11. process
+11. path
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2008 SP1+
+12. process
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++11 or later
-12. property
+13. property
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++17 or later
-13. safe_object
+14. safe_object
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
     - C++14 or later
-14. shared_recursive_mutex
+15. shared_recursive_mutex
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - std::shared_mutex or std::shared_timed_mutex required
-15. shared_mem
+16. shared_mem
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-16. singleton
+17. singleton
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-17. string
+18. string
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-18. stl_compat
+19. stl_compat
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-19. thread_pool
+20. thread_pool
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++14 or later
-20. type_traits
+21. type_traits
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-21. typeinfo
+22. typeinfo
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-22. url
+23. url
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
