@@ -30,6 +30,31 @@ template <typename T> inline const T *trim_str() {
 } // namespace internal
 
 //
+// printable functions.
+//
+
+template <typename T>
+inline std::basic_string<T> &printable(std::basic_string<T> &s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(),
+                       [](int ch) { return std::isprint(ch); })
+              .base(),
+          s.end());
+  return s;
+}
+
+template <typename T> inline std::basic_string<T> printable(const T *s) {
+  std::basic_string<T> ss(s);
+  return std::move(printable(ss));
+}
+
+#ifdef __cpp_rvalue_references
+template <typename T>
+inline std::basic_string<T> printable(std::basic_string<T> &&s) {
+  return std::move(printable(s));
+}
+#endif
+
+//
 // trim functions.
 //
 
@@ -43,18 +68,28 @@ inline std::basic_string<T> &ltrim(std::basic_string<T> &s) {
   return s.erase(0, s.find_first_not_of(internal::trim_str<T>()));
 }
 
+template <typename T>
+inline std::basic_string<T> &trim(std::basic_string<T> &s) {
+  return std::move(ltrim<T>(rtrim<T>(s)));
+}
+
 #if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
+template <typename T>
+inline std::basic_string<T> rtrim(const std::basic_string<T> &s) {
+  std::basic_string<T> val = s;
+  return std::move(rtrim<T>(val));
+}
+template <typename T>
+inline std::basic_string<T> ltrim(const std::basic_string<T> &s) {
+  std::basic_string<T> val = s;
+  return std::move(ltrim<T>(val));
+}
 template <typename T>
 inline std::basic_string<T> trim(const std::basic_string<T> &s) {
   std::basic_string<T> val = s;
-  return ltrim<T>(rtrim<T>(val));
+  return std::move(ltrim<T>(rtrim<T>(val)));
 }
 #endif
-
-template <typename T>
-inline std::basic_string<T> &trim(std::basic_string<T> &s) {
-  return ltrim<T>(rtrim<T>(s));
-}
 
 template <typename T> inline std::basic_string<T> rtrim(const T *s) {
   std::basic_string<T> ss(s);
