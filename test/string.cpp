@@ -1,6 +1,53 @@
 ﻿#include <ext/string>
 #include <gtest/gtest.h>
 
+TEST(string_test, printable_test) {
+  std::string str = "\e\x10test\f\x11test\a\x12";
+  EXPECT_STREQ(ext::printable(str).c_str(), "testtest");
+
+  std::wstring str_w = L"\e\x10test\f\x11test\a\x12";
+  EXPECT_STREQ(ext::printable(str_w).c_str(), L"testtest");
+
+  str = "\e\x10test\f\x11test\a\x12";
+  EXPECT_STREQ(ext::lprintable(str).c_str(), "test\f\x11test\a\x12");
+
+  str_w = L"\e\x10test\f\x11test\a\x12";
+  EXPECT_STREQ(ext::lprintable(str_w).c_str(), L"test\f\x11test\a\x12");
+
+  str = "\e\x10test\f\x11test\a\x12";
+  EXPECT_STREQ(ext::rprintable(str).c_str(), "\e\x10test\f\x11test");
+
+  str_w = L"\e\x10test\f\x11test\a\x12";
+  EXPECT_STREQ(ext::rprintable(str_w).c_str(), L"\e\x10test\f\x11test");
+
+  EXPECT_STREQ(ext::printable(std::string("\e\x10test\e\x10")).c_str(), "test");
+  EXPECT_STREQ(ext::printable(std::wstring(L"\e\x10test\e\x10")).c_str(),
+               L"test");
+  EXPECT_STREQ(ext::lprintable(std::string("\e\x10test\e\x10")).c_str(),
+               "test\e\x10");
+  EXPECT_STREQ(ext::lprintable(std::wstring(L"\e\x10test\e\x10")).c_str(),
+               L"test\e\x10");
+  EXPECT_STREQ(ext::rprintable(std::string("\e\x10test\e\x10")).c_str(),
+               "\e\x10test");
+  EXPECT_STREQ(ext::rprintable(std::wstring(L"\e\x10test\e\x10")).c_str(),
+               L"\e\x10test");
+
+  EXPECT_STREQ(ext::printable("\e\x10test\e\x10").c_str(), "test");
+  EXPECT_STREQ(ext::printable(L"\e\x10test\e\x10").c_str(), L"test");
+  EXPECT_STREQ(ext::lprintable("\e\x10test\e\x10").c_str(), "test\e\x10");
+  EXPECT_STREQ(ext::lprintable(L"\e\x10test\e\x10").c_str(), L"test\e\x10");
+  EXPECT_STREQ(ext::rprintable("\e\x10test\e\x10").c_str(), "\e\x10test");
+  EXPECT_STREQ(ext::rprintable(L"\e\x10test\e\x10").c_str(), L"\e\x10test");
+
+#if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
+  const std::string const_str = "\e\x10\e\x10test\e\x10\e\x10";
+  EXPECT_STREQ(ext::printable(const_str).c_str(), "test");
+
+  const std::wstring const_wstr = L"\e\x10\e\x10test\e\x10\e\x10";
+  EXPECT_STREQ(ext::printable(const_wstr).c_str(), L"test");
+#endif
+}
+
 TEST(string_test, trim_test) {
   std::string str = " test ";
   EXPECT_STREQ(ext::trim(str).c_str(), "test");

@@ -34,7 +34,7 @@ template <typename T> inline const T *trim_str() {
 //
 
 template <typename T>
-inline std::basic_string<T> &printable(std::basic_string<T> &s) {
+inline std::basic_string<T> &rprintable(std::basic_string<T> &s) {
   s.erase(std::find_if(s.rbegin(), s.rend(),
                        [](int ch) { return std::isprint(ch); })
               .base(),
@@ -42,17 +42,55 @@ inline std::basic_string<T> &printable(std::basic_string<T> &s) {
   return s;
 }
 
+template <typename T>
+inline std::basic_string<T> &lprintable(std::basic_string<T> &s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+                                  [](int ch) { return std::isprint(ch); }));
+  return s;
+}
+
+template <typename T>
+inline std::basic_string<T> &printable(std::basic_string<T> &s) {
+  s.erase(std::remove_if(s.begin(), s.end(),
+                         [](T ch) { return !std::isprint(ch); }),
+          s.end());
+  return s;
+}
+
+#if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
+template <typename T>
+inline std::basic_string<T> rprintable(const std::basic_string<T> &s) {
+  std::basic_string<T> val = s;
+  return std::move(rprintable<T>(val));
+}
+
+template <typename T>
+inline std::basic_string<T> lprintable(const std::basic_string<T> &s) {
+  std::basic_string<T> val = s;
+  return std::move(lprintable<T>(val));
+}
+
+template <typename T>
+inline std::basic_string<T> printable(const std::basic_string<T> &s) {
+  std::basic_string<T> val = s;
+  return std::move(lprintable<T>(rprintable<T>(val)));
+}
+#endif
+
+template <typename T> inline std::basic_string<T> rprintable(const T *s) {
+  std::basic_string<T> ss(s);
+  return std::move(rprintable(ss));
+}
+
+template <typename T> inline std::basic_string<T> lprintable(const T *s) {
+  std::basic_string<T> ss(s);
+  return std::move(lprintable(ss));
+}
+
 template <typename T> inline std::basic_string<T> printable(const T *s) {
   std::basic_string<T> ss(s);
   return std::move(printable(ss));
 }
-
-#ifdef __cpp_rvalue_references
-template <typename T>
-inline std::basic_string<T> printable(std::basic_string<T> &&s) {
-  return std::move(printable(s));
-}
-#endif
 
 //
 // trim functions.
@@ -70,7 +108,7 @@ inline std::basic_string<T> &ltrim(std::basic_string<T> &s) {
 
 template <typename T>
 inline std::basic_string<T> &trim(std::basic_string<T> &s) {
-  return std::move(ltrim<T>(rtrim<T>(s)));
+  return ltrim<T>(rtrim<T>(s));
 }
 
 #if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
@@ -79,11 +117,13 @@ inline std::basic_string<T> rtrim(const std::basic_string<T> &s) {
   std::basic_string<T> val = s;
   return std::move(rtrim<T>(val));
 }
+
 template <typename T>
 inline std::basic_string<T> ltrim(const std::basic_string<T> &s) {
   std::basic_string<T> val = s;
   return std::move(ltrim<T>(val));
 }
+
 template <typename T>
 inline std::basic_string<T> trim(const std::basic_string<T> &s) {
   std::basic_string<T> val = s;
