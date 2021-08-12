@@ -2,48 +2,48 @@
 #include <gtest/gtest.h>
 
 TEST(string_test, printable_test) {
-  std::string str = "\e\x10test\f\x11test\a\x12";
+  std::string str = "\x0e\x10test\x0f\x11test\x0a\x12";
   EXPECT_STREQ(ext::printable(str).c_str(), "testtest");
 
-  std::wstring str_w = L"\e\x10test\f\x11test\a\x12";
+  std::wstring str_w = L"\x0e\x10test\x0f\x11test\x0a\x12";
   EXPECT_STREQ(ext::printable(str_w).c_str(), L"testtest");
 
-  str = "\e\x10test\f\x11test\a\x12";
-  EXPECT_STREQ(ext::lprintable(str).c_str(), "test\f\x11test\a\x12");
+  str = "\x0e\x10test\x0f\x11test\x0a\x12";
+  EXPECT_STREQ(ext::lprintable(str).c_str(), "test\x0f\x11test\x0a\x12");
 
-  str_w = L"\e\x10test\f\x11test\a\x12";
-  EXPECT_STREQ(ext::lprintable(str_w).c_str(), L"test\f\x11test\a\x12");
+  str_w = L"\x0e\x10test\x0f\x11test\x0a\x12";
+  EXPECT_STREQ(ext::lprintable(str_w).c_str(), L"test\x0f\x11test\x0a\x12");
 
-  str = "\e\x10test\f\x11test\a\x12";
-  EXPECT_STREQ(ext::rprintable(str).c_str(), "\e\x10test\f\x11test");
+  str = "\x0e\x10test\x0f\x11test\x0a\x12";
+  EXPECT_STREQ(ext::rprintable(str).c_str(), "\x0e\x10test\x0f\x11test");
 
-  str_w = L"\e\x10test\f\x11test\a\x12";
-  EXPECT_STREQ(ext::rprintable(str_w).c_str(), L"\e\x10test\f\x11test");
+  str_w = L"\x0e\x10test\x0f\x11test\x0a\x12";
+  EXPECT_STREQ(ext::rprintable(str_w).c_str(), L"\x0e\x10test\x0f\x11test");
 
-  EXPECT_STREQ(ext::printable(std::string("\e\x10test\e\x10")).c_str(), "test");
-  EXPECT_STREQ(ext::printable(std::wstring(L"\e\x10test\e\x10")).c_str(),
+  EXPECT_STREQ(ext::printable(std::string("\x0e\x10test\x0e\x10")).c_str(), "test");
+  EXPECT_STREQ(ext::printable(std::wstring(L"\x0e\x10test\x0e\x10")).c_str(),
                L"test");
-  EXPECT_STREQ(ext::lprintable(std::string("\e\x10test\e\x10")).c_str(),
-               "test\e\x10");
-  EXPECT_STREQ(ext::lprintable(std::wstring(L"\e\x10test\e\x10")).c_str(),
-               L"test\e\x10");
-  EXPECT_STREQ(ext::rprintable(std::string("\e\x10test\e\x10")).c_str(),
-               "\e\x10test");
-  EXPECT_STREQ(ext::rprintable(std::wstring(L"\e\x10test\e\x10")).c_str(),
-               L"\e\x10test");
+  EXPECT_STREQ(ext::lprintable(std::string("\x0e\x10test\x0e\x10")).c_str(),
+               "test\x0e\x10");
+  EXPECT_STREQ(ext::lprintable(std::wstring(L"\x0e\x10test\x0e\x10")).c_str(),
+               L"test\x0e\x10");
+  EXPECT_STREQ(ext::rprintable(std::string("\x0e\x10test\x0e\x10")).c_str(),
+               "\x0e\x10test");
+  EXPECT_STREQ(ext::rprintable(std::wstring(L"\x0e\x10test\x0e\x10")).c_str(),
+               L"\x0e\x10test");
 
-  EXPECT_STREQ(ext::printable("\e\x10test\e\x10").c_str(), "test");
-  EXPECT_STREQ(ext::printable(L"\e\x10test\e\x10").c_str(), L"test");
-  EXPECT_STREQ(ext::lprintable("\e\x10test\e\x10").c_str(), "test\e\x10");
-  EXPECT_STREQ(ext::lprintable(L"\e\x10test\e\x10").c_str(), L"test\e\x10");
-  EXPECT_STREQ(ext::rprintable("\e\x10test\e\x10").c_str(), "\e\x10test");
-  EXPECT_STREQ(ext::rprintable(L"\e\x10test\e\x10").c_str(), L"\e\x10test");
+  EXPECT_STREQ(ext::printable("\x0e\x10test\x0e\x10").c_str(), "test");
+  EXPECT_STREQ(ext::printable(L"\x0e\x10test\x0e\x10").c_str(), L"test");
+  EXPECT_STREQ(ext::lprintable("\x0e\x10test\x0e\x10").c_str(), "test\x0e\x10");
+  EXPECT_STREQ(ext::lprintable(L"\x0e\x10test\x0e\x10").c_str(), L"test\x0e\x10");
+  EXPECT_STREQ(ext::rprintable("\x0e\x10test\x0e\x10").c_str(), "\x0e\x10test");
+  EXPECT_STREQ(ext::rprintable(L"\x0e\x10test\x0e\x10").c_str(), L"\x0e\x10test");
 
 #if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
-  const std::string const_str = "\e\x10\e\x10test\e\x10\e\x10";
+  const std::string const_str = "\x0e\x10\x0e\x10test\x0e\x10\x0e\x10";
   EXPECT_STREQ(ext::printable(const_str).c_str(), "test");
 
-  const std::wstring const_wstr = L"\e\x10\e\x10test\e\x10\e\x10";
+  const std::wstring const_wstr = L"\x0e\x10\x0e\x10test\x0e\x10\x0e\x10";
   EXPECT_STREQ(ext::printable(const_wstr).c_str(), L"test");
 #endif
 }
