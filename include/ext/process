@@ -22,12 +22,12 @@
 #include <unistd.h>
 #endif
 
-#include <ext/pstream>
-
 #include <list>
 #include <string>
 
 #include "stl_compat"
+
+#include <ext/pstream>
 
 #if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #include <thread>

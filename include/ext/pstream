@@ -28,7 +28,7 @@ public:
 #if defined(_WIN32)
 #else
 #if defined(__GLIBCXX__)
-  pstream(int fd) : buf_(__gnu_cxx::stdio_filebuf<char>(fd, M)), T(&buf_) {}
+  pstream(int fd) : T(&buf_), buf_(__gnu_cxx::stdio_filebuf<char>(fd, M)) {}
 #else
   pstream(int fd) : fd_(fd) {}
 #endif
@@ -45,6 +45,7 @@ public:
   }
 
 #if defined(_WIN32)
+  void close() {}
 #else
 #if defined(__GLIBCXX__)
   int fd() { return buf_.fd(); }
