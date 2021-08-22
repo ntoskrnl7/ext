@@ -1,0 +1,73 @@
+/**
+ * @file pstream
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements pipe stream(ipstream/opstream) class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#include "stl_compat"
+
+#ifndef _EXT_PSTREAM_
+#define _EXT_PSTREAM_
+
+#if defined(__GLIBCXX__)
+#include <ext/stdio_filebuf.h>
+#endif
+
+#include <iostream>
+
+namespace ext {
+template <std::ios::openmode M, typename T> class pstream : public T {
+public:
+  pstream() {}
+  ~pstream() { buf_.close(); }
+  pstream(pstream &&other) { swap(other); }
+#if defined(_WIN32)
+#else
+#if defined(__GLIBCXX__)
+  pstream(int fd) : buf_(__gnu_cxx::stdio_filebuf<char>(fd, M)), T(&buf_) {}
+#else
+  pstream(int fd) : fd_(fd) {}
+#endif
+#endif
+  pstream &operator=(pstream &&rhs) {
+    swap(rhs);
+    return *this;
+  };
+
+  void swap(pstream &p) CXX_NOEXCEPT {
+    std::swap(buf_, p.buf_);
+    this->init(&buf_);
+    p.init(&p.buf_);
+  }
+
+#if defined(_WIN32)
+#else
+#if defined(__GLIBCXX__)
+  int fd() { return buf_.fd(); }
+  void close() { buf_.close(); }
+#else
+  int fd() { return fd_; }
+  void close() {}
+#endif
+#endif
+
+private:
+#if defined(_WIN32)
+#else
+#if defined(__GLIBCXX__)
+  mutable __gnu_cxx::stdio_filebuf<char> buf_;
+#else
+  int fd_;
+#endif
+#endif
+};
+
+using ipstream = pstream<std::ios::in, std::istream>;
+using opstream = pstream<std::ios::out, std::ostream>;
+} // namespace ext
+
+#endif // _EXT_PSTREAM_

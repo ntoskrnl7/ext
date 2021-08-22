@@ -82,3 +82,109 @@ TEST(process_test, this_process_test) {
   EXPECT_STREQ(name.c_str(), "unittest");
 #endif
 }
+
+#if defined(__GLIBCXX__)
+TEST(process_test, process_stdout_basic_test) {
+  ext::process ls("ls", {"-al", "."});
+  std::cout << ls.get_cmdline();
+  std::cout << ls.out().rdbuf();
+  if (ls.joinable())
+    ls.join();
+}
+
+TEST(process_test, process_stdin_basic_test) {
+  ext::process cat("cat");
+  cat.in() << "test 1\n";
+  cat.in() << "test 2\ntest 3\n";
+  cat.in().close();
+  std::cout << cat.out().rdbuf() << std::endl;
+  if (cat.joinable())
+    cat.join();
+}
+
+#include <condition_variable>
+#include <mutex>
+
+TEST(process_test, process_stdout_test) {
+  ext::process process("find", {"/", "-name", "*.service"});
+  std::condition_variable cv;
+  std::mutex mtx;
+
+  std::thread stdout_thread([&process] {
+    ext::process wc("wc", {"-l"});
+    wc.in() << process.out().rdbuf();
+    wc.in().close();
+    std::cout << wc.out().rdbuf();
+    if (wc.joinable())
+      wc.join();
+  });
+
+  std::thread delayed_kill_thread([&mtx, &cv, &process] {
+    std::unique_lock lk(mtx);
+    cv.wait_for(lk, std::chrono::seconds(1));
+    if (process.joinable())
+      kill(process.native_handle(), SIGKILL);
+  });
+
+  EXPECT_TRUE(process.joinable());
+  process.join();
+  cv.notify_all();
+  EXPECT_EQ(process.exit_code(), EXIT_SUCCESS);
+
+  if (stdout_thread.joinable())
+    stdout_thread.join();
+  if (delayed_kill_thread.joinable())
+    delayed_kill_thread.join();
+}
+
+TEST(process_test, process_stdin_test) {
+  ext::process ps("ps", {"-ef"});
+  ext::process grep("grep", {"root"});
+  std::condition_variable cv;
+  std::mutex mtx;
+
+  std::thread stdout_thread([&ps, &grep] {
+    std::stringstream ss;
+    ss << "----------------------------------------------------------------\n"
+       << grep.out().rdbuf()
+       << "---------------------------------------------------------------"
+          "-\n";
+    auto s = ss.str();
+    std::cout << ((s.size() > 50) ? s.substr(0, 50) : s) << '\n';
+  });
+
+  std::thread delayed_kill_thread([&mtx, &cv, &ps, &grep] {
+    std::unique_lock lk(mtx);
+    cv.wait_for(lk, std::chrono::seconds(10));
+    if (grep.joinable())
+      kill(ps.native_handle(), SIGKILL);
+    if (ps.joinable())
+      kill(ps.native_handle(), SIGKILL);
+  });
+
+  grep.in() << ps.out().rdbuf();
+  grep.in().close();
+
+  EXPECT_TRUE(grep.joinable());
+  grep.join();
+  EXPECT_EQ(grep.exit_code(), EXIT_SUCCESS);
+
+  cv.notify_all();
+
+  if (stdout_thread.joinable())
+    stdout_thread.join();
+  if (delayed_kill_thread.joinable())
+    delayed_kill_thread.join();
+}
+
+TEST(process_test, process_pipe_operator_test) {
+  auto result = ext::process("ps", {"-ef"}) | ext::process("grep", {"root"}) |
+                ext::process("grep", {"/usr"}) | ext::process("wc", {"-l"});
+  EXPECT_STREQ("ps -ef | grep root | grep /usr | wc -l",
+               result.get_cmdline().c_str());
+  std::cout << "cmdline : " << result.get_cmdline() << std::endl;
+  std::cout << "result :" << result.out().rdbuf() << std::endl;
+  if (result.joinable())
+    result.join();
+}
+#endif

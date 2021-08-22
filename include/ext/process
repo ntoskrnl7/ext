@@ -22,8 +22,9 @@
 #include <unistd.h>
 #endif
 
+#include <ext/pstream>
+
 #include <list>
-#include <ostream>
 #include <string>
 
 #include "stl_compat"
@@ -84,7 +85,7 @@ public:
     }
 
   private:
-    friend process;
+    friend class process;
     mutable native_id_type id_;
   };
 
@@ -121,6 +122,13 @@ public:
     execute_(command, working_directory, arguments);
   }
 
+  process(std::istream in, const std::string &command,
+          const std::list<std::string> &arguments = std::list<std::string>(),
+          const std::string &working_directory = std::string())
+      : last_error_(no_error), exit_code_(exit_success) {
+    execute_(command, working_directory, arguments);
+  }
+
 #ifdef __cpp_rvalue_references
   process(process &&other) CXX_NOEXCEPT { swap(other); }
 
@@ -131,7 +139,13 @@ public:
     return *this;
   }
 
-  void swap(process &p) CXX_NOEXCEPT { std::swap(proc_, p.proc_); }
+  void swap(process &p) CXX_NOEXCEPT {
+    std::swap(in_, p.in_);
+    std::swap(out_, p.out_);
+    std::swap(err_, p.err_);
+    std::swap(cmdline_, p.cmdline_);
+    std::swap(proc_, p.proc_);
+  }
 #endif
 
   ~process() {
@@ -150,8 +164,12 @@ public:
 #else
     int status;
     if (waitpid(proc_.id_, &status, WNOHANG) > 0) {
-      if (WIFEXITED(status))
+      if (WIFEXITED(status)) {
+        in_.close();
+        out_.close();
+        err_.close();
         proc_.id_ = invalid_id;
+      }
     }
 #endif
     return proc_.id_ != invalid_id;
@@ -175,8 +193,14 @@ public:
     if (waitpid(proc_.id_, &status, 0) == -1) {
       proc_.id_ = invalid_id;
       last_error_ = errno;
+      in_.close();
+      out_.close();
+      err_.close();
       return;
     }
+    in_.close();
+    out_.close();
+    err_.close();
     if (WIFEXITED(status))
       exit_code_ = WEXITSTATUS(status);
 #endif
@@ -192,10 +216,14 @@ public:
     proc_.handle_ = NULL;
 #else
     native_id_type id = proc_.id_;
-    std::thread([id]() {
+    std::thread([id, in = in_.fd(), out = out_.fd(), err = err_.fd()]() {
       int status;
       waitpid(id, &status, 0);
-    }).detach();
+      close(in);
+      close(out);
+      close(err);
+    })
+        .detach();
 #endif
     proc_.id_ = invalid_id;
   }
@@ -206,7 +234,7 @@ public:
 
   native_error_code last_error() const { return last_error_; }
 
-  native_handle_type native_handle() {
+  native_handle_type native_handle() const {
 #if defined(_WIN32)
     return proc_.handle_;
 #else
@@ -214,23 +242,23 @@ public:
 #endif
   }
 
-  const std::string &get_cmdline() { return cmdline_; }
+  const std::string &get_cmdline() const { return cmdline_; }
 
 private:
   bool execute_(const std::string &command,
                 const std::string &working_directory,
                 const std::list<std::string> &arguments) {
     last_error_ = no_error;
+    cmdline_ = command;
+    for (auto arg : arguments)
+      cmdline_ += " " + arg;
+
 #if defined(_WIN32)
     PROCESS_INFORMATION pi;
     STARTUPINFOA si;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-
-    std::string cmd = command;
-    CXX_FOR(const std::string &argument, arguments)
-      cmd += " " + argument;
-    if (!CreateProcessA(NULL, &cmd[0], NULL, NULL, FALSE,
+    if (!CreateProcessA(NULL, &cmdline_[0], NULL, NULL, FALSE,
                         NORMAL_PRIORITY_CLASS | CREATE_SEPARATE_WOW_VDM, NULL,
                         working_directory.empty() ? NULL
                                                   : working_directory.c_str(),
@@ -242,26 +270,69 @@ private:
     proc_.id_ = pi.dwProcessId;
     return (proc_.handle_ != NULL);
 #else
+    int child_in[2];
+    if (pipe(child_in) == -1) {
+      last_error_ = errno;
+      return false;
+    }
+    int child_out[2];
+    if (pipe(child_out) == -1) {
+      last_error_ = errno;
+      close(child_in[0]);
+      close(child_in[1]);
+      return false;
+    }
+    int child_err[2];
+    if (pipe(child_err) == -1) {
+      last_error_ = errno;
+      close(child_in[0]);
+      close(child_in[1]);
+      close(child_out[0]);
+      close(child_out[1]);
+      return false;
+    }
+
     char *cwd = nullptr;
     if (!working_directory.empty()) {
       char buf[PATH_MAX];
       cwd = getcwd(buf, sizeof(buf));
-      (void)chdir(working_directory.c_str());
     }
     proc_.id_ = fork();
-    cmdline_ = command;
+
     if (proc_.id_ == invalid_id) {
       last_error_ = errno;
       if (cwd)
         (void)chdir(cwd);
+      close(child_in[0]);
+      close(child_in[1]);
+      close(child_out[0]);
+      close(child_out[1]);
+      close(child_err[0]);
+      close(child_err[1]);
       return false;
     }
+
     if (proc_.id_) {
-      if (cwd)
-        (void)chdir(cwd);
+      close(child_in[0]);
+      close(child_out[1]);
+      close(child_err[1]);
+
+      in_ = {child_in[1]};
+      out_ = {child_out[0]};
+      err_ = {child_err[0]};
       return true;
     }
-    setsid();
+
+    dup2(child_in[0], STDIN_FILENO);
+    dup2(child_out[1], STDOUT_FILENO);
+    dup2(child_err[1], STDERR_FILENO);
+    close(child_in[1]);
+    close(child_out[0]);
+    close(child_err[0]);
+
+    if (working_directory.c_str())
+      (void)chdir(working_directory.c_str());
+
     char **argv = new char *[arguments.size() + 2];
     argv[0] = (char *)command.c_str();
 
@@ -269,11 +340,24 @@ private:
     for (auto &argument : arguments)
       *const_argv++ = argument.c_str();
     *const_argv = nullptr;
+
+    setsid();
     execvp(argv[0], argv);
     std::terminate();
-    delete[] argv;
-    return true;
 #endif
+  }
+
+public:
+  opstream &in() { return in_; }
+  ipstream &out() { return out_; }
+  ipstream &err() { return err_; }
+
+  friend process operator|(process &&lhs, process &&rhs) {
+    rhs.in() << lhs.out().rdbuf();
+    rhs.in().close();
+    rhs.cmdline_ = lhs.cmdline_ + " | " + rhs.cmdline_;
+    lhs.detach();
+    return std::move(rhs);
   }
 
 private:
@@ -281,6 +365,9 @@ private:
   native_exit_code exit_code_;
   mutable proc_t proc_;
   std::string cmdline_;
+  mutable opstream in_;
+  mutable ipstream out_;
+  mutable ipstream err_;
 };
 
 namespace this_process {

@@ -86,47 +86,52 @@
     - Clang 10.0+
     - Visual Studio 2017+
     - C++17 or later
-14. safe_object
+14. pstream
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2017+
+    - C++11 or later
+15. safe_object
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
     - C++14 or later
-15. shared_recursive_mutex
+16. shared_recursive_mutex
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - std::shared_mutex or std::shared_timed_mutex required
-16. shared_mem
+17. shared_mem
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-17. singleton
+18. singleton
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-18. string
+19. string
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-19. stl_compat
+20. stl_compat
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-20. thread_pool
+21. thread_pool
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++14 or later
-21. type_traits
+22. type_traits
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-22. typeinfo
+23. typeinfo
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-23. url
+24. url
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
