@@ -23,26 +23,28 @@ namespace ext {
 template <std::ios::openmode M, typename T> class pstream : public T {
 public:
   pstream() {}
-  ~pstream() { buf_.close(); }
   pstream(pstream &&other) { swap(other); }
 #if defined(_WIN32)
+  void swap(pstream &p) CXX_NOEXCEPT {}
 #else
 #if defined(__GLIBCXX__)
   pstream(int fd) : T(&buf_), buf_(__gnu_cxx::stdio_filebuf<char>(fd, M)) {}
-#else
-  pstream(int fd) : fd_(fd) {}
-#endif
-#endif
-  pstream &operator=(pstream &&rhs) {
-    swap(rhs);
-    return *this;
-  };
+  ~pstream() { buf_.close(); }
 
   void swap(pstream &p) CXX_NOEXCEPT {
     std::swap(buf_, p.buf_);
     this->init(&buf_);
     p.init(&p.buf_);
   }
+#else
+  pstream(int fd) : fd_(fd) {}
+  void swap(pstream &p) CXX_NOEXCEPT { std::swap(fd_, p.fd_); }
+#endif
+#endif
+  pstream &operator=(pstream &&rhs) {
+    swap(rhs);
+    return *this;
+  };
 
 #if defined(_WIN32)
   void close() {}
