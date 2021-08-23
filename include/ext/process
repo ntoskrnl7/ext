@@ -19,15 +19,12 @@
 #include <string.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
-#include <unistd.h>
 #endif
 
 #include <list>
 #include <string>
 
-#include "stl_compat"
-
-#include <ext/pstream>
+#include "pipe"
 
 #if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #include <thread>
@@ -122,15 +119,11 @@ public:
     execute_(command, working_directory, arguments);
   }
 
-  process(std::istream in, const std::string &command,
-          const std::list<std::string> &arguments = std::list<std::string>(),
-          const std::string &working_directory = std::string())
-      : last_error_(no_error), exit_code_(exit_success) {
-    execute_(command, working_directory, arguments);
-  }
-
 #ifdef __cpp_rvalue_references
-  process(process &&other) CXX_NOEXCEPT { swap(other); }
+  process(process &&other) CXX_NOEXCEPT : last_error_(no_error),
+                                          exit_code_(exit_success) {
+    swap(other);
+  }
 
   process &operator=(process &&rhs) CXX_NOEXCEPT {
     if (joinable())
@@ -158,6 +151,9 @@ public:
       return false;
 #if defined(_WIN32)
     if (WaitForSingleObject(proc_.handle_, 0) == WAIT_ABANDONED_0) {
+      in_.close();
+      out_.close();
+      err_.close();
       proc_.handle_ = NULL;
       proc_.id_ = invalid_id;
     }
@@ -181,6 +177,9 @@ public:
 #if defined(_WIN32)
     if (WaitForSingleObject(proc_.handle_, INFINITE) != WAIT_OBJECT_0) {
       last_error_ = GetLastError();
+      in_.close();
+      out_.close();
+      err_.close();
       return;
     }
     if (!GetExitCodeProcess(proc_.handle_, &exit_code_)) {
@@ -198,12 +197,12 @@ public:
       err_.close();
       return;
     }
-    in_.close();
-    out_.close();
-    err_.close();
     if (WIFEXITED(status))
       exit_code_ = WEXITSTATUS(status);
 #endif
+    in_.close();
+    out_.close();
+    err_.close();
     proc_.id_ = invalid_id;
     return;
   }
@@ -213,17 +212,25 @@ public:
       return;
 #if defined(_WIN32)
     CloseHandle(proc_.handle_);
+    auto handle = proc_.handle_;
+    std::thread([handle, in = in_.native_handle(), out = out_.native_handle(),
+                 err = err_.native_handle()]() {
+      WaitForSingleObject(handle, INFINITE);
+      CloseHandle(in);
+      CloseHandle(out);
+      CloseHandle(err);
+    }).detach();
     proc_.handle_ = NULL;
 #else
     native_id_type id = proc_.id_;
-    std::thread([id, in = in_.fd(), out = out_.fd(), err = err_.fd()]() {
+    std::thread([id, in = in_.native_handle(), out = out_.native_handle(),
+                 err = err_.native_handle()]() {
       int status;
       waitpid(id, &status, 0);
       close(in);
       close(out);
       close(err);
-    })
-        .detach();
+    }).detach();
 #endif
     proc_.id_ = invalid_id;
   }
@@ -244,6 +251,14 @@ public:
 
   const std::string &get_cmdline() const { return cmdline_; }
 
+  void kill() {
+#if defined(_WIN32)
+    TerminateProcess(proc_.handle_, EXIT_FAILURE);
+#else
+    ::kill(proc_.id_, SIGKILL);
+#endif
+  }
+
 private:
   bool execute_(const std::string &command,
                 const std::string &working_directory,
@@ -253,13 +268,25 @@ private:
     for (auto arg : arguments)
       cmdline_ += " " + arg;
 
+    ext::pipe in;
+    ext::pipe out;
+    ext::pipe err;
 #if defined(_WIN32)
     PROCESS_INFORMATION pi;
     STARTUPINFOA si;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-    if (!CreateProcessA(NULL, &cmdline_[0], NULL, NULL, FALSE,
-                        NORMAL_PRIORITY_CLASS | CREATE_SEPARATE_WOW_VDM, NULL,
+    si.dwFlags |= STARTF_USESTDHANDLES;
+    in_ = std::move(in.write());
+    out_ = std::move(out.read());
+    err_ = std::move(err.read());
+    si.hStdInput = in.read().native_handle();
+    si.hStdOutput = out.write().native_handle();
+    si.hStdError = err.write().native_handle();
+    SetHandleInformation(in_.native_handle(), HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(out_.native_handle(), HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(err_.native_handle(), HANDLE_FLAG_INHERIT, 0);
+    if (!CreateProcessA(NULL, &cmdline_[0], NULL, NULL, TRUE, 0, NULL,
                         working_directory.empty() ? NULL
                                                   : working_directory.c_str(),
                         &si, &pi)) {
@@ -270,28 +297,6 @@ private:
     proc_.id_ = pi.dwProcessId;
     return (proc_.handle_ != NULL);
 #else
-    int child_in[2];
-    if (pipe(child_in) == -1) {
-      last_error_ = errno;
-      return false;
-    }
-    int child_out[2];
-    if (pipe(child_out) == -1) {
-      last_error_ = errno;
-      close(child_in[0]);
-      close(child_in[1]);
-      return false;
-    }
-    int child_err[2];
-    if (pipe(child_err) == -1) {
-      last_error_ = errno;
-      close(child_in[0]);
-      close(child_in[1]);
-      close(child_out[0]);
-      close(child_out[1]);
-      return false;
-    }
-
     char *cwd = nullptr;
     if (!working_directory.empty()) {
       char buf[PATH_MAX];
@@ -303,32 +308,21 @@ private:
       last_error_ = errno;
       if (cwd)
         (void)chdir(cwd);
-      close(child_in[0]);
-      close(child_in[1]);
-      close(child_out[0]);
-      close(child_out[1]);
-      close(child_err[0]);
-      close(child_err[1]);
       return false;
     }
 
     if (proc_.id_) {
-      close(child_in[0]);
-      close(child_out[1]);
-      close(child_err[1]);
-
-      in_ = {child_in[1]};
-      out_ = {child_out[0]};
-      err_ = {child_err[0]};
+      in_ = std::move(in.write());
+      out_ = std::move(out.read());
+      err_ = std::move(err.read());
       return true;
     }
-
-    dup2(child_in[0], STDIN_FILENO);
-    dup2(child_out[1], STDOUT_FILENO);
-    dup2(child_err[1], STDERR_FILENO);
-    close(child_in[1]);
-    close(child_out[0]);
-    close(child_err[0]);
+    dup2(in.read().native_handle(), STDIN_FILENO);
+    dup2(out.write().native_handle(), STDOUT_FILENO);
+    dup2(err.write().native_handle(), STDERR_FILENO);
+    ::close(in.write().native_handle());
+    ::close(out.read().native_handle());
+    ::close(err.read().native_handle());
 
     if (working_directory.c_str())
       (void)chdir(working_directory.c_str());
@@ -348,15 +342,29 @@ private:
   }
 
 public:
-  opstream &in() { return in_; }
-  ipstream &out() { return out_; }
-  ipstream &err() { return err_; }
+  opstream &in() {
+    if (last_error_ != no_error)
+      throw std::runtime_error("Invalid proceses");
+    return in_;
+  }
+  ipstream &out() {
+    if (last_error_ != no_error)
+      throw std::runtime_error("Invalid proceses");
+    return out_;
+  }
+  ipstream &err() {
+    if (last_error_ != no_error)
+      throw std::runtime_error("Invalid proceses");
+    return err_;
+  }
 
   friend process operator|(process &&lhs, process &&rhs) {
     rhs.in() << lhs.out().rdbuf();
     rhs.in().close();
     rhs.cmdline_ = lhs.cmdline_ + " | " + rhs.cmdline_;
     lhs.detach();
+    lhs.last_error_ = 0;
+    rhs.last_error_ = 0;
     return std::move(rhs);
   }
 
@@ -378,6 +386,7 @@ inline process::id get_id() {
   return process::id(getpid());
 #endif
 }
+
 inline std::string &get_cmdline() {
   static std::string cmdline_;
   if (!cmdline_.empty())

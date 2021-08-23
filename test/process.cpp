@@ -83,25 +83,49 @@ TEST(process_test, this_process_test) {
 #endif
 }
 
-#if defined(__GLIBCXX__)
 TEST(process_test, process_stdout_basic_test) {
-  ext::process ls("ls", {"-al", "."});
-  std::cout << ls.get_cmdline();
-  std::cout << ls.out().rdbuf();
-  if (ls.joinable())
-    ls.join();
+#if defined(_WIN32)
+#ifdef __cpp_initializer_lists
+  ext::process process("cmd", {"/c", "dir", "."});
+#else
+  std::list<std::string> args;
+  args.push_back("/c");
+  args.push_back("dir");
+  args.push_back(".");
+  ext::process process("cmd", args);
+#endif // __cpp_initializer_lists
+#else
+  ext::process process("ls", {"-al", "."});
+#endif
+  std::cout << process.get_cmdline() << std::endl;
+  std::cout << process.out().rdbuf() << std::endl;
+  if (process.joinable())
+    process.join();
 }
 
 TEST(process_test, process_stdin_basic_test) {
-  ext::process cat("cat");
-  cat.in() << "test 1\n";
-  cat.in() << "test 2\ntest 3\n";
-  cat.in().close();
-  std::cout << cat.out().rdbuf() << std::endl;
-  if (cat.joinable())
-    cat.join();
+#if defined(_WIN32)
+#ifdef __cpp_initializer_lists
+  ext::process process("cmd", {"/c", "more"});
+#else
+  std::list<std::string> args;
+  args.push_back("/c");
+  args.push_back("more");
+  ext::process process("cmd", args);
+#endif // __cpp_initializer_lists
+#else
+  ext::process process("more");
+#endif
+  process.in() << "test 1\n";
+  process.in() << "test 2\ntest 3\n";
+  process.in().close();
+  std::cout << process.out().rdbuf() << std::endl;
+  if (process.joinable())
+    process.join();
 }
 
+#if defined(_WIN32)
+#else
 #include <condition_variable>
 #include <mutex>
 
@@ -123,7 +147,7 @@ TEST(process_test, process_stdout_test) {
     std::unique_lock lk(mtx);
     cv.wait_for(lk, std::chrono::seconds(1));
     if (process.joinable())
-      kill(process.native_handle(), SIGKILL);
+      process.kill();
   });
 
   EXPECT_TRUE(process.joinable());
@@ -150,16 +174,16 @@ TEST(process_test, process_stdin_test) {
        << "---------------------------------------------------------------"
           "-\n";
     auto s = ss.str();
-    std::cout << ((s.size() > 50) ? s.substr(0, 50) : s) << '\n';
+    std::cout << ((s.size() > 200) ? s.substr(0, 200) : s) << '\n';
   });
 
   std::thread delayed_kill_thread([&mtx, &cv, &ps, &grep] {
     std::unique_lock lk(mtx);
     cv.wait_for(lk, std::chrono::seconds(10));
     if (grep.joinable())
-      kill(ps.native_handle(), SIGKILL);
+      grep.kill();
     if (ps.joinable())
-      kill(ps.native_handle(), SIGKILL);
+      ps.kill();
   });
 
   grep.in() << ps.out().rdbuf();

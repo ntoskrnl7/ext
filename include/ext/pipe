@@ -1,0 +1,62 @@
+/**
+ * @file pipe
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements pipe class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#ifndef _EXT_PIPE_
+#define _EXT_PIPE_
+
+#include "pstream"
+
+#if defined(_WIN32)
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
+namespace ext {
+class pipe {
+public:
+  pipe() {
+#if defined(_WIN32)
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = NULL;
+
+    HANDLE read;
+    HANDLE write;
+    if (CreatePipe(&read, &write, &sa, 0) != TRUE)
+      throw std::runtime_error("Failed to CreatePipe");
+
+    read_ = ext::ipstream(read);
+    write_ = ext::opstream(write);
+#else
+    int child[2];
+    if (::pipe(child) == -1)
+      throw std::runtime_error("Failed to pipe");
+
+    read_ = ext::ipstream(child[0]);
+    write_ = ext::opstream(child[1]);
+#endif
+  }
+
+  ~pipe() {
+    read_.close();
+    write_.close();
+  }
+
+  ipstream &read() { return read_; }
+  opstream &write() { return write_; }
+
+private:
+  ext::ipstream read_;
+  ext::opstream write_;
+};
+} // namespace ext
+#endif // _EXT_PIPE_

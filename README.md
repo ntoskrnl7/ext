@@ -76,62 +76,67 @@
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-12. process
+12. pipe
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++11 or later
-13. property
+13. process
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2017+
+    - C++11 or later
+14. property
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++17 or later
-14. pstream
+15. pstream
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++11 or later
-15. safe_object
+16. safe_object
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
     - C++14 or later
-16. shared_recursive_mutex
+17. shared_recursive_mutex
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - std::shared_mutex or std::shared_timed_mutex required
-17. shared_mem
+18. shared_mem
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-18. singleton
+19. singleton
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-19. string
+20. string
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-20. stl_compat
+21. stl_compat
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-21. thread_pool
+22. thread_pool
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2017+
     - C++14 or later
-22. type_traits
+23. type_traits
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-23. typeinfo
+24. typeinfo
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-24. url
+25. url
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+

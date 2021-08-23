@@ -15,58 +15,180 @@
 
 #if defined(__GLIBCXX__)
 #include <ext/stdio_filebuf.h>
+#else
+#include <cstring>
+#include <stdio.h>
+#if defined(_WIN32)
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
 #endif
 
 #include <iostream>
-
 namespace ext {
+#if defined(__GLIBCXX__)
+template <typename _CharT, typename _Traits = std::char_traits<_CharT>>
+class basic_pipebuf : public __gnu_cxx::stdio_filebuf<_CharT, _Traits> {
+  typedef __gnu_cxx::stdio_filebuf<_CharT, _Traits> T;
+  using T::T;
+
+public:
+  typedef int native_handle_t;
+
+  native_handle_t native_handle() {
+    return __gnu_cxx::stdio_filebuf<_CharT, _Traits>::fd();
+  }
+};
+#else
+template <typename _CharT, typename _Traits = std::char_traits<_CharT>>
+class basic_pipebuf : public std::basic_streambuf<_CharT, _Traits> {
+public:
+  typedef _CharT char_type;
+  typedef _Traits traits_type;
+  typedef typename traits_type::int_type int_type;
+  typedef typename traits_type::pos_type pos_type;
+  typedef typename traits_type::off_type off_type;
+  typedef std::basic_streambuf<char_type, traits_type> streambuf_type;
+#if defined(_WIN32)
+  typedef HANDLE native_handle_t;
+  const CXX_CONSTEXPR static native_handle_t invalid_handle = NULL;
+#else
+  typedef int native_handle_t;
+  const CXX_CONSTEXPR static native_handle_t invalid_handle = -1;
+#endif
+
+public:
+  basic_pipebuf() : buffer(nullptr), handle_(invalid_handle) {}
+  basic_pipebuf(native_handle_t handle, std::ios_base::openmode mode)
+      : buffer(nullptr), handle_(handle) {
+    if (mode & std::ios::in) {
+      buffer = new char_type[pbSize + bufSize];
+      if (!buffer)
+        throw std::bad_alloc();
+      memset(buffer, 0, pbSize + bufSize);
+      streambuf_type::setg(buffer + pbSize, buffer + pbSize, buffer + pbSize);
+    }
+  }
+  ~basic_pipebuf() {
+    if (buffer)
+      delete buffer;
+  }
+
+  //
+  //  std::ostream
+  //
+protected:
+  virtual int_type overflow(int_type c) {
+    if (c != EOF) {
+      char_type ch = static_cast<char_type>(c);
+      if (xsputn(&ch, 1) != 1)
+        return EOF;
+    }
+    return c;
+  }
+
+  virtual std::streamsize xsputn(const char *s, std::streamsize num) {
+#if defined(_WIN32)
+    DWORD bytesWritten = 0;
+    return WriteFile(handle_, s, static_cast<DWORD>(num), &bytesWritten,
+                     NULL) == TRUE
+               ? static_cast<std::streamsize>(bytesWritten)
+               : -1;
+#else
+    return ::write(handle_, s, num);
+#endif
+  }
+
+  //
+  // std::istream
+  //
+protected:
+  virtual int_type underflow() {
+#if !defined(_MSC_VER)
+    using std::memmove;
+#endif
+
+    if (streambuf_type::gptr() < streambuf_type::egptr())
+      return _Traits::to_int_type(*streambuf_type::gptr());
+
+    size_t numPutback;
+    numPutback = streambuf_type::gptr() - streambuf_type::eback();
+    if (numPutback > pbSize) {
+      numPutback = pbSize;
+    }
+
+    memmove(buffer + (pbSize - numPutback), streambuf_type::gptr() - numPutback,
+            numPutback);
+
+    int num;
+#if defined(_WIN32)
+    DWORD bytesRead = 0;
+    ReadFile(handle_, buffer + pbSize, bufSize, &bytesRead, NULL);
+    num = (int)bytesRead;
+#else
+    num = ::read(handle_, buffer + pbSize, bufSize);
+#endif
+    if (num <= 0)
+      return EOF;
+
+    streambuf_type::setg(buffer + (pbSize - numPutback), buffer + pbSize,
+                         buffer + pbSize + num);
+
+    return _Traits::to_int_type(*streambuf_type::gptr());
+  }
+
+private:
+  static const int pbSize = 4;
+  static const int bufSize = BUFSIZ;
+  char_type *buffer;
+
+private:
+  native_handle_t handle_;
+
+public:
+  native_handle_t native_handle() { return handle_; }
+
+  void close() {
+    if (handle_ != invalid_handle) {
+#if defined(_WIN32)
+      CloseHandle(handle_);
+#else
+      ::close(handle_);
+#endif
+      handle_ = invalid_handle;
+    }
+  }
+};
+#endif
+
+using pipebuf = basic_pipebuf<char>;
+
 template <std::ios::openmode M, typename T> class pstream : public T {
 public:
-  pstream() {}
-  pstream(pstream &&other) { swap(other); }
-#if defined(_WIN32)
-  void swap(pstream &p) CXX_NOEXCEPT {}
-#else
-#if defined(__GLIBCXX__)
-  pstream(int fd) : T(&buf_), buf_(__gnu_cxx::stdio_filebuf<char>(fd, M)) {}
+  typedef typename pipebuf::native_handle_t native_handle_t;
+
+  pstream() : T(nullptr) {}
+  pstream(pstream &&other) : T(nullptr) { swap(other); }
+  pstream(native_handle_t handle) : T(&buf_), buf_(pipebuf(handle, M)) {}
   ~pstream() { buf_.close(); }
 
   void swap(pstream &p) CXX_NOEXCEPT {
     std::swap(buf_, p.buf_);
-    this->init(&buf_);
-    p.init(&p.buf_);
+    this->rdbuf(&buf_);
+    p.rdbuf(&p.buf_);
   }
-#else
-  pstream(int fd) : fd_(fd) {}
-  void swap(pstream &p) CXX_NOEXCEPT { std::swap(fd_, p.fd_); }
-#endif
-#endif
+
   pstream &operator=(pstream &&rhs) {
     swap(rhs);
     return *this;
   };
 
-#if defined(_WIN32)
-  void close() {}
-#else
-#if defined(__GLIBCXX__)
-  int fd() { return buf_.fd(); }
+  native_handle_t native_handle() { return buf_.native_handle(); }
   void close() { buf_.close(); }
-#else
-  int fd() { return fd_; }
-  void close() {}
-#endif
-#endif
 
 private:
-#if defined(_WIN32)
-#else
-#if defined(__GLIBCXX__)
-  mutable __gnu_cxx::stdio_filebuf<char> buf_;
-#else
-  int fd_;
-#endif
-#endif
+  mutable pipebuf buf_;
 };
 
 using ipstream = pstream<std::ios::in, std::istream>;
