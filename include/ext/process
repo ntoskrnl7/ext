@@ -15,10 +15,11 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #else
+#include <csignal>
 #include <limits.h>
 #include <string.h>
 #include <sys/wait.h>
-#include <csignal>
+
 #endif
 
 #include <list>
@@ -307,7 +308,7 @@ private:
     if (proc_.id_ == invalid_id) {
       last_error_ = errno;
       if (cwd)
-        cwd = chdir(cwd);
+        int res_ = chdir(cwd);
       return false;
     }
 
@@ -325,7 +326,7 @@ private:
     ::close(err.read().native_handle());
 
     if (working_directory.c_str())
-      cwd = chdir(working_directory.c_str());
+      int res_ = chdir(working_directory.c_str());
 
     char **argv = new char *[arguments.size() + 2];
     argv[0] = (char *)command.c_str();
