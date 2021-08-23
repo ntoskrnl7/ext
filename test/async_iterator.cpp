@@ -94,12 +94,8 @@ TEST(async_iterator_test, int_thread_cancelable_test) {
   std::thread t0([&res, &processed]() {
     std::this_thread::sleep_for(std::chrono::microseconds(500));
     res.cancel();
-    std::stringstream s;
-    s << "cancel requested - processed " << processed << "\n";
-    std::cout << s.str();
   });
-
-  std::thread t([&res, &processed]() {
+  std::thread t1([&res, &processed]() {
     CXX_FOR(auto &i, res) {
       EXPECT_LE(i, processed);
       EXPECT_LT(i, (int)res.size());
@@ -114,8 +110,8 @@ TEST(async_iterator_test, int_thread_cancelable_test) {
 
   if (t0.joinable())
     t0.join();
-  if (t.joinable())
-    t.join();
+  if (t1.joinable())
+    t1.join();
   if (t2.joinable())
     t2.join();
 }
