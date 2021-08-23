@@ -86,8 +86,8 @@ TEST(async_iterator_test, int_thread_cancelable_test) {
     for (int i = 0; i < count; ++i) {
       if (ctx.cancel_requested())
         break;
-      ctx.push(i);
       processed = i;
+      ctx.push(i);
     }
   });
 
@@ -128,9 +128,7 @@ TEST(async_iterator_test, string_test) {
   });
 
   int j = 1;
-  CXX_FOR(auto &s, res) {
-    EXPECT_EQ(s, "str " + std::to_string(j++));
-  }
+  CXX_FOR(auto &s, res) { EXPECT_EQ(s, "str " + std::to_string(j++)); }
 }
 
 TEST(async_iterator_test, pair_test) {

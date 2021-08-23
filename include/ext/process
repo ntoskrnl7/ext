@@ -307,7 +307,7 @@ private:
     if (proc_.id_ == invalid_id) {
       last_error_ = errno;
       if (cwd)
-        (void)chdir(cwd);
+        cwd = chdir(cwd);
       return false;
     }
 
@@ -325,7 +325,7 @@ private:
     ::close(err.read().native_handle());
 
     if (working_directory.c_str())
-      (void)chdir(working_directory.c_str());
+      cwd = chdir(working_directory.c_str());
 
     char **argv = new char *[arguments.size() + 2];
     argv[0] = (char *)command.c_str();
