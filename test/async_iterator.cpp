@@ -13,45 +13,45 @@ TEST(async_iterator_test, int_test) {
   int_result res([](int_result::context &ctx) {
     ctx.begin(4);
     ctx.push(1);
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ctx.push(2);
     ctx.push(3);
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ctx.push(4);
     ctx.end();
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   });
 
+  int j = 1;
   CXX_FOR(auto &i, res) {
-    std::cout << i << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    EXPECT_EQ(j++, i);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
+  j = 1;
   CXX_FOR(auto &i, res) {
-    std::cout << i << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    EXPECT_EQ(j++, i);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
-  CXX_FOR(auto &i, res) {
-    EXPECT_TRUE(false);
-    std::cout << i << std::endl;
-  }
+  CXX_FOR(auto &i, res) EXPECT_TRUE(false);
 
   res = int_result([](int_result::context &ctx) {
     ctx.begin(4);
     ctx.push(5);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    ctx.push(6);
     ctx.push(7);
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    ctx.push(8);
     ctx.push(9);
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    ctx.push(11);
+    ctx.push(13);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   });
   EXPECT_EQ(res.size(), 5);
 
+  j = 3;
   CXX_FOR(auto &i, res) {
-    std::cout << i << std::endl;
+    EXPECT_EQ(j += 2, i);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
@@ -66,22 +66,10 @@ TEST(async_iterator_test, int_thread_test) {
   });
 
   std::thread t([&res]() {
-    CXX_FOR(auto &i, res) {
-      std::stringstream s;
-      s << "t(" << res.current() << "/" << res.size() << "):\t" << i
-        << std::endl;
-      std::cout << s.str();
-      EXPECT_LT(i, (int)res.size());
-    }
+    CXX_FOR(auto &i, res) { EXPECT_LT(i, (int)res.size()); }
   });
   std::thread t2([&res]() {
-    CXX_FOR(auto &i, res) {
-      std::stringstream s;
-      s << "t2(" << res.current() << "/" << res.size() << "):\t" << i
-        << std::endl;
-      std::cout << s.str();
-      EXPECT_LT(i, (int)res.size());
-    }
+    CXX_FOR(auto &i, res) { EXPECT_LT(i, (int)res.size()); }
   });
   if (t.joinable())
     t.join();
@@ -113,20 +101,12 @@ TEST(async_iterator_test, int_thread_cancelable_test) {
 
   std::thread t([&res, &processed]() {
     CXX_FOR(auto &i, res) {
-      std::stringstream s;
-      s << "t(" << res.current() << "/" << res.size() << "):\t" << i
-        << std::endl;
-      std::cout << s.str();
       EXPECT_LE(i, processed);
       EXPECT_LT(i, (int)res.size());
     }
   });
   std::thread t2([&res, &processed]() {
     CXX_FOR(auto &i, res) {
-      std::stringstream s;
-      s << "t2(" << res.current() << "/" << res.size() << "):\t" << i
-        << std::endl;
-      std::cout << s.str();
       EXPECT_LE(i, processed);
       EXPECT_LT(i, (int)res.size());
     }
@@ -150,8 +130,11 @@ TEST(async_iterator_test, string_test) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ctx.push("str 4");
   });
-  CXX_FOR(auto &s, res)
-  std::cout << s << std::endl;
+
+  int j = 1;
+  CXX_FOR(auto &s, res) {
+    EXPECT_EQ(s, "str " + std::to_string(j++));
+  }
 }
 
 TEST(async_iterator_test, pair_test) {
@@ -178,8 +161,8 @@ TEST(async_iterator_test, pair_test) {
 #endif
   });
 
+  int j = 0;
   CXX_FOR(auto &s, res) {
-    std::cout << s.first << "," << s.second << std::endl;
     EXPECT_EQ(s.first, "str " + std::to_string((long long)s.second));
     EXPECT_EQ(s.second, s.second);
   }

@@ -17,7 +17,6 @@
 #include <ext/stdio_filebuf.h>
 #else
 #include <cstring>
-#include <stdio.h>
 #if defined(_WIN32)
 #include <Windows.h>
 #else
@@ -59,20 +58,14 @@ public:
 #endif
 
 public:
-  basic_pipebuf() : buffer(nullptr), handle_(invalid_handle) {}
+  basic_pipebuf() : handle_(invalid_handle) {}
   basic_pipebuf(native_handle_t handle, std::ios_base::openmode mode)
-      : buffer(nullptr), handle_(handle) {
+      : handle_(handle) {
     if (mode & std::ios::in) {
-      buffer = new char_type[pbSize + bufSize];
-      if (!buffer)
-        throw std::bad_alloc();
-      memset(buffer, 0, pbSize + bufSize);
-      streambuf_type::setg(buffer + pbSize, buffer + pbSize, buffer + pbSize);
+      buffer.resize(putback_begin + buffer_size);
+      streambuf_type::setg(&buffer[putback_begin], &buffer[putback_begin],
+                           &buffer[putback_begin]);
     }
-  }
-  ~basic_pipebuf() {
-    if (buffer)
-      delete buffer;
   }
 
   //
@@ -80,15 +73,15 @@ public:
   //
 protected:
   virtual int_type overflow(int_type c) {
-    if (c != EOF) {
+    if (c != _Traits::eof()) {
       char_type ch = static_cast<char_type>(c);
       if (xsputn(&ch, 1) != 1)
-        return EOF;
+        return _Traits::eof();
     }
     return c;
   }
 
-  virtual std::streamsize xsputn(const char *s, std::streamsize num) {
+  virtual std::streamsize xsputn(const char_type *s, std::streamsize num) {
 #if defined(_WIN32)
     DWORD bytesWritten = 0;
     return WriteFile(handle_, s, static_cast<DWORD>(num), &bytesWritten,
@@ -105,43 +98,37 @@ protected:
   //
 protected:
   virtual int_type underflow() {
-#if !defined(_MSC_VER)
-    using std::memmove;
-#endif
-
     if (streambuf_type::gptr() < streambuf_type::egptr())
       return _Traits::to_int_type(*streambuf_type::gptr());
 
-    size_t numPutback;
-    numPutback = streambuf_type::gptr() - streambuf_type::eback();
-    if (numPutback > pbSize) {
-      numPutback = pbSize;
-    }
+    size_t putback_len = streambuf_type::gptr() - streambuf_type::eback();
+    if (putback_len > putback_begin)
+      putback_len = putback_begin;
 
-    memmove(buffer + (pbSize - numPutback), streambuf_type::gptr() - numPutback,
-            numPutback);
-
-    int num;
+    std::memmove(&buffer[putback_begin - putback_len],
+                 streambuf_type::gptr() - putback_len, putback_len);
 #if defined(_WIN32)
     DWORD bytesRead = 0;
-    ReadFile(handle_, buffer + pbSize, bufSize, &bytesRead, NULL);
-    num = (int)bytesRead;
+    size_t len =
+        ::ReadFile(handle_, &buffer[putback_begin],
+                   static_cast<DWORD>(buffer_size), &bytesRead, NULL) == TRUE
+            ? static_cast<size_t>(bytesRead)
+            : 0;
 #else
-    num = ::read(handle_, buffer + pbSize, bufSize);
+    size_t len = ::read(handle_, &buffer[putback_begin], buffer_size);
 #endif
-    if (num <= 0)
-      return EOF;
+    if (len <= 0)
+      return _Traits::eof();
 
-    streambuf_type::setg(buffer + (pbSize - numPutback), buffer + pbSize,
-                         buffer + pbSize + num);
-
+    streambuf_type::setg(&buffer[putback_begin - putback_len],
+                         &buffer[putback_begin], &buffer[putback_begin + len]);
     return _Traits::to_int_type(*streambuf_type::gptr());
-  }
+  } // namespace ext
 
 private:
-  static const int pbSize = 4;
-  static const int bufSize = BUFSIZ;
-  char_type *buffer;
+  std::vector<char_type> buffer;
+  static const size_t putback_begin = 128;
+  static const size_t buffer_size = 4096;
 
 private:
   native_handle_t handle_;
