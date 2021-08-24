@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#define CXX_USE_NULLPTR
+#include "stl_compat"
+
 #include "platforms/misc.h"
 
 #if defined(_WIN32)

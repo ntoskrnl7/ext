@@ -28,7 +28,7 @@ TEST(shared_mem_test, create_open_compare) {
   shared_mem_base mem("memory_struct0");
   EXPECT_TRUE(mem.open());
   memory_struct0 *buffer = (memory_struct0 *)mem.map(0, sizeof(memory_struct0));
-  EXPECT_NE(buffer, nullptr);
+  EXPECT_NE(buffer, (memory_struct0 *)nullptr);
 
   st_mem->i = 100;
   st_mem->j = 200;

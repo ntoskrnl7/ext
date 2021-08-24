@@ -33,10 +33,10 @@ template <typename T> inline const T *trim_str() {
 // printable functions.
 //
 
+#if defined(__cpp_lambdas)
 template <typename T>
 inline std::basic_string<T> &rprintable(std::basic_string<T> &s) {
-  s.erase(std::find_if(s.rbegin(), s.rend(),
-                       [](int ch) { return std::isprint(ch); })
+  s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) { return isprint(ch); })
               .base(),
           s.end());
   return s;
@@ -44,15 +44,14 @@ inline std::basic_string<T> &rprintable(std::basic_string<T> &s) {
 
 template <typename T>
 inline std::basic_string<T> &lprintable(std::basic_string<T> &s) {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-                                  [](int ch) { return std::isprint(ch); }));
+  s.erase(s.begin(),
+          std::find_if(s.begin(), s.end(), [](int ch) { return isprint(ch); }));
   return s;
 }
 
 template <typename T>
 inline std::basic_string<T> &printable(std::basic_string<T> &s) {
-  s.erase(std::remove_if(s.begin(), s.end(),
-                         [](T ch) { return !std::isprint(ch); }),
+  s.erase(std::remove_if(s.begin(), s.end(), [](T ch) { return !isprint(ch); }),
           s.end());
   return s;
 }
@@ -91,6 +90,7 @@ template <typename T> inline std::basic_string<T> printable(const T *s) {
   std::basic_string<T> ss(s);
   return std::move(printable(ss));
 }
+#endif
 
 //
 // trim functions.

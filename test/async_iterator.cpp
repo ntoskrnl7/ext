@@ -34,7 +34,7 @@ TEST(async_iterator_test, int_test) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
-  CXX_FOR(auto &i, res) EXPECT_TRUE(false);
+  CXX_FOR(auto &i, res) { EXPECT_TRUE(false); }
 
   res = int_result([](int_result::context &ctx) {
     ctx.begin(4);
@@ -128,7 +128,9 @@ TEST(async_iterator_test, string_test) {
   });
 
   int j = 1;
-  CXX_FOR(auto &s, res) { EXPECT_EQ(s, "str " + std::to_string(j++)); }
+  CXX_FOR(auto &s, res) {
+    EXPECT_EQ(s, "str " + std::to_string((long long)j++));
+  }
 }
 
 TEST(async_iterator_test, pair_test) {
@@ -189,26 +191,27 @@ void int_test_phase1(int_result::context &ctx) {
 TEST(async_iterator_test, int_test) {
   typedef ext::async_result<int> int_result;
   int_result res = int_test_phase0;
+
+  int j = 1;
   CXX_FOR(int i, res) {
-    std::cout << i << std::endl;
+    EXPECT_EQ(j++, i);
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 
+  j = 1;
   CXX_FOR(int i, res) {
-    std::cout << i << std::endl;
+    EXPECT_EQ(j++, i);
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 
-  CXX_FOR(int &i, res) {
-    EXPECT_TRUE(false);
-    std::cout << i << std::endl;
-  }
+  CXX_FOR(int &i, res) { EXPECT_TRUE(false); }
 
   res = int_result(int_test_phase1);
   EXPECT_EQ((int)res.size(), 5);
 
+  j = 5;
   CXX_FOR(int &i, res) {
-    std::cout << i << std::endl;
+    EXPECT_EQ(j++, i);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }

@@ -1,6 +1,7 @@
 #include <ext/path>
 #include <ext/process>
 
+#if _EXT_PROCES_
 #define GTEST_HAS_TR1_TUPLE 0
 #include <gtest/gtest.h>
 
@@ -211,4 +212,5 @@ TEST(process_test, process_pipe_operator_test) {
   if (result.joinable())
     result.join();
 }
+#endif
 #endif

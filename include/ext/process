@@ -8,6 +8,9 @@
  */
 #pragma once
 
+#include "stl_compat"
+
+#if CXX_VER >= 201103L
 #ifndef _EXT_PROCESS_
 #define _EXT_PROCESS_
 
@@ -426,3 +429,4 @@ inline std::string &get_cmdline() {
 } // namespace this_process
 } // namespace ext
 #endif // _EXT_PROCES_
+#endif

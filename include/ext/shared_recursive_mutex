@@ -25,6 +25,8 @@
 #include <boost/unordered/unordered_map.hpp>
 
 #define CXX_USE_NULLPTR
+#define CXX_USE_STD_SYSTEM_ERROR
+#include <boost/system/system_error.hpp>
 #endif
 
 #include "stl_compat"
