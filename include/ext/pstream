@@ -16,7 +16,6 @@
 #if defined(__GLIBCXX__)
 #include <ext/stdio_filebuf.h>
 #else
-#include <cstring>
 #if defined(_WIN32)
 #include <Windows.h>
 #else
@@ -24,7 +23,10 @@
 #endif
 #endif
 
+#include <cstring>
 #include <iostream>
+#include <vector>
+
 namespace ext {
 #if defined(__GLIBCXX__)
 template <typename _CharT, typename _Traits = std::char_traits<_CharT>>

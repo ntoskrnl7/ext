@@ -1,8 +1,8 @@
-#include <ext/path>
 #include <ext/process>
 
-#ifdef _EXT_PROCES_
+#ifdef _EXT_PROCESS_
 #define GTEST_HAS_TR1_TUPLE 0
+#include <ext/path>
 #include <gtest/gtest.h>
 
 TEST(process_test, run_invalid_cmd) {
