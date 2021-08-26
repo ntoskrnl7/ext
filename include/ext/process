@@ -223,7 +223,8 @@ public:
       CloseHandle(in);
       CloseHandle(out);
       CloseHandle(err);
-    }).detach();
+    })
+        .detach();
     proc_.handle_ = NULL;
 #else
     native_id_type id = proc_.id_;
@@ -234,7 +235,8 @@ public:
       close(in);
       close(out);
       close(err);
-    }).detach();
+    })
+        .detach();
 #endif
     proc_.id_ = invalid_id;
   }
@@ -311,7 +313,8 @@ private:
     if (proc_.id_ == invalid_id) {
       last_error_ = errno;
       if (cwd)
-        int res_ = chdir(cwd);
+        if (chdir(cwd) == -1) {
+        }
       return false;
     }
 
@@ -329,7 +332,8 @@ private:
     ::close(err.read().native_handle());
 
     if (working_directory.c_str())
-      int res_ = chdir(working_directory.c_str());
+      if (chdir(working_directory.c_str()) == -1) {
+      }
 
     char **argv = new char *[arguments.size() + 2];
     argv[0] = (char *)command.c_str();
