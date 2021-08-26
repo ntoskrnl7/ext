@@ -15,20 +15,20 @@
 
 #define CXX_USE_STD_MUTEX
 #include <boost/thread/mutex.hpp>
-
-#define CXX_USE_NULLPTR
 #endif
 
-#include <ext/shared_recursive_mutex>
+#define CXX_USE_NULLPTR
 #include <ext/observable>
+#include <ext/shared_recursive_mutex>
 
-#ifndef _EXT_STD_CHRONO_
+#if !defined(_EXT_STD_CHRONO_) && !defined(CXX_STD_CHRONO_NOT_SUPPORTED)
 #include <chrono>
 #endif
 #if !defined(_EXT_STD_THREAD_) && !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #include <thread>
 #endif
-#ifndef _EXT_STD_CONDITION_VARIABLE_
+#if !defined(_EXT_STD_CONDITION_VARIABLE_) &&                                  \
+    !defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED)
 #include <condition_variable>
 #endif
 #if !defined(_EXT_STD_MUTEX_) && !defined(CXX_STD_MUTEX_NOT_SUPPORTED)

@@ -1,4 +1,6 @@
 #include <ext/callback>
+
+#ifdef _EXT_CALLBACK_
 #include <functional>
 #include <gtest/gtest.h>
 
@@ -43,3 +45,4 @@ TEST(callback_test, callback_args_test) {
   EXPECT_EQ(sum, 80);
 }
 #endif
+#endif // _EXT_CALLBACK_

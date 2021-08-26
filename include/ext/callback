@@ -7,8 +7,6 @@
  *
  */
 #pragma once
-#ifndef _EXT_CALLBACK_
-#define _EXT_CALLBACK_
 
 #ifdef CXX_USE_BOOST
 #define CXX_USE_STD_MUTEX
@@ -22,7 +20,10 @@
 #endif // CXX_USE_BOOST
 
 #include "stl_compat"
+
 #if defined(CXX_MUTEX) || defined(_EXT_STD_MUTEX_)
+#ifndef _EXT_CALLBACK_
+#define _EXT_CALLBACK_
 #include <functional>
 #include <memory>
 #ifndef _EXT_STD_MUTEX_
@@ -80,6 +81,6 @@ private:
   std::unordered_map<cookie, std::shared_ptr<context>> data_;
 };
 } // namespace ext
-#endif // CXX_MUTEX
 
 #endif // _EXT_CALLBACK_
+#endif // defined(CXX_MUTEX) || defined(_EXT_STD_MUTEX_)

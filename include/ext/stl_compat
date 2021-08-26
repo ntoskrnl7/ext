@@ -350,8 +350,8 @@ typedef unsigned long long uint_least64_t;
 
 typedef signed char int_fast8_t;
 typedef unsigned char uint_fast8_t;
-//typedef signed short int int_fast16_t;
-//typedef unsigned short int uint_fast16_t;
+typedef signed short int int_fast16_t;
+typedef unsigned short int uint_fast16_t;
 typedef signed int int_fast32_t;
 typedef unsigned int uint_fast32_t;
 typedef signed long long int_fast64_t;
@@ -795,7 +795,7 @@ using namespace std::tr1::placeholders;
 #ifdef CXX_USE_NULLPTR
 #ifndef _EXT_NULLPTR_
 #define _EXT_NULLPTR_
-const class {
+const class nullptr_t {
 public:
   template <class T> operator T *() const { return 0; }
   template <class C, class T> operator T C::*() const { return 0; }
@@ -815,6 +815,10 @@ private:
 namespace std {
 template <typename T> class unique_ptr {
 public:
+  unique_ptr &operator=(nullptr_t) {
+    reset();
+    return *this;
+  }
   unique_ptr() : ptr_(nullptr) {}
   unique_ptr(T *ptr) : ptr_(ptr) {}
   ~unique_ptr() {
@@ -824,11 +828,11 @@ public:
   void reset(T *ptr = nullptr) {
     if (ptr_)
       delete ptr_;
-    if (ptr)
-      ptr_ = ptr;
+    ptr_ = ptr;
   }
   operator bool() { return ptr_ != nullptr; }
   T &operator*() { return *ptr_; }
+  T *operator->() { return ptr_; }
 
 private:
   T *ptr_;
@@ -924,7 +928,7 @@ CXX_CONSTEXPR byte operator|(const byte _Left, const byte _Right) CXX_NOEXCEPT {
       static_cast<unsigned int>(_Left) | static_cast<unsigned int>(_Right)));
 }
 
-CXX_CONSTEXPR byte operator&(const byte _Left, const byte _Right)CXX_NOEXCEPT {
+CXX_CONSTEXPR byte operator&(const byte _Left, const byte _Right) CXX_NOEXCEPT {
   return static_cast<byte>(static_cast<unsigned char>(
       static_cast<unsigned int>(_Left) & static_cast<unsigned int>(_Right)));
 }

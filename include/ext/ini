@@ -8,15 +8,17 @@
  */
 #pragma once
 
-#ifndef _EXT_INI_
-#define _EXT_INI_
-
 #ifdef CXX_USE_BOOST
 #define CXX_USE_STD_REGEX
 #include <boost/regex.hpp>
 #endif
 
 #include "stl_compat"
+
+#if ((!defined(CXX_STD_REGEX_NOT_SUPPORTED)) || defined(_EXT_STD_REGEX_))
+#ifndef _EXT_INI_
+#define _EXT_INI_
+
 #include "string"
 
 #include <istream>
@@ -25,7 +27,6 @@
 #if !defined(CXX_STD_REGEX_NOT_SUPPORTED)
 #include <regex>
 #endif
-
 namespace ext {
 class ini {
 public:
@@ -129,3 +130,4 @@ inline std::ostream &operator<<(std::ostream &stream, class ini &ini) {
 } // namespace ext
 
 #endif // _EXT_INI_
+#endif

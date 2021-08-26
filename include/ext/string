@@ -36,28 +36,34 @@ template <typename T> inline const T *trim_str() {
 // printable functions.
 //
 
-#if defined(__cpp_lambdas)
 template <typename T>
 inline std::basic_string<T> &rprintable(std::basic_string<T> &s) {
-  s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) { return isprint(ch); })
-              .base(),
-          s.end());
+  s.erase(std::find_if(s.rbegin(), s.rend(), isprint).base(), s.end());
   return s;
 }
 
 template <typename T>
 inline std::basic_string<T> &lprintable(std::basic_string<T> &s) {
-  s.erase(s.begin(),
-          std::find_if(s.begin(), s.end(), [](int ch) { return isprint(ch); }));
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), isprint));
   return s;
 }
 
+#if defined(__cpp_lambdas)
 template <typename T>
 inline std::basic_string<T> &printable(std::basic_string<T> &s) {
   s.erase(std::remove_if(s.begin(), s.end(), [](T ch) { return !isprint(ch); }),
           s.end());
   return s;
 }
+#else
+template <typename T> bool is_not_print(T ch) { return !isprint(ch); }
+
+template <typename T>
+inline std::basic_string<T> &printable(std::basic_string<T> &s) {
+  s.erase(std::remove_if(s.begin(), s.end(), is_not_print<T>), s.end());
+  return s;
+}
+#endif
 
 #if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
 template <typename T>
@@ -93,7 +99,6 @@ template <typename T> inline std::basic_string<T> printable(const T *s) {
   std::basic_string<T> ss(s);
   return std::move(printable(ss));
 }
-#endif
 
 //
 // trim functions.

@@ -31,10 +31,16 @@
 
 #include "stl_compat"
 
+#if ((!defined(CXX_STD_ATOMIC_NOT_SUPPORTED)) || defined(_EXT_STD_ATOMIC_)) && \
+    ((!defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED)) ||                         \
+     defined(_EXT_STD_SHARED_MUTEX_)) &&                                       \
+    ((!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_))
+
 #if !defined(_EXT_STD_THREAD_) && !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #include <thread>
 #endif
-#if !defined(_EXT_STD_SHARED_MUTEX_) && !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED)
+#if !defined(_EXT_STD_SHARED_MUTEX_) &&                                        \
+    !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED)
 #include <shared_mutex>
 #endif
 #if !defined(_EXT_STD_ATOMIC_) && !defined(CXX_STD_ATOMIC_NOT_SUPPORTED)
@@ -44,6 +50,7 @@
 #if !defined(_EXT_STD_UNORDERED_MAP_)
 #include <unordered_map>
 #endif
+
 namespace ext {
 /**
  * @brief The shared_recursive_mutex class
@@ -160,3 +167,4 @@ private:
 } // namespace ext
 
 #endif // _EXT_SHARED_RECURSIVE_MUTEX_
+#endif

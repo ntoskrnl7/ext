@@ -1,5 +1,6 @@
 ﻿#include <ext/ini>
 
+#ifdef _EXT_INI_
 #include <gtest/gtest.h>
 
 #include <sstream>
@@ -76,7 +77,8 @@ TEST(ini_test, ofstream_test) {
 }
 
 TEST(ini_test, erase_test) {
-  ext::ini ini(std::istringstream("[TEST]\nX=10\nY=20\n[TEST1]\nZ=30\n[TEST2]\nX=40\nY=50\n[TEST3]\nZ=60"));
+  ext::ini ini(std::istringstream(
+      "[TEST]\nX=10\nY=20\n[TEST1]\nZ=30\n[TEST2]\nX=40\nY=50\n[TEST3]\nZ=60"));
   EXPECT_STREQ(ini["TEST"]["X"].c_str(), "10");
   EXPECT_STREQ(ini["TEST"]["Y"].c_str(), "20");
   EXPECT_STREQ(ini["TEST1"]["Z"].c_str(), "30");
@@ -86,7 +88,8 @@ TEST(ini_test, erase_test) {
 
   ini["TEST"].erase("X");
   EXPECT_TRUE(ini["TEST"].find("X") == ini["TEST"].end());
-  
+
   ini.erase("TEST1");
   EXPECT_FALSE(ini.contains("TEST1"));
 }
+#endif
