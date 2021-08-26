@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#ifndef _EXT_SHARED_MEM_
+#define _EXT_SHARED_MEM_
+
 #define CXX_USE_NULLPTR
 #include "stl_compat"
 
@@ -544,3 +547,5 @@ private:
 };
 
 #endif
+
+#endif // _EXT_SHARED_MEM_
