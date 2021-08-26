@@ -7,6 +7,9 @@
  *
  */
 #pragma once
+#ifndef _EXT_CALLBACK_
+#define _EXT_CALLBACK_
+
 #ifdef CXX_USE_BOOST
 #define CXX_USE_STD_MUTEX
 #include <boost/thread/mutex.hpp>
@@ -50,7 +53,7 @@ public:
     std::unique_lock<std::mutex> lk(mtx_);
     typedef std::pair<cookie, std::shared_ptr<context>> type;
     CXX_FOR(type item, data_)
-      item.second->callback_(__CALLBACK_ARGS__);
+    item.second->callback_(__CALLBACK_ARGS__);
   }
 
   cookie operator+=(function callback) {
@@ -78,3 +81,5 @@ private:
 };
 } // namespace ext
 #endif // CXX_MUTEX
+
+#endif // _EXT_CALLBACK_

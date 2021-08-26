@@ -270,7 +270,8 @@ public:
       close(in);
       close(out);
       close(err);
-    }).detach();
+    })
+        .detach();
 #endif
     proc_.id_ = invalid_id;
   }

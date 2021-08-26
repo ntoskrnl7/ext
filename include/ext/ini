@@ -8,6 +8,9 @@
  */
 #pragma once
 
+#ifndef _EXT_INI_
+#define _EXT_INI_
+
 #ifdef CXX_USE_BOOST
 #define CXX_USE_STD_REGEX
 #include <boost/regex.hpp>
@@ -124,3 +127,5 @@ inline std::ostream &operator<<(std::ostream &stream, class ini &ini) {
   return stream;
 }
 } // namespace ext
+
+#endif // _EXT_INI_

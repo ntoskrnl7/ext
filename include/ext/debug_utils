@@ -42,7 +42,8 @@ inline bool is_debugger_present() {
 }
 
 #define breakpoint() std::raise(SIGINT)
-int msleep(long msec) {
+
+inline int msleep(long msec) {
   struct timespec ts;
   int res;
 
@@ -63,16 +64,16 @@ int msleep(long msec) {
 #endif
 
 inline bool wait_for_debugger(unsigned long timeout) {
-#define sleep_duration 100
-  timeout /= sleep_duration;
+  const long duration = 100;
+  timeout /= duration;
   for (unsigned long i = 0; i < timeout; ++i) {
     if (is_debugger_present())
       return true;
-    msleep(sleep_duration);
+    msleep(duration);
   }
   return false;
 }
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif // __DEBUG_UTIL_H__

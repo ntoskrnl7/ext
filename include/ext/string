@@ -8,6 +8,9 @@
  */
 #pragma once
 
+#ifndef _EXT_STRING_
+#define _EXT_STRING_
+
 #include <algorithm>
 #include <ctype.h>
 #include <functional>
@@ -465,3 +468,5 @@ inline std::vector<std::string> split(const std::string &str,
 } // namespace string
 using namespace string;
 } // namespace ext
+
+#endif // _EXT_STRING_
