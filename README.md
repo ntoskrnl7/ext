@@ -25,7 +25,7 @@
 - gcc 7.5.0, 8.3.0
 - g++ 7.5.0, 8.3.0
 - Clang 10.0.0, 11.0.0
-- Visual Studio 2008 SP1, 2010, 2017
+- Visual Studio 2008 SP1, 2010, 2017, 2019
 
 ---
 
@@ -38,7 +38,8 @@
 2. async_iterator
    - gcc 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1+
+   - Visual Studio 2008 SP1, 2010+ (with Boost 1.69.0)
+   - Visual Studio 2017+
 3. base64
    - gcc 8.3.0+
    - Clang 10.0+
@@ -46,7 +47,8 @@
 4. callback
    - gcc 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1+
+   - Visual Studio 2008 SP1, 2010+ (with Boost 1.69.0)
+   - Visual Studio 2017+
 5. cdbg
    - gcc 8.3.0+
    - Clang 10.0+
@@ -62,16 +64,21 @@
 8. collection
    - gcc 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
+   - Visual Studio 2008 SP1+, 2010 (with Boost 1.69.0)
+   - Visual Studio 2017+
    - std::shared_mutex or std::shared_timed_mutex required
 9. ini
    - gcc 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1+
+   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
+   - Visual Studio 2010+
+   - std::regex required
 10. observable
     - gcc 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1+
+    - Visual Studio 2008 SP1+, 2010 (with Boost 1.69.0)
+    - Visual Studio 2017+
+    - std::shared_mutex or std::shared_timed_mutex required
 11. path
     - gcc 8.3.0+
     - Clang 10.0+
@@ -79,13 +86,13 @@
 12. pipe
     - gcc 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2017+
-    - C++11 or later
+    - Visual Studio 2008 SP1+
 13. process
     - gcc 8.3.0+
     - Clang 10.0+
+    - Visual Studio 2008 SP1, 2010+ (with Boost 1.69.0)
     - Visual Studio 2017+
-    - C++11 or later
+    - std::thread required
 14. property
     - gcc 8.3.0+
     - Clang 10.0+
@@ -94,8 +101,7 @@
 15. pstream
     - gcc 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2017+
-    - C++11 or later
+    - Visual Studio 2008 SP1+
 16. safe_object
     - gcc 8.3.0+
     - Clang 10.0+
@@ -105,7 +111,8 @@
 17. shared_recursive_mutex
     - gcc 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
+    - Visual Studio 2008 SP1, 2010+ (with Boost 1.69.0)
+    - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
 18. shared_mem
     - gcc 8.3.0+

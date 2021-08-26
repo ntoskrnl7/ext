@@ -7,6 +7,7 @@
 #include <ext/async_iterator>
 #include <gtest/gtest.h>
 
+#ifdef _EXT_ASYNC_ITERATOR_
 #ifdef __cpp_lambdas
 TEST(async_iterator_test, int_test) {
   typedef ext::async_result<int> int_result;
@@ -215,4 +216,5 @@ TEST(async_iterator_test, int_test) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
-#endif
+#endif // __cpp_lambdas
+#endif // _EXT_ASYNC_ITERATOR_

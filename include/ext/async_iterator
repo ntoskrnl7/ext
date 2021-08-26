@@ -7,8 +7,6 @@
  *
  */
 #pragma once
-#ifndef _EXT_ASYNC_ITERATOR_
-#define _EXT_ASYNC_ITERATOR_
 
 #ifdef CXX_USE_BOOST
 #define CXX_USE_STD_MUTEX
@@ -30,10 +28,18 @@
 #define CXX_USE_NULLPTR
 #include "stl_compat"
 
+#if ((!defined(CXX_STD_ATOMIC_NOT_SUPPORTED)) || defined(_EXT_STD_ATOMIC_)) && \
+    ((!defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED)) ||                   \
+     defined(_EXT_STD_CONDITION_VARIABLE_)) &&                                 \
+    ((!defined(CXX_STD_MUTEX_NOT_SUPPORTED)) || defined(_EXT_STD_MUTEX_)) &&   \
+    ((!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_))
+
+#ifndef _EXT_ASYNC_ITERATOR_
+#define _EXT_ASYNC_ITERATOR_
+
 #include <functional>
 #include <memory>
 #include <queue>
-
 
 #ifndef _EXT_STD_ATOMIC_
 #include <atomic>
@@ -46,10 +52,10 @@
 #ifndef _EXT_STD_MUTEX_
 #include <mutex>
 #endif
+
 #ifndef _EXT_STD_THREAD_
 #include <thread>
 #endif
-
 namespace ext {
 template <typename T> class async_iterator {
 public:
@@ -280,3 +286,4 @@ private:
 };
 } // namespace ext
 #endif // _EXT_ASYNC_ITERATOR_
+#endif

@@ -125,8 +125,31 @@ TEST(process_test, process_stdin_basic_test) {
     process.join();
 }
 
+TEST(process_test, process_pipe_operator_test) {
 #if defined(_WIN32)
+#ifdef __cpp_initializer_lists
+  auto result = ext::process("cmd", {"/c", "echo", "test-1-2-3"}) |
+                ext::process("cmd", {"/c", "more"});
 #else
+  std::list<std::string> args;
+  args.push_back("/c");
+  args.push_back("echo");
+  args.push_back("test-1-2-3");
+
+  std::list<std::string> args2;
+  args2.push_back("/c");
+  args2.push_back("more");
+  ext::process result = ext::process("cmd", args) | ext::process("cmd", args2);
+#endif // __cpp_initializer_lists
+#else
+  auto result = ext::process("echo", {"test-1-2-3"}) ext::process("more");
+#endif
+  std::cout << result.out().rdbuf() << std::endl;
+  if (result.joinable())
+    result.join();
+}
+
+#if !defined(_WIN32)
 #include <condition_variable>
 #include <mutex>
 
@@ -202,7 +225,7 @@ TEST(process_test, process_stdin_test) {
     delayed_kill_thread.join();
 }
 
-TEST(process_test, process_pipe_operator_test) {
+TEST(process_test, process_pipe_operator_test2) {
   auto result = ext::process("ps", {"-ef"}) | ext::process("grep", {"root"}) |
                 ext::process("grep", {"/usr"}) | ext::process("wc", {"-l"});
   EXPECT_STREQ("ps -ef | grep root | grep /usr | wc -l",

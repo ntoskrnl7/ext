@@ -33,9 +33,13 @@ public:
     HANDLE write;
     if (CreatePipe(&read, &write, &sa, 0) != TRUE)
       throw std::runtime_error("Failed to CreatePipe");
-
+#ifdef __cpp_rvalue_references
     read_ = ext::ipstream(read);
     write_ = ext::opstream(write);
+#else
+    read_.swap(ext::ipstream(read));
+    write_.swap(ext::opstream(write));
+#endif
 #else
     int child[2];
     if (::pipe(child) == -1)

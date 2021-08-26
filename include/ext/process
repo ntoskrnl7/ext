@@ -8,9 +8,15 @@
  */
 #pragma once
 
+#ifdef CXX_USE_BOOST
+#define CXX_USE_STD_THREAD
+#include <boost/thread/thread.hpp>
+#endif // CXX_USE_BOOST
+
+#define CXX_USE_STD_MOVE
 #include "stl_compat"
 
-#if CXX_VER >= 201103L
+#if (!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_)
 #ifndef _EXT_PROCESS_
 #define _EXT_PROCESS_
 
@@ -107,13 +113,20 @@ private:
   };
 #ifdef CXX_DELETED_FUNCTIONS_NOT_SUPPORTED
   process &operator=(const process &) { return *this; }
+#if !defined(_MSC_VER) || _MSC_VER > 1600
   process(const process &) {}
+#endif
 #else
 public:
   process &operator=(const process &) = delete;
   process(const process &) = delete;
 #endif
 public:
+#if defined(_MSC_VER) && _MSC_VER < 1600
+  process(process &rhs) : last_error_(no_error), exit_code_(exit_success) {
+    this->swap(rhs);
+  }
+#endif
   process() : last_error_(no_error), exit_code_(exit_success) {}
 
   process(const std::string &command,
@@ -135,15 +148,21 @@ public:
     swap(rhs);
     return *this;
   }
+#endif
 
   void swap(process &p) CXX_NOEXCEPT {
+#ifdef __cpp_rvalue_references
     std::swap(in_, p.in_);
     std::swap(out_, p.out_);
     std::swap(err_, p.err_);
+#else
+    in_.swap(p.in_);
+    out_.swap(p.out_);
+    err_.swap(p.err_);
+#endif
     std::swap(cmdline_, p.cmdline_);
     std::swap(proc_, p.proc_);
   }
-#endif
 
   ~process() {
     if (joinable())
@@ -211,19 +230,36 @@ public:
     return;
   }
 
+#if !defined(__cpp_lambdas)
+private:
+  static void detach_thread(HANDLE handle, HANDLE in, HANDLE out, HANDLE err) {
+    WaitForSingleObject(handle, INFINITE);
+    CloseHandle(in);
+    CloseHandle(out);
+    CloseHandle(err);
+  }
+#endif
+public:
   void detach() {
     if (!joinable())
       return;
 #if defined(_WIN32)
     CloseHandle(proc_.handle_);
-    auto handle = proc_.handle_;
-    std::thread([handle, in = in_.native_handle(), out = out_.native_handle(),
-                 err = err_.native_handle()]() {
+    HANDLE handle = proc_.handle_;
+    HANDLE in = in_.native_handle();
+    HANDLE out = out_.native_handle();
+    HANDLE err = err_.native_handle();
+#if defined(__cpp_lambdas)
+    std::thread([handle, in, out, err]() {
       WaitForSingleObject(handle, INFINITE);
       CloseHandle(in);
       CloseHandle(out);
       CloseHandle(err);
     }).detach();
+#else
+    std::thread(std::bind(process::detach_thread, handle, in, out, err))
+        .detach();
+#endif
     proc_.handle_ = NULL;
 #else
     native_id_type id = proc_.id_;
@@ -269,8 +305,7 @@ private:
                 const std::list<std::string> &arguments) {
     last_error_ = no_error;
     cmdline_ = command;
-    for (auto arg : arguments)
-      cmdline_ += " " + arg;
+    CXX_FOR(const std::string &arg, arguments) { cmdline_ += " " + arg; }
 
     ext::pipe in;
     ext::pipe out;
@@ -281,9 +316,15 @@ private:
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     si.dwFlags |= STARTF_USESTDHANDLES;
+#ifdef __cpp_rvalue_references
     in_ = std::move(in.write());
     out_ = std::move(out.read());
     err_ = std::move(err.read());
+#else
+    in_.swap(in.write());
+    out_.swap(out.read());
+    err_.swap(err.read());
+#endif
     si.hStdInput = in.read().native_handle();
     si.hStdOutput = out.write().native_handle();
     si.hStdError = err.write().native_handle();
@@ -311,7 +352,8 @@ private:
     if (proc_.id_ == invalid_id) {
       last_error_ = errno;
       if (cwd)
-        int res_ = chdir(cwd);
+        if (chdir(cwd) == -1) {
+        }
       return false;
     }
 
@@ -329,7 +371,8 @@ private:
     ::close(err.read().native_handle());
 
     if (working_directory.c_str())
-      int res_ = chdir(working_directory.c_str());
+      if (chdir(working_directory.c_str()) == -1) {
+      }
 
     char **argv = new char *[arguments.size() + 2];
     argv[0] = (char *)command.c_str();
@@ -361,7 +404,7 @@ public:
       throw std::runtime_error("Invalid proceses");
     return err_;
   }
-
+#ifdef __cpp_rvalue_references
   friend process operator|(process &&lhs, process &&rhs) {
     rhs.in() << lhs.out().rdbuf();
     rhs.in().close();
@@ -371,6 +414,19 @@ public:
     rhs.last_error_ = 0;
     return std::move(rhs);
   }
+#else
+  friend process operator|(process &lhs, process &rhs) {
+    rhs.in() << lhs.out().rdbuf();
+    rhs.in().close();
+    rhs.cmdline_ = lhs.cmdline_ + " | " + rhs.cmdline_;
+    lhs.detach();
+    lhs.last_error_ = 0;
+    rhs.last_error_ = 0;
+    process result;
+    result.swap(rhs);
+    return result;
+  }
+#endif
 
 private:
   native_error_code last_error_;

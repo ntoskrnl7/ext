@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#define CXX_USE_NULLPTR
 #include "stl_compat"
 
 #ifndef _EXT_PSTREAM_
@@ -18,12 +19,15 @@
 #else
 #if defined(_WIN32)
 #include <Windows.h>
+#include <fcntl.h>
+#include <io.h>
 #else
 #include <unistd.h>
 #endif
 #endif
 
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -40,6 +44,28 @@ public:
   native_handle_t native_handle() {
     return __gnu_cxx::stdio_filebuf<_CharT, _Traits>::fd();
   }
+};
+#elif defined(_WIN32)
+template <typename _CharT>
+class basic_pipebuf : public std::basic_filebuf<_CharT> {
+  typedef std::basic_filebuf<_CharT> T;
+
+public:
+  basic_pipebuf() : T(nullptr) {}
+  basic_pipebuf(HANDLE handle, std::ios::openmode mode)
+      : std::basic_filebuf<_CharT>(_fdopen(
+            _open_osfhandle((intptr_t)handle,
+                            (mode & std::ios::out) ? _O_RDWR : _O_RDONLY),
+            ((mode & std::ios::out) ? "r+" : "r"))),
+        handle_(handle) {}
+
+public:
+  typedef HANDLE native_handle_t;
+
+  native_handle_t native_handle() { return handle_; }
+
+private:
+  HANDLE handle_;
 };
 #else
 template <typename _CharT, typename _Traits = std::char_traits<_CharT>>
@@ -151,37 +177,77 @@ public:
 };
 #endif
 
-using pipebuf = basic_pipebuf<char>;
+typedef basic_pipebuf<char> pipebuf;
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+template <std::ios::openmode M, typename T> class pstream : public T {
+public:
+  typedef typename pipebuf::native_handle_t native_handle_t;
+
+  pstream() : buf_(nullptr), T(nullptr) {}
+#ifdef __cpp_rvalue_references
+  pstream(pstream &&other) : buf_(nullptr), T(nullptr) { swap(other); }
+#endif
+  pstream(native_handle_t handle)
+      : buf_(new ext::pipebuf(handle, M)), T(buf_) {}
+  ~pstream() { close(); }
+
+  void swap(pstream &p) CXX_NOEXCEPT {
+    std::swap(buf_, p.buf_);
+    this->rdbuf(buf_);
+    p.rdbuf(p.buf_);
+  }
+#ifdef __cpp_rvalue_references
+  pstream &operator=(pstream &&rhs) {
+    swap(rhs);
+    return *this;
+  };
+#endif
+  native_handle_t native_handle() { return buf_->native_handle(); }
+
+  void close() {
+    if (buf_) {
+      buf_->close();
+      delete buf_;
+      buf_ = nullptr;
+    }
+  }
+
+private:
+  mutable pipebuf *buf_;
+};
+#else
 template <std::ios::openmode M, typename T> class pstream : public T {
 public:
   typedef typename pipebuf::native_handle_t native_handle_t;
 
   pstream() : T(nullptr) {}
+#ifdef __cpp_rvalue_references
   pstream(pstream &&other) : T(nullptr) { swap(other); }
+#endif
   pstream(native_handle_t handle) : T(&buf_), buf_(pipebuf(handle, M)) {}
-  ~pstream() { buf_.close(); }
+  ~pstream() { close(); }
 
   void swap(pstream &p) CXX_NOEXCEPT {
     std::swap(buf_, p.buf_);
     this->rdbuf(&buf_);
     p.rdbuf(&p.buf_);
   }
-
+#ifdef __cpp_rvalue_references
   pstream &operator=(pstream &&rhs) {
     swap(rhs);
     return *this;
   };
-
+#endif
   native_handle_t native_handle() { return buf_.native_handle(); }
   void close() { buf_.close(); }
 
 private:
   mutable pipebuf buf_;
 };
+#endif
 
-using ipstream = pstream<std::ios::in, std::istream>;
-using opstream = pstream<std::ios::out, std::ostream>;
+typedef pstream<std::ios::in, std::istream> ipstream;
+typedef pstream<std::ios::out, std::ostream> opstream;
 } // namespace ext
-
 #endif // _EXT_PSTREAM_

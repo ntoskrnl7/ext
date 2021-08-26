@@ -7,9 +7,6 @@
  *
  */
 #pragma once
-#ifndef _EXT_COLLECTION_
-#define _EXT_COLLECTION_
-
 #ifdef CXX_USE_BOOST
 #ifndef _EXT_SHARED_RECURSIVE_MUTEX_
 #define CXX_USE_STD_SHARED_MUTEX
@@ -19,6 +16,10 @@
 #endif
 
 #include "stl_compat"
+
+#ifdef CXX_SHARED_MUTEX
+#ifndef _EXT_COLLECTION_
+#define _EXT_COLLECTION_
 
 #include <iterator>
 #include <list>
@@ -269,3 +270,4 @@ public:
 } // namespace ext
 
 #endif // _EXT_COLLECTION_
+#endif

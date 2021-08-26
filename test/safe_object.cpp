@@ -1,9 +1,10 @@
-#include <ext/cdbg>
 #include <ext/safe_object>
+
+#ifdef _EXT_SAFE_OBJECT_
+#include <ext/cdbg>
 #include <ext/shared_recursive_mutex>
 #include <gtest/gtest.h>
 
-#ifdef _EXT_SAFE_OBJECT_
 class test_object {
 public:
   int value;
