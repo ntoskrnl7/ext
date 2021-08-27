@@ -1,6 +1,17 @@
 ﻿#include <ext/string>
 #include <gtest/gtest.h>
 
+TEST(string_test, movable_string_test) {
+  using namespace ext::string;
+  movable::string a(512, 'a');
+  movable::string b(a.begin(), a.end());
+  EXPECT_EQ(a, b);
+
+  movable::wstring aw(512, L'a');
+  movable::wstring bw(aw.begin(), aw.end());
+  EXPECT_EQ(aw, bw);
+}
+
 TEST(string_test, printable_test) {
   std::string str = "\x0e\x10test\x0f\x11test\x0a\x12";
   EXPECT_STREQ(ext::printable(str).c_str(), "testtest");
@@ -20,7 +31,8 @@ TEST(string_test, printable_test) {
   str_w = L"\x0e\x10test\x0f\x11test\x0a\x12";
   EXPECT_STREQ(ext::rprintable(str_w).c_str(), L"\x0e\x10test\x0f\x11test");
 
-  EXPECT_STREQ(ext::printable(std::string("\x0e\x10test\x0e\x10")).c_str(), "test");
+  EXPECT_STREQ(ext::printable(std::string("\x0e\x10test\x0e\x10")).c_str(),
+               "test");
   EXPECT_STREQ(ext::printable(std::wstring(L"\x0e\x10test\x0e\x10")).c_str(),
                L"test");
   EXPECT_STREQ(ext::lprintable(std::string("\x0e\x10test\x0e\x10")).c_str(),
@@ -35,9 +47,11 @@ TEST(string_test, printable_test) {
   EXPECT_STREQ(ext::printable("\x0e\x10test\x0e\x10").c_str(), "test");
   EXPECT_STREQ(ext::printable(L"\x0e\x10test\x0e\x10").c_str(), L"test");
   EXPECT_STREQ(ext::lprintable("\x0e\x10test\x0e\x10").c_str(), "test\x0e\x10");
-  EXPECT_STREQ(ext::lprintable(L"\x0e\x10test\x0e\x10").c_str(), L"test\x0e\x10");
+  EXPECT_STREQ(ext::lprintable(L"\x0e\x10test\x0e\x10").c_str(),
+               L"test\x0e\x10");
   EXPECT_STREQ(ext::rprintable("\x0e\x10test\x0e\x10").c_str(), "\x0e\x10test");
-  EXPECT_STREQ(ext::rprintable(L"\x0e\x10test\x0e\x10").c_str(), L"\x0e\x10test");
+  EXPECT_STREQ(ext::rprintable(L"\x0e\x10test\x0e\x10").c_str(),
+               L"\x0e\x10test");
 
 #if (!defined(_MSC_VER)) || (defined(_MSC_VER) && _MSC_VER > 1600)
   const std::string const_str = "\x0e\x10\x0e\x10test\x0e\x10\x0e\x10";

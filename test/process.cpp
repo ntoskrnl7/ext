@@ -142,7 +142,7 @@ TEST(process_test, process_pipe_operator_test) {
   ext::process result = ext::process("cmd", args) | ext::process("cmd", args2);
 #endif // __cpp_initializer_lists
 #else
-  auto result = ext::process("echo", {"test-1-2-3"}) ext::process("more");
+  auto result = ext::process("echo", {"test-1-2-3"}) | ext::process("more");
 #endif
   std::cout << result.out().rdbuf() << std::endl;
   if (result.joinable())

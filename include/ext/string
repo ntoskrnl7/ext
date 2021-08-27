@@ -24,6 +24,45 @@
 
 namespace ext {
 namespace string {
+
+namespace movable {
+
+#ifdef _EXT_STD_MOVE_
+template <typename T> class basic_string : public std::basic_string<T> {
+private:
+  typedef std::basic_string<T> string_type;
+
+public:
+  basic_string(const T *ptr) : string_type(ptr) {}
+  basic_string(size_t size, const T ch) : string_type(size, ch) {}
+  basic_string(const string_type &s) : string_type(s) {}
+  basic_string(const std::allocator<T> &ai) : string_type(ai) {}
+  basic_string(const typename string_type::iterator &first,
+               const typename string_type::iterator &last)
+      : string_type(first, last) {}
+
+public:
+  basic_string(ext::movable<basic_string> &other) { swap(other); }
+  basic_string &operator=(ext::movable<basic_string> &rhs) {
+    swap(rhs);
+    return *this;
+  }
+
+  basic_string &swap(basic_string &other) {
+    string_type::swap(other);
+    return *this;
+  }
+};
+
+typedef basic_string<char> string;
+typedef basic_string<wchar_t> wstring;
+#else
+typedef std::basic_string<char> string;
+typedef std::basic_string<wchar_t> wstring;
+#endif
+
+} // namespace movable
+
 namespace internal {
 template <typename T> inline const T *trim_str() {
   CXX_IF_CONSTEXPR(std::is_same<T, char>::value)

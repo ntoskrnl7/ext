@@ -799,9 +799,6 @@ const class nullptr_t {
 public:
   template <class T> operator T *() const { return 0; }
   template <class C, class T> operator T C::*() const { return 0; }
-
-private:
-  void operator&() const;
 } nullptr = {};
 #endif // _EXT_NULLPTR_
 #endif // CXX_USE_NULLPTR
@@ -842,6 +839,64 @@ private:
 #endif
 
 ///
+/// std::move
+///
+#ifdef CXX_STD_MOVE_NOT_SUPPORTED
+#if defined(CXX_USE_STD_MAKE_UNIQUE) || defined(_EXT_STD_MAKE_UNIQUE_) ||      \
+    defined(CXX_USE_STD_REMOVE) || defined(CXX_USE_STD_REMOVE_IF) ||           \
+    defined(CXX_USE_STD_MAKE_SHARED) || defined(_EXT_STD_MAKE_SHARED_)
+#define CXX_USE_STD_MOVE
+#endif
+#endif
+#ifdef CXX_USE_STD_MOVE
+#ifndef _EXT_STD_MOVE_
+#define _EXT_STD_MOVE_
+namespace ext {
+template <typename T> struct movable : public T {};
+
+#define primitive_move(type)                                                   \
+  inline type &move(type &t) { return t; }
+
+#define primitive_move2(type)                                                  \
+  primitive_move(type);                                                        \
+  inline unsigned type &move(unsigned type &t) { return t; }
+
+primitive_move2(char);
+primitive_move2(short);
+primitive_move2(int);
+primitive_move2(long);
+primitive_move2(long long);
+primitive_move(float);
+primitive_move(double);
+primitive_move(long double);
+
+#ifdef _XSTRING_
+inline std::string move(std::string &t) {
+  std::string tmp;
+  t.swap(tmp);
+  return tmp;
+}
+#endif
+
+#ifdef _VECTOR_
+template <typename T> inline std::vector<T> move(std::vector<T> &t) {
+  std::vector<T> tmp;
+  t.swap(tmp);
+  return tmp;
+}
+#endif
+
+template <typename T> inline ext::movable<T> &move(T &val) {
+  return static_cast<ext::movable<T> &>(val);
+}
+} // namespace ext
+namespace std {
+using ext::move;
+} // namespace std
+#endif // _EXT_STD_MOVE_
+#endif // CXX_USE_STD_MOVE
+
+///
 /// std::make_unique
 ///
 #ifdef CXX_USE_STD_MAKE_UNIQUE
@@ -858,15 +913,10 @@ inline std::unique_ptr<T> make_unique(Args &&... __args) {
 template <typename T> inline std::unique_ptr<T> make_unique() {
   return std::unique_ptr<T>(new T());
 }
-#ifdef __cpp_rvalue_references
-template <typename T> inline std::unique_ptr<T> make_unique(T &&value) {
-  return std::unique_ptr<T>(new T(std::move(value)));
+template <typename T, typename A0>
+inline std::unique_ptr<T> make_unique(const A0 &a0) {
+  return std::unique_ptr<T>(new T(a0));
 }
-#else
-template <typename T> inline std::unique_ptr<T> make_unique(const T &value) {
-  return std::unique_ptr<T>(new T(std::move(value)));
-}
-#endif // __cpp_rvalue_references
 #endif // __cpp_variadic_templates
 } // namespace std
 #endif // _EXT_STD_MAKE_UNIQUE_
@@ -886,15 +936,10 @@ inline std::shared_ptr<T> make_shared(Args &&... __args) {
 template <typename T> inline std::shared_ptr<T> make_shared() {
   return std::shared_ptr<T>(new T());
 }
-#ifdef __cpp_rvalue_references
-template <typename T> inline std::shared_ptr<T> make_shared(T &&value) {
-  return std::shared_ptr<T>(new T(std::move(value)));
+template <typename T, typename A0>
+inline std::shared_ptr<T> make_shared(const A0 &a0) {
+  return std::shared_ptr<T>(new T(a0));
 }
-#else
-template <typename T> inline std::shared_ptr<T> make_shared(const T &value) {
-  return std::shared_ptr<T>(new T(std::move(value)));
-}
-#endif // __cpp_rvalue_references
 #endif // __cpp_variadic_templates
 } // namespace std
 #endif // _EXT_STD_MAKE_SHARED_
@@ -1014,25 +1059,6 @@ ForwardIt remove_if(ForwardIt first, ForwardIt last, UnaryPredicate p) {
 } // namespace std
 #endif // _EXT_STD_REMOVE_IF_
 #endif // CXX_USE_STD_REMOVE_IF
-
-///
-/// std::move
-///
-#ifdef CXX_STD_MOVE_NOT_SUPPORTED
-#if defined(CXX_USE_STD_MAKE_UNIQUE) || defined(_EXT_STD_MAKE_UNIQUE_) ||      \
-    defined(CXX_USE_STD_REMOVE) || defined(CXX_USE_STD_REMOVE_IF) ||           \
-    defined(CXX_USE_STD_MAKE_SHARED) || defined(_EXT_STD_MAKE_SHARED_)
-#define CXX_USE_STD_MOVE
-#endif
-#endif
-#ifdef CXX_USE_STD_MOVE
-#ifndef _EXT_STD_MOVE_
-#define _EXT_STD_MOVE_
-namespace std {
-template <typename T> inline T &move(T &t) { return t; }
-} // namespace std
-#endif // _EXT_STD_MOVE_
-#endif // CXX_USE_STD_MOVE
 
 ///
 /// std::apply

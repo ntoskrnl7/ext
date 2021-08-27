@@ -51,7 +51,7 @@ class basic_pipebuf : public std::basic_filebuf<_CharT> {
   typedef std::basic_filebuf<_CharT> T;
 
 public:
-  basic_pipebuf() : T(nullptr) {}
+  basic_pipebuf() : T(nullptr), handle_(NULL) {}
   basic_pipebuf(HANDLE handle, std::ios::openmode mode)
       : std::basic_filebuf<_CharT>(_fdopen(
             _open_osfhandle((intptr_t)handle,
@@ -63,6 +63,11 @@ public:
   typedef HANDLE native_handle_t;
 
   native_handle_t native_handle() { return handle_; }
+
+  void swap(basic_pipebuf &other) {
+    std::basic_filebuf<_CharT>::swap(other);
+    std::swap(handle_, other.handle_);
+  }
 
 private:
   HANDLE handle_;
@@ -205,6 +210,12 @@ public:
 #endif
   native_handle_t native_handle() { return buf_->native_handle(); }
 
+  native_handle_t detach() {
+    native_handle_t handle = buf_.native_handle();
+    buf_.swap(pipebuf());
+    return handle;
+  }
+
   void close() {
     if (buf_) {
       buf_->close();
@@ -240,6 +251,13 @@ public:
   };
 #endif
   native_handle_t native_handle() { return buf_.native_handle(); }
+
+  native_handle_t detach() {
+    native_handle_t handle = buf_.native_handle();
+    buf_.swap(pipebuf());
+    return handle;
+  }
+
   void close() { buf_.close(); }
 
 private:

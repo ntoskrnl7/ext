@@ -17,6 +17,7 @@
 #include <boost/thread/mutex.hpp>
 #endif
 
+#define CXX_USE_STD_MOVE
 #define CXX_USE_NULLPTR
 #include <ext/observable>
 #include <ext/shared_recursive_mutex>

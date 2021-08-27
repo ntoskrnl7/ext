@@ -112,8 +112,8 @@ private:
 #endif
   };
 #ifdef CXX_DELETED_FUNCTIONS_NOT_SUPPORTED
-  process &operator=(const process &) { return *this; }
 #if !defined(_MSC_VER) || _MSC_VER > 1600
+  process &operator=(const process &) { return *this; }
   process(const process &) {}
 #endif
 #else
@@ -123,8 +123,12 @@ public:
 #endif
 public:
 #if defined(_MSC_VER) && _MSC_VER < 1600
+  process &operator=(process &other) {
+    swap(other);
+    return *this;
+  }
   process(process &rhs) : last_error_(no_error), exit_code_(exit_success) {
-    this->swap(rhs);
+    swap(rhs);
   }
 #endif
   process() : last_error_(no_error), exit_code_(exit_success) {}
@@ -160,6 +164,8 @@ public:
     out_.swap(p.out_);
     err_.swap(p.err_);
 #endif
+    std::swap(exit_code_, p.exit_code_);
+    std::swap(last_error_, p.last_error_);
     std::swap(cmdline_, p.cmdline_);
     std::swap(proc_, p.proc_);
   }
@@ -245,33 +251,13 @@ public:
       return;
 #if defined(_WIN32)
     CloseHandle(proc_.handle_);
-    HANDLE handle = proc_.handle_;
-    HANDLE in = in_.native_handle();
-    HANDLE out = out_.native_handle();
-    HANDLE err = err_.native_handle();
-#if defined(__cpp_lambdas)
-    std::thread([handle, in, out, err]() {
-      WaitForSingleObject(handle, INFINITE);
-      CloseHandle(in);
-      CloseHandle(out);
-      CloseHandle(err);
-    }).detach();
-#else
-    std::thread(std::bind(process::detach_thread, handle, in, out, err))
-        .detach();
-#endif
     proc_.handle_ = NULL;
 #else
     native_id_type id = proc_.id_;
-    std::thread([id, in = in_.native_handle(), out = out_.native_handle(),
-                 err = err_.native_handle()]() {
+    std::thread([id]() {
       int status;
       waitpid(id, &status, 0);
-      close(in);
-      close(out);
-      close(err);
-    })
-        .detach();
+    }).detach();
 #endif
     proc_.id_ = invalid_id;
   }
