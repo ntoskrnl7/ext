@@ -30,6 +30,9 @@
  * std::unique_ptr
  * std::make_unique
  * std::make_shared
+ * std::to_string
+ * std::stoul
+ * std::stoull
  * nullptr
  *
  * CXX_USE_ALL_FEATURES
@@ -59,6 +62,8 @@
  * CXX_USE_STD_TRUE_TYPE
  * CXX_USE_STD_FALSE_TYPE
  * CXX_USE_STD_VOID_T
+ * CXX_USE_STD_UNORDERED_MAP
+ * CXX_USE_STD_HASH
  *
  * Boost only
  * CXX_USE_STD_ATOMIC
@@ -129,6 +134,7 @@
 #if (!defined(_MSC_VER)) || (defined(_MSC_VER) && (_MSC_VER < 1600))
 #define CXX_STDINT_NOT_SUPPORTED
 #define CXX_STD_UNORDERED_MAP_NOT_SUPPORTED
+#define CXX_STD_HASH_NOT_SUPPORTED
 #define CXX_AUTO_TYPE_NOT_SUPPORTED
 #define CXX_NULLPTR_NOT_SUPPORTED
 #define CXX_STD_MOVE_NOT_SUPPORTED
@@ -277,12 +283,21 @@
 #if !defined(CXX_STD_MAKE_SHARED_NOT_SUPPORTED)
 #undef CXX_USE_STD_MAKE_SHARED
 #endif
+
 #if !defined(CXX_STD_UNORDERED_MAP_NOT_SUPPORTED)
 #if defined(BOOST_UNORDERED_UNORDERED_MAP_HPP_INCLUDED) &&                     \
     (defined(_MSC_VER) && (_MSC_VER > 1600))
 #undef CXX_USE_STD_UNORDERED_MAP
 #endif
 #endif
+
+#if !defined(CXX_STD_HASH_NOT_SUPPORTED)
+#if defined(BOOST_FUNCTIONAL_HASH_EXTENSIONS_HPP) &&                           \
+    (defined(_MSC_VER) && (_MSC_VER > 1600))
+#undef CXX_USE_STD_HASH
+#endif
+#endif
+
 #if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #undef CXX_USE_STD_THREAD
 #endif
@@ -347,11 +362,14 @@ typedef signed int int_least32_t;
 typedef unsigned int uint_least32_t;
 typedef signed long long int_least64_t;
 typedef unsigned long long uint_least64_t;
-
+#if _MSC_VER != 1600
 typedef signed char int_fast8_t;
+#endif
 typedef unsigned char uint_fast8_t;
+#if _MSC_VER != 1600
 typedef signed short int int_fast16_t;
 typedef unsigned short int uint_fast16_t;
+#endif
 typedef signed int int_fast32_t;
 typedef unsigned int uint_fast32_t;
 typedef signed long long int_fast64_t;
@@ -581,6 +599,22 @@ typedef boost::system::errc::errc_t errc;
 #endif // _EXT_STD_SYSTEM_ERROR_
 #endif
 
+#if defined(CXX_USE_STD_HASH) && defined(BOOST_FUNCTIONAL_HASH_EXTENSIONS_HPP)
+#if (defined(_XFUNCTIONAL_) && _MSC_VER == 1600)
+// VS2010
+//  - boost/regex/v4/regex_workaround.hpp -> vector -> xfunctional -> std::hash
+#define CXX_USE_BOOST_NAMESPACE_HASH
+#else
+#ifndef _EXT_STD_HASH_
+#define _EXT_STD_HASH_
+namespace std {
+using boost::hash;
+} // namespace std
+#undef CXX_USE_STD_HASH
+#endif // _EXT_STD_HASH_
+#endif // (defined(_XFUNCTIONAL_) && _MSC_VER == 1600)
+#endif
+
 #if defined(CXX_USE_STD_UNORDERED_MAP) &&                                      \
     defined(BOOST_UNORDERED_UNORDERED_MAP_HPP_INCLUDED)
 #ifndef _EXT_STD_UNORDERED_MAP_
@@ -648,6 +682,7 @@ using boost::unique_lock;
 namespace std {
 typedef boost::regex regex;
 typedef boost::smatch smatch;
+using boost::regex_match;
 using boost::regex_search;
 } // namespace std
 #undef CXX_USE_STD_REGEX
@@ -681,6 +716,7 @@ using std::tr1::shared_ptr;
 #ifndef _EXT_STD_UNORDERED_MAP_
 #define _EXT_STD_UNORDERED_MAP_
 namespace std {
+using std::tr1::hash;
 using std::tr1::unordered_map;
 #undef CXX_USE_STD_SHARED_PTR
 } // namespace std
@@ -1106,6 +1142,9 @@ template <class T, T v> struct integral_constant {
   typedef T value_type;
   typedef integral_constant type;
   operator value_type() const CXX_NOEXCEPT { return value; }
+
+  // since c++14
+  CXX_CONSTEXPR value_type operator()() const CXX_NOEXCEPT { return value; }
 };
 } // namespace std
 #endif // _EXT_STD_INTEGRAL_CONSTANT_
@@ -1388,7 +1427,6 @@ inline std::wstring to_wstring(unsigned long _Val) {
 }
 } // namespace std
 #endif // _EXT_STD_TO_STRING_
-
 #endif // _STRING_
 #endif // defined(_MSC_VER) && (_MSC_VER < 1600)
 
@@ -1397,6 +1435,9 @@ inline std::wstring to_wstring(unsigned long _Val) {
 #ifndef _EXT_STD_STRING_STRING_TO_
 #define _EXT_STD_STRING_STRING_TO_
 #include <errno.h>
+#include <limits.h>
+#include <limits>
+#include <locale>
 #include <stdexcept>
 #include <stdlib.h>
 
@@ -1433,6 +1474,86 @@ inline unsigned long stoul(const std::wstring &str, std::size_t *pos = 0,
   if (pos)
     *pos = (size_t)(end - ptr);
   return ret;
+}
+
+template <typename T, typename N>
+inline N basic_stoull(const std::basic_string<T> &str, std::size_t *pos = 0,
+                      int base = 10) {
+  if (base == 1 || base < 0 || base > 36) {
+    throw std::invalid_argument("invalid stoul argument (base)");
+    return std::numeric_limits<N>::max();
+  }
+
+  errno = 0;
+  const T *begin = str.c_str();
+
+  const T *s = begin;
+  T c;
+  do {
+    c = *s++;
+  } while (std::isspace<T>(c, std::locale::classic()));
+
+  bool negative = c == (T)'-';
+  if (negative || (c == (T)'+'))
+    c = *s++;
+
+  if ((base == 0 || base == 16) && c == (T)'0' && ((*s | 0x20) == (T)'x')) {
+    c = s[1];
+    s += 2;
+    base = 16;
+  }
+  if (base == 0)
+    base = (c == (T)'0') ? 8 : 10;
+
+  const N last_offset = std::numeric_limits<N>::max() / static_cast<N>(base);
+  const N base_max = std::numeric_limits<N>::max() % static_cast<N>(base);
+
+  N ret = 0;
+  const T *inital_s = s;
+  for (;;) {
+    if (c >= (T)'0' && c <= (T)'9') {
+      c -= (T)'0';
+    } else {
+      c |= (T)0x20;
+      if (c >= (T)'a' && c <= (T)'z')
+        c -= (T)('a' - 10);
+      else
+        break;
+    }
+
+    if (c >= base)
+      break;
+
+    if (ret > last_offset || (ret == last_offset && c > base_max)) {
+      errno = ERANGE;
+      throw std::out_of_range("stoul argument stoull of range");
+      return std::numeric_limits<N>::max();
+    }
+
+    ret *= base;
+    ret += c;
+    c = *s++;
+  }
+
+  if (inital_s == s) {
+    throw std::invalid_argument("invalid argument");
+    return std::numeric_limits<N>::max();
+  }
+
+  if (pos)
+    *pos = (size_t)((s - 1) - begin);
+
+  return (negative) ? ~ret + 1 : ret;
+}
+
+inline unsigned long long stoull(const std::string &str, std::size_t *pos = 0,
+                                 int base = 10) {
+  return basic_stoull<char, unsigned long long>(str, pos, base);
+}
+
+inline unsigned long long stoull(const std::wstring &str, std::size_t *pos = 0,
+                                 int base = 10) {
+  return basic_stoull<wchar_t, unsigned long long>(str, pos, base);
 }
 } // namespace std
 #endif // _EXT_STD_STRING_STO_

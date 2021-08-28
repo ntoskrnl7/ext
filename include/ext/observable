@@ -20,6 +20,7 @@
     !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED)
 #include <shared_mutex>
 #endif
+#include "stl_compat"
 
 #include <list>
 

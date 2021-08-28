@@ -147,6 +147,12 @@
     - gcc 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
+26. version
+    - gcc 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2008 SP1 (with Boost 1.69.0)
+    - Visual Studio 2010+
+    - std::regex
 
 ---
 

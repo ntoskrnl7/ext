@@ -35,6 +35,7 @@
 #if !defined(_EXT_STD_MUTEX_) && !defined(CXX_STD_MUTEX_NOT_SUPPORTED)
 #include <mutex>
 #endif
+#include <ext/stl_compat>
 
 #include <iostream>
 
@@ -138,7 +139,6 @@ TEST(observable_test, observer_with_one_arg) {
   object_with_observable_one_arg obj("obj_one_arg");
   object_with_observable_one_arg obj_1("obj_one_arg_1");
   object_with_observable_one_arg obj_2("obj_one_arg_2");
-
 #if defined(__cpp_lambdas) && defined(OBSERVABLE_WITH_LOCK)
   std::mutex mtx;
   std::condition_variable cv;

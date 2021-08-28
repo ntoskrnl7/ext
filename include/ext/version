@@ -1,0 +1,236 @@
+﻿/**
+ * @file version
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements Version helper features.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+
+#pragma once
+
+#ifdef CXX_USE_BOOST
+#define CXX_USE_STD_REGEX
+#include <boost/regex.hpp>
+
+#define CXX_USE_STD_HASH
+#define CXX_USE_STD_UNORDERED_MAP
+#include <boost/unordered/unordered_map.hpp>
+#endif
+
+#define CXX_USE_NULLPTR
+#define CXX_USE_STD_CSTDINT
+#include "stl_compat"
+
+#if ((!defined(CXX_STD_REGEX_NOT_SUPPORTED)) || defined(_EXT_STD_REGEX_))
+#include "string"
+#if !defined(CXX_STD_REGEX_NOT_SUPPORTED)
+#include <regex>
+#endif
+
+#if !defined(_EXT_STD_UNORDERED_MAP_)
+#include <unordered_map>
+#endif
+#include "stl_compat"
+
+#ifndef _EXT_VERSION_
+#define _EXT_VERSION_
+
+namespace ext {
+// https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+#define EXT_PRERELEASE_PATTERN                                                 \
+  "((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-" \
+  "Z-][0-9a-zA-Z-]*))*)"
+#define EXT_BUILD_METADATA_PATTERN "([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*)"
+#define EXT_VERSION_PATTERN                                                    \
+  "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-" EXT_PRERELEASE_PATTERN  \
+  ")?(?:\\+" EXT_BUILD_METADATA_PATTERN ")?$"
+
+class version {
+private:
+  class minor {
+    friend class version;
+
+  private:
+    minor(uint64_t &p) : patch_(p) {}
+    uint64_t value_;
+    uint64_t &patch_;
+
+  public:
+    void operator++() {
+      // https://semver.org/#spec-item-7
+      ++value_;
+      patch_ = 0;
+    }
+    operator uint64_t() const { return value_; }
+  };
+
+  class major {
+    friend class version;
+
+  private:
+    major(class minor &minor) : minor_(minor) {}
+    uint64_t value_;
+    class minor &minor_;
+
+  public:
+    void operator++() {
+      // https://semver.org/#spec-item-8
+      ++value_;
+      minor_.value_ = 0;
+      minor_.patch_ = 0;
+    }
+    operator uint64_t() const { return value_; }
+  };
+
+public:
+  version(const std::string &version) : major_(minor_), minor_(patch_) {
+    std::regex re(EXT_VERSION_PATTERN);
+    std::smatch match;
+    if (!std::regex_match(version, match, re))
+      throw std::invalid_argument("Invalid version format");
+
+    if (match.size() < 4)
+      throw std::invalid_argument("Invalid version format");
+
+    major_.value_ = std::stoull(match[1].str());
+    minor_.value_ = std::stoull(match[2].str());
+    patch_ = std::stoull(match[3].str());
+
+    if (match.size() > 4)
+      prerelease_ = match[4].str();
+
+    if (match.size() > 5)
+      build_metadata_ = match[5].str();
+  }
+
+  version &operator=(const version &rhs) {
+    major_.value_ = rhs.major_.value_;
+    minor_.value_ = rhs.minor_.value_;
+    patch_ = rhs.patch_;
+    prerelease_ = rhs.prerelease_;
+    build_metadata_ = rhs.build_metadata_;
+    return *this;
+  }
+
+  version &version::operator=(const std::string &rhs) {
+    *this = ext::version(rhs);
+    return *this;
+  }
+
+  bool operator==(const version &rhs) const {
+    return major_ == rhs.major_ && minor_ == rhs.minor_ &&
+           patch_ == rhs.patch_ && prerelease_ == rhs.prerelease_;
+  }
+
+  bool operator!=(const version &rhs) const { return !operator==(rhs); }
+
+  // https://semver.org/#spec-item-11
+  //
+  // TODO
+  // Pre-release value comparison is not implemented yet.
+  // 1.0.0-alpha < 1.0.0-alpha.1 < 1.0.0-alpha.beta < 1.0.0-beta
+  // < 1.0.0-beta.2 < 1.0.0-beta.11 < 1.0.0-rc.1 < 1.0.0.
+  bool operator<(const version &rhs) const {
+    if (major_ != rhs.major_)
+      return major_ < rhs.major_;
+    if (minor_ != rhs.minor_)
+      return minor_ < rhs.minor_;
+    if (patch_ != rhs.patch_)
+      return patch_ < rhs.patch_;
+    return (!prerelease_.empty()) && rhs.prerelease_.empty();
+  }
+
+  bool operator>(const version &rhs) const {
+    if (major_ != rhs.major_)
+      return major_ > rhs.major_;
+    if (minor_ != rhs.minor_)
+      return minor_ > rhs.minor_;
+    if (patch_ != rhs.patch_)
+      return patch_ > rhs.patch_;
+    return prerelease_.empty() && !rhs.prerelease_.empty();
+  }
+
+  bool operator<=(const version &rhs) const {
+    return operator<(rhs) || operator==(rhs);
+  }
+
+  bool operator>=(const version &rhs) const {
+    return operator>(rhs) || operator==(rhs);
+  }
+
+  operator std::string() const { return str(); }
+
+  version &version::operator++() {
+    ++patch_;
+    return *this;
+  }
+
+public:
+  bool stable() const { return major_ > 0; }
+
+  bool released() const { return prerelease_.empty(); }
+
+  version &version::release() {
+    prerelease_.clear();
+    return *this;
+  }
+
+public:
+  class major &major() {
+    return major_;
+  }
+  class minor &minor() {
+    return minor_;
+  }
+  uint64_t patch() const { return patch_; }
+
+  const std::string &prerelease() const { return prerelease_; }
+  void prerelease(const std::string &str) {
+    if (std::regex_match(str, std::regex(EXT_PRERELEASE_PATTERN "$")))
+      prerelease_ = str;
+  }
+
+  const std::string &build_metadata() const { return build_metadata_; }
+  void build_metadata(const std::string &str) {
+    if (std::regex_match(str, std::regex(EXT_BUILD_METADATA_PATTERN "$")))
+      build_metadata_ = str;
+  }
+
+  std::string str() const {
+    std::string s = std::to_string(major_) + '.' + std::to_string(minor_) +
+                    '.' + std::to_string(patch_);
+    if (!prerelease_.empty())
+      s += '-' + prerelease_;
+    if (!build_metadata_.empty())
+      s += '+' + build_metadata_;
+    return s;
+  }
+
+private:
+  class major major_;
+  class minor minor_;
+  uint64_t patch_;
+  std::string prerelease_;
+  std::string build_metadata_;
+};
+
+#undef EXT_PRERELEASE_PATTERN
+#undef EXT_BUILD_METADATA_PATTERN
+#undef EXT_VERSION_PATTERN
+} // namespace ext
+
+#if defined(CXX_USE_BOOST_NAMESPACE_HASH)
+#define CXX_STD_HASH boost::hash
+#else
+#define CXX_STD_HASH std::hash
+#endif
+template <> struct CXX_STD_HASH<ext::version> {
+  size_t operator()(const ext::version &k) const {
+    return CXX_STD_HASH<std::string>()(k.str());
+  }
+};
+#undef CXX_STD_HASH
+
+#endif // _EXT_VERSION_
+#endif

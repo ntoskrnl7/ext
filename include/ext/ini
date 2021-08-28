@@ -27,6 +27,8 @@
 #if !defined(CXX_STD_REGEX_NOT_SUPPORTED)
 #include <regex>
 #endif
+#include "stl_compat"
+
 namespace ext {
 class ini {
 public:

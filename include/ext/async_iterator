@@ -56,6 +56,8 @@
 #ifndef _EXT_STD_THREAD_
 #include <thread>
 #endif
+#include "stl_compat"
+
 namespace ext {
 template <typename T> class async_iterator {
 public:

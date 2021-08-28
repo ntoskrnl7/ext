@@ -1,5 +1,65 @@
-﻿#include <ext/string>
+﻿#define CXX_USE_NULLPTR
+#include <ext/string>
 #include <gtest/gtest.h>
+
+TEST(string_test, stoul) {
+  EXPECT_EQ(std::stoul("-12345"), 4294954951);
+  EXPECT_EQ(std::stoul("12345"), 12345);
+  EXPECT_EQ(std::stoul("0xffffffff", nullptr, 16),
+            std::numeric_limits<unsigned long>::max());
+
+  EXPECT_EQ(std::stoul(L"-12345"), 4294954951);
+  EXPECT_EQ(std::stoul(L"12345"), 12345);
+  EXPECT_EQ(std::stoul(L"0xffffffff", nullptr, 16),
+            std::numeric_limits<unsigned long>::max());
+
+  EXPECT_THROW(EXPECT_EQ(std::stoul("hello", nullptr, 16),
+                         std::numeric_limits<unsigned long>::max()),
+               std::invalid_argument);
+
+  EXPECT_THROW(EXPECT_EQ(std::stoul("Lhello", nullptr, 16),
+                         std::numeric_limits<unsigned long>::max()),
+               std::invalid_argument);
+
+  EXPECT_THROW(EXPECT_EQ(std::stoul("0xffffffffffffffffff", nullptr, 16),
+                         std::numeric_limits<unsigned long>::max()),
+               std::out_of_range);
+
+  EXPECT_THROW(EXPECT_EQ(std::stoul(L"0xffffffffffffffffff", nullptr, 16),
+                         std::numeric_limits<unsigned long>::max()),
+               std::out_of_range);
+}
+
+TEST(string_test, stoull) {
+  EXPECT_EQ(std::stoull("-12345"), 18446744073709539271);
+  EXPECT_EQ(std::stoull("12345"), 12345);
+  EXPECT_EQ(std::stoull("0xffffffffffffffff", nullptr, 16),
+            std::numeric_limits<unsigned long long>::max());
+
+  EXPECT_EQ(std::stoull("-12345"), 18446744073709539271);
+  EXPECT_EQ(std::stoull("12345"), 12345);
+  EXPECT_EQ(std::stoull("0xffffffffffffffff", nullptr, 16),
+            std::numeric_limits<unsigned long long>::max());
+
+  EXPECT_EQ(std::stoull(L"-12345"), 18446744073709539271);
+  EXPECT_EQ(std::stoull(L"12345"), 12345);
+
+  EXPECT_THROW(EXPECT_EQ(std::stoull("hello", nullptr, 16),
+                         std::numeric_limits<unsigned long long>::max()),
+               std::invalid_argument);
+
+  EXPECT_THROW(EXPECT_EQ(std::stoull("Lhello", nullptr, 16),
+                         std::numeric_limits<unsigned long long>::max()),
+               std::invalid_argument);
+
+  EXPECT_THROW(EXPECT_EQ(std::stoull("0xffffffffffffffffff", nullptr, 16),
+                         std::numeric_limits<unsigned long long>::max()),
+               std::out_of_range);
+
+  EXPECT_THROW(EXPECT_EQ(std::stoull(L"0xffffffffffffffffff", nullptr, 16),
+                         std::numeric_limits<unsigned long long>::max()),
+               std::out_of_range);
+}
 
 TEST(string_test, movable_string_test) {
   using namespace ext::string;
