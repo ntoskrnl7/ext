@@ -88,10 +88,11 @@ public:
     std::regex re(EXT_VERSION_PATTERN);
     std::smatch match;
     if (!std::regex_match(version, match, re))
-      throw std::invalid_argument("Invalid version format");
+      throw std::invalid_argument("Invalid version format : " + version);
 
     if (match.size() < 4)
-      throw std::invalid_argument("Invalid version format");
+      throw std::invalid_argument("Invalid version format : " + version + " (" +
+                                  std::to_string(match.size()) + " < 4");
 
     major_.value_ = std::stoull(match[1].str());
     minor_.value_ = std::stoull(match[2].str());
@@ -113,7 +114,7 @@ public:
     return *this;
   }
 
-  version &version::operator=(const std::string &rhs) {
+  version &operator=(const std::string &rhs) {
     *this = ext::version(rhs);
     return *this;
   }
@@ -161,7 +162,7 @@ public:
 
   operator std::string() const { return str(); }
 
-  version &version::operator++() {
+  version &operator++() {
     ++patch_;
     return *this;
   }
@@ -171,7 +172,7 @@ public:
 
   bool released() const { return prerelease_.empty(); }
 
-  version &version::release() {
+  version &release() {
     prerelease_.clear();
     return *this;
   }

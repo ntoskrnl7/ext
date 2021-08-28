@@ -3,6 +3,17 @@
 #include <gtest/gtest.h>
 
 TEST(string_test, stoul) {
+#if defined(__linux__)
+  EXPECT_EQ((uint32_t)std::stoul("-12345"), 4294954951);
+  EXPECT_EQ(std::stoul("12345"), 12345);
+  EXPECT_EQ((uint32_t)std::stoul("0xffffffff", nullptr, 16),
+            std::numeric_limits<uint32_t>::max());
+
+  EXPECT_EQ((uint32_t)std::stoul(L"-12345"), 4294954951);
+  EXPECT_EQ(std::stoul(L"12345"), 12345);
+  EXPECT_EQ((uint32_t)std::stoul(L"0xffffffff", nullptr, 16),
+            std::numeric_limits<uint32_t>::max());
+#else
   EXPECT_EQ(std::stoul("-12345"), 4294954951);
   EXPECT_EQ(std::stoul("12345"), 12345);
   EXPECT_EQ(std::stoul("0xffffffff", nullptr, 16),
@@ -12,7 +23,7 @@ TEST(string_test, stoul) {
   EXPECT_EQ(std::stoul(L"12345"), 12345);
   EXPECT_EQ(std::stoul(L"0xffffffff", nullptr, 16),
             std::numeric_limits<unsigned long>::max());
-
+#endif
   EXPECT_THROW(EXPECT_EQ(std::stoul("hello", nullptr, 16),
                          std::numeric_limits<unsigned long>::max()),
                std::invalid_argument);
@@ -31,17 +42,17 @@ TEST(string_test, stoul) {
 }
 
 TEST(string_test, stoull) {
-  EXPECT_EQ(std::stoull("-12345"), 18446744073709539271);
+  EXPECT_EQ(std::stoull("-12345"), 18446744073709539271ull);
   EXPECT_EQ(std::stoull("12345"), 12345);
   EXPECT_EQ(std::stoull("0xffffffffffffffff", nullptr, 16),
             std::numeric_limits<unsigned long long>::max());
 
-  EXPECT_EQ(std::stoull("-12345"), 18446744073709539271);
+  EXPECT_EQ(std::stoull("-12345"), 18446744073709539271ull);
   EXPECT_EQ(std::stoull("12345"), 12345);
   EXPECT_EQ(std::stoull("0xffffffffffffffff", nullptr, 16),
             std::numeric_limits<unsigned long long>::max());
 
-  EXPECT_EQ(std::stoull(L"-12345"), 18446744073709539271);
+  EXPECT_EQ(std::stoull(L"-12345"), 18446744073709539271ull);
   EXPECT_EQ(std::stoull(L"12345"), 12345);
 
   EXPECT_THROW(EXPECT_EQ(std::stoull("hello", nullptr, 16),

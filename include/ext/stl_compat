@@ -1319,6 +1319,19 @@ template <typename... Ts> using void_t = typename make_void<Ts...>::type;
 #endif // _EXT_STD_VOID_T_
 #endif // CXX_USE_STD_VOID_T
 
+#if defined(_MSC_VER) && (_MSC_VER == 1600)
+#ifdef _STRING_
+#ifndef _EXT_STD_TO_STRING_
+#define _EXT_STD_TO_STRING_
+namespace std {
+inline std::string to_string(size_t val) {
+  return std::to_string(static_cast<_ULonglong>(val));
+}
+} // namespace std
+#endif
+#endif
+#endif
+
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
 #ifdef _STRING_
 #ifndef _EXT_STD_TO_STRING_
@@ -1374,6 +1387,10 @@ inline std::string to_string(unsigned long _Val) {
   return std::string(buffer);
 }
 
+inline std::string to_string(size_t val) {
+  return std::to_string(static_cast<unsigned long long>(val));
+}
+
 template <class _Ty>
 inline std::wstring _Floating_to_wstring(const wchar_t *_Fmt, _Ty _Val) {
   const int _Len = static_cast<size_t>(_CSTD _scwprintf(_Fmt, _Val));
@@ -1425,6 +1442,11 @@ inline std::wstring to_wstring(unsigned long _Val) {
   _ultow_s(_Val, buffer, 10);
   return std::wstring(buffer);
 }
+
+inline std::wstring to_wstring(size_t val) {
+  return std::to_wstring(static_cast<unsigned long long>(val));
+}
+
 } // namespace std
 #endif // _EXT_STD_TO_STRING_
 #endif // _STRING_
