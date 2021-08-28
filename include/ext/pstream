@@ -252,12 +252,6 @@ public:
 #endif
   native_handle_t native_handle() { return buf_.native_handle(); }
 
-  native_handle_t detach() {
-    native_handle_t handle = buf_.native_handle();
-    buf_.swap(pipebuf());
-    return handle;
-  }
-
   void close() { buf_.close(); }
 
 private:
