@@ -2,7 +2,7 @@
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
-#include "platforms/windows/win32-ex/include/Security/Descriptor.h"
+#include "win32-ex/include/Security/Descriptor.h"
 #include <Windows.h>
 #include <sddl.h>
 

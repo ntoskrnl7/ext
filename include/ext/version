@@ -48,11 +48,11 @@ namespace ext {
 
 class version {
 private:
-  class minor {
+  class minor_ {
     friend class version;
 
   private:
-    minor(uint64_t &p) : patch_(p) {}
+    minor_(uint64_t &p) : patch_(p) {}
     uint64_t value_;
     uint64_t &patch_;
 
@@ -65,13 +65,13 @@ private:
     operator uint64_t() const { return value_; }
   };
 
-  class major {
+  class major_ {
     friend class version;
 
   private:
-    major(class minor &minor) : minor_(minor) {}
+    major_(class minor_ &minor) : minor_(minor) {}
     uint64_t value_;
-    class minor &minor_;
+    class minor_ &minor_;
 
   public:
     void operator++() {
@@ -178,10 +178,10 @@ public:
   }
 
 public:
-  class major &major() {
+  class major_ &major() {
     return major_;
   }
-  class minor &minor() {
+  class minor_ &minor() {
     return minor_;
   }
   uint64_t patch() const { return patch_; }
@@ -209,8 +209,8 @@ public:
   }
 
 private:
-  class major major_;
-  class minor minor_;
+  class major_ major_;
+  class minor_ minor_;
   uint64_t patch_;
   std::string prerelease_;
   std::string build_metadata_;

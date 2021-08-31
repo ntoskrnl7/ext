@@ -13,17 +13,31 @@
 
 #include "pstream"
 
+#if defined(__GLIBCXX__)
+#include <unistd.h>
+#if defined(_WIN32)
+#include <fcntl.h>
+#endif
+#else
 #if defined(_WIN32)
 #include <Windows.h>
 #else
 #include <unistd.h>
+#endif
 #endif
 
 namespace ext {
 class pipe {
 public:
   pipe() {
-#if defined(_WIN32)
+#if defined(__GLIBCXX__) && defined(_WIN32)
+    int child[2];
+    if (::_pipe(child, 1024 * 1024, O_BINARY) == -1)
+      throw std::runtime_error("Failed to pipe");
+
+    read_ = ext::ipstream(child[0]);
+    write_ = ext::opstream(child[1]);
+#elif defined(_WIN32)
     SECURITY_ATTRIBUTES sa;
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
     sa.bInheritHandle = TRUE;

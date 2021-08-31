@@ -51,7 +51,7 @@ class basic_pipebuf : public std::basic_filebuf<_CharT> {
   typedef std::basic_filebuf<_CharT> T;
 
 public:
-  basic_pipebuf() : T(nullptr), handle_(NULL) {}
+  basic_pipebuf() : T(NULL), handle_(NULL) {}
   basic_pipebuf(HANDLE handle, std::ios::openmode mode)
       : std::basic_filebuf<_CharT>(_fdopen(
             _open_osfhandle((intptr_t)handle,
@@ -82,13 +82,8 @@ public:
   typedef typename traits_type::pos_type pos_type;
   typedef typename traits_type::off_type off_type;
   typedef std::basic_streambuf<char_type, traits_type> streambuf_type;
-#if defined(_WIN32)
-  typedef HANDLE native_handle_t;
-  const CXX_CONSTEXPR static native_handle_t invalid_handle = NULL;
-#else
   typedef int native_handle_t;
   const CXX_CONSTEXPR static native_handle_t invalid_handle = -1;
-#endif
 
 public:
   basic_pipebuf() : handle_(invalid_handle) {}
@@ -115,15 +110,7 @@ protected:
   }
 
   virtual std::streamsize xsputn(const char_type *s, std::streamsize num) {
-#if defined(_WIN32)
-    DWORD bytesWritten = 0;
-    return WriteFile(handle_, s, static_cast<DWORD>(num), &bytesWritten,
-                     NULL) == TRUE
-               ? static_cast<std::streamsize>(bytesWritten)
-               : -1;
-#else
     return ::write(handle_, s, num);
-#endif
   }
 
   //
@@ -140,16 +127,8 @@ protected:
 
     std::memmove(&buffer[putback_begin - putback_len],
                  streambuf_type::gptr() - putback_len, putback_len);
-#if defined(_WIN32)
-    DWORD bytesRead = 0;
-    size_t len =
-        ::ReadFile(handle_, &buffer[putback_begin],
-                   static_cast<DWORD>(buffer_size), &bytesRead, NULL) == TRUE
-            ? static_cast<size_t>(bytesRead)
-            : 0;
-#else
+
     size_t len = ::read(handle_, &buffer[putback_begin], buffer_size);
-#endif
     if (len <= 0)
       return _Traits::eof();
 
@@ -171,11 +150,7 @@ public:
 
   void close() {
     if (handle_ != invalid_handle) {
-#if defined(_WIN32)
-      CloseHandle(handle_);
-#else
       ::close(handle_);
-#endif
       handle_ = invalid_handle;
     }
   }

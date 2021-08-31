@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(__linux__) | defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || !defined(_WIN32)
 #include <sys/stat.h>
 
 typedef mode_t perm;
