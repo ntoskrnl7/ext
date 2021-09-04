@@ -260,5 +260,5 @@ paket-files/
 __pycache__/
 *.pyc
 
-build/
+build*/
 .vscode/

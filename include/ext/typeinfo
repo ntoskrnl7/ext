@@ -13,7 +13,7 @@
 #include <string>
 #include <typeinfo>
 
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <dbghelp.h>
@@ -32,7 +32,7 @@ namespace ext {
 template <typename T> inline std::string get_type_name(T &t) {
   std::string result;
   char *name = nullptr;
-#if defined(_WIN32)
+#if defined(_MSC_VER)
   char nameBuffer[1024] = {
       0,
   };

@@ -186,8 +186,14 @@ TEST(process_test, process_stdout_test) {
 }
 
 TEST(process_test, process_stdin_test) {
+  ext::process whoami("whoami");
+  std::string name((std::istreambuf_iterator<char>(whoami.out().rdbuf())),
+                   std::istreambuf_iterator<char>());
+  if (whoami.joinable())
+    whoami.join();
+  std::cout << "whoami : " << name << std::endl;
   ext::process ps("ps", {"-ef"});
-  ext::process grep("grep", {"root"});
+  ext::process grep("grep", {name});
   std::condition_variable cv;
   std::mutex mtx;
 
@@ -211,6 +217,8 @@ TEST(process_test, process_stdin_test) {
   });
 
   grep.in() << ps.out().rdbuf();
+  if (ps.joinable())
+    ps.join();
   grep.in().close();
 
   EXPECT_TRUE(grep.joinable());
