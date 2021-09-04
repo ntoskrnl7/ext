@@ -225,11 +225,10 @@ template <typename T> inline bool compare_char_i(T char1, T char2) {
 //  search functions.
 //
 namespace internal {
-template <typename T>
-inline typename std::basic_string<T>::const_iterator
-search(const typename std::basic_string<T>::const_iterator &begin,
-       const typename std::basic_string<T>::const_iterator &end,
-       const std::basic_string<T> &s_str, bool case_sensitive = false) {
+template <typename T, typename _Iterator>
+inline _Iterator search(const _Iterator &begin, const _Iterator &end,
+                        const std::basic_string<T> &s_str,
+                        bool case_sensitive = false) {
 #ifdef __cpp_lib_boyer_moore_searcher
   if (case_sensitive)
     return std::search(begin, end,
@@ -241,7 +240,6 @@ search(const typename std::basic_string<T>::const_iterator &begin,
                      case_sensitive ? compare_char<T> : compare_char_i<T>);
 #endif
 }
-
 } // namespace internal
 
 template <typename T>
@@ -338,14 +336,12 @@ replace_all(std::basic_string<T> &str, const std::basic_string<T> &old_str,
   if (old_str.empty())
     return str;
 
-  typename std::basic_string<T>::const_iterator it = str.begin();
+  typename std::basic_string<T>::iterator it = str.begin();
   do {
     it = internal::search(it, str.end(), old_str, case_sensitive);
     if (it != str.end()) {
-      typename std::basic_string<T>::size_type pos = std::distance(
-          static_cast<typename std::basic_string<T>::const_iterator>(
-              str.begin()),
-          it);
+      typename std::basic_string<T>::size_type pos =
+          std::distance(str.begin(), it);
       str.replace(it, it + old_str.length(), new_str);
       it = str.begin() + pos + new_str.length();
     }
