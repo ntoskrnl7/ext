@@ -62,7 +62,7 @@ public:
 public:
   typedef HANDLE native_handle_t;
 
-  native_handle_t native_handle() { return handle_; }
+  native_handle_t native_handle() const { return handle_; }
 
   void swap(basic_pipebuf &other) {
     std::basic_filebuf<_CharT>::swap(other);
@@ -167,7 +167,7 @@ private:
   native_handle_t handle_;
 
 public:
-  native_handle_t native_handle() { return handle_; }
+  native_handle_t native_handle() const { return handle_; }
 
   void close() {
     if (handle_ != invalid_handle) {
@@ -208,7 +208,7 @@ public:
     return *this;
   };
 #endif
-  native_handle_t native_handle() { return buf_->native_handle(); }
+  native_handle_t native_handle() const { return buf_->native_handle(); }
 
   native_handle_t detach() {
     native_handle_t handle = buf_.native_handle();
@@ -250,7 +250,7 @@ public:
     return *this;
   };
 #endif
-  native_handle_t native_handle() { return buf_.native_handle(); }
+  native_handle_t native_handle() const { return buf_.native_handle(); }
 
   void close() { buf_.close(); }
 

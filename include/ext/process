@@ -73,17 +73,12 @@ public:
     id() : id_(invalid_id) {}
     id(native_id_type id) : id_(id) {}
 
-    friend bool operator==(process::id lhs, process::id rhs) CXX_NOEXCEPT {
-      return lhs.id_ == rhs.id_;
-    }
-
-    friend bool operator<(process::id lhs, process::id rhs) CXX_NOEXCEPT {
-      return lhs.id_ < rhs.id_;
-    }
+    operator native_id_type() const { return id_; }
 
     template <class _CharT, class _Traits>
     friend std::basic_ostream<_CharT, _Traits> &
-    operator<<(std::basic_ostream<_CharT, _Traits> &stream, process::id id) {
+    operator<<(std::basic_ostream<_CharT, _Traits> &stream,
+               const process::id &id) {
       if (id == process::id())
         return stream << "process::id of a non-executing process";
       else
@@ -92,24 +87,10 @@ public:
 
   private:
     friend class process;
-    mutable native_id_type id_;
+    native_id_type id_;
   };
 
 private:
-  struct proc_t {
-    proc_t()
-        : id_(invalid_id)
-#if defined(_WIN32)
-          ,
-          handle_(NULL)
-#endif
-    {
-    }
-    native_id_type id_;
-#if defined(_WIN32)
-    native_handle_type handle_;
-#endif
-  };
 #ifdef CXX_DELETED_FUNCTIONS_NOT_SUPPORTED
 #if !defined(_MSC_VER) || _MSC_VER > 1600
   process &operator=(const process &) { return *this; }
@@ -166,7 +147,10 @@ public:
     std::swap(exit_code_, p.exit_code_);
     std::swap(last_error_, p.last_error_);
     std::swap(cmdline_, p.cmdline_);
-    std::swap(proc_, p.proc_);
+    std::swap(id_, p.id_);
+#if defined(_WIN32)
+    std::swap(handle_, p.handle_);
+#endif
   }
 
   ~process() {
@@ -175,50 +159,52 @@ public:
   }
 
   bool joinable() const CXX_NOEXCEPT {
-    if (proc_.id_ == invalid_id)
+    if (id_ == invalid_id)
       return false;
 #if defined(_WIN32)
-    if (WaitForSingleObject(proc_.handle_, 0) == WAIT_ABANDONED_0) {
+    DWORD exit_code = STILL_ACTIVE;
+    GetExitCodeProcess(handle_, &exit_code);
+    if (exit_code != STILL_ACTIVE) {
+      exit_code_ = exit_code;
       in_.close();
       out_.close();
       err_.close();
-      proc_.handle_ = NULL;
-      proc_.id_ = invalid_id;
+      id_ = invalid_id;
+      CloseHandle(InterlockedExchangePointer(&handle_, NULL));
     }
 #else
-    int status;
-    if (waitpid(proc_.id_, &status, WNOHANG) > 0) {
+    int status = 0;
+    if (waitpid(id_, &status, WNOHANG) > 0) {
       if (WIFEXITED(status)) {
+        exit_code_ = WEXITSTATUS(status);
         in_.close();
         out_.close();
         err_.close();
-        proc_.id_ = invalid_id;
+        id_ = invalid_id;
       }
     }
 #endif
-    return proc_.id_ != invalid_id;
+    return id_ != invalid_id;
   }
 
   void join() {
     if (!joinable())
       return;
 #if defined(_WIN32)
-    if (WaitForSingleObject(proc_.handle_, INFINITE) != WAIT_OBJECT_0) {
+    if (WaitForSingleObject(handle_, INFINITE) != WAIT_OBJECT_0) {
       last_error_ = GetLastError();
       in_.close();
       out_.close();
       err_.close();
       return;
     }
-    if (!GetExitCodeProcess(proc_.handle_, &exit_code_)) {
+    if (!GetExitCodeProcess(handle_, &exit_code_))
       last_error_ = GetLastError();
-    }
-    CloseHandle(proc_.handle_);
-    proc_.handle_ = NULL;
+
+    CloseHandle(InterlockedExchangePointer(&handle_, NULL));
 #else
-    int status;
-    if (waitpid(proc_.id_, &status, 0) == -1) {
-      proc_.id_ = invalid_id;
+    int status = 0;
+    if (waitpid(id_, &status, 0) == -1) {
       last_error_ = errno;
       in_.close();
       out_.close();
@@ -231,47 +217,46 @@ public:
     in_.close();
     out_.close();
     err_.close();
-    proc_.id_ = invalid_id;
-    return;
+    id_ = invalid_id;
   }
 
 #if !defined(__cpp_lambdas)
 private:
-  static void detach_thread(HANDLE handle, HANDLE in, HANDLE out, HANDLE err) {
+  static void detach_thread_(HANDLE handle, HANDLE in, HANDLE out, HANDLE err) {
     WaitForSingleObject(handle, INFINITE);
     CloseHandle(in);
     CloseHandle(out);
     CloseHandle(err);
   }
 #endif
+
 public:
   void detach() {
     if (!joinable())
       return;
 #if defined(_WIN32)
-    CloseHandle(proc_.handle_);
-    proc_.handle_ = NULL;
+    CloseHandle(InterlockedExchangePointer(&handle_, NULL));
 #else
-    native_id_type id = proc_.id_;
+    native_id_type id = id_;
     std::thread([id]() {
-      int status;
+      int status = 0;
       waitpid(id, &status, 0);
     }).detach();
 #endif
-    proc_.id_ = invalid_id;
+    id_ = invalid_id;
   }
-
-  process::id get_id() const CXX_NOEXCEPT { return proc_.id_; }
 
   native_exit_code exit_code() const { return exit_code_; }
 
   native_error_code last_error() const { return last_error_; }
 
+  id get_id() const CXX_NOEXCEPT { return id_; }
+
   native_handle_type native_handle() const {
 #if defined(_WIN32)
-    return proc_.handle_;
+    return handle_;
 #else
-    return proc_.id_;
+    return id_;
 #endif
   }
 
@@ -279,9 +264,9 @@ public:
 
   void kill() {
 #if defined(_WIN32)
-    TerminateProcess(proc_.handle_, EXIT_FAILURE);
+    TerminateProcess(handle_, EXIT_FAILURE);
 #else
-    ::kill(proc_.id_, SIGKILL);
+    ::kill(id_, SIGKILL);
 #endif
   }
 
@@ -336,18 +321,18 @@ private:
       last_error_ = GetLastError();
       return false;
     }
-    proc_.handle_ = pi.hProcess;
-    proc_.id_ = pi.dwProcessId;
-    return (proc_.handle_ != NULL);
+    handle_ = pi.hProcess;
+    id_ = pi.dwProcessId;
+    return (handle_ != NULL);
 #else
     char *cwd = nullptr;
     if (!working_directory.empty()) {
       char buf[PATH_MAX];
       cwd = getcwd(buf, sizeof(buf));
     }
-    proc_.id_ = fork();
+    id_ = fork();
 
-    if (proc_.id_ == invalid_id) {
+    if (id_ == invalid_id) {
       last_error_ = errno;
       if (cwd)
         if (chdir(cwd) == -1) {
@@ -355,7 +340,7 @@ private:
       return false;
     }
 
-    if (proc_.id_) {
+    if (id_) {
       in_ = std::move(in.write());
       out_ = std::move(out.read());
       err_ = std::move(err.read());
@@ -428,12 +413,15 @@ public:
 
 private:
   native_error_code last_error_;
-  native_exit_code exit_code_;
-  mutable proc_t proc_;
-  std::string cmdline_;
+  mutable native_exit_code exit_code_;
+#if defined(_WIN32)
+  mutable native_handle_type handle_;
+#endif
+  mutable id id_;
   mutable opstream in_;
   mutable ipstream out_;
   mutable ipstream err_;
+  std::string cmdline_;
 };
 
 namespace this_process {
