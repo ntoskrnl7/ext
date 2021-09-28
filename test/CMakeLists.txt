@@ -21,9 +21,10 @@ if (MSVC_VERSION LESS_EQUAL 1700)
     NAME googletest
     GITHUB_REPOSITORY google/googletest
     GIT_TAG release-1.7.0
-    VERSION 1.4.0
+    VERSION 1.7.0
     OPTIONS "INSTALL_GTEST OFF" "gtest_force_shared_crt"
   )
+  include_directories("${gtest_SOURCE_DIR}/include")
 else()
   CPMAddPackage(
     NAME googletest
@@ -39,15 +40,11 @@ file(GLOB SOURCE_FILES ./*.cpp)
 add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
 target_link_libraries(unittest ext gtest gtest_main)
 
-if (MSVC_VERSION LESS_EQUAL 1600)
-add_definitions("/EHsc")
-endif()
-
 if (CXX_USE_BOOST)
-add_definitions(-DCXX_USE_BOOST)
-find_package(Boost 1.69.0 REQUIRED COMPONENTS thread system chrono)
-include_directories(${Boost_INCLUDE_DIRS})
-target_link_directories(unittest PRIVATE ${Boost_LIBRARY_DIRS})
+  add_definitions(-DCXX_USE_BOOST)
+  find_package(Boost 1.69.0 REQUIRED COMPONENTS thread system chrono)
+  include_directories(${Boost_INCLUDE_DIRS})
+  target_link_directories(unittest PRIVATE ${Boost_LIBRARY_DIRS})
 endif()
 
 get_property(CXX_STANDARD_SPECIFIED TARGET unittest PROPERTY CXX_STANDARD SET)
@@ -64,7 +61,7 @@ set_property(TARGET unittest PROPERTY CXX_STANDARD_REQUIRED ON)
 if (WIN32)
 elseif(APPLE)
 elseif(UNIX)
-target_link_libraries(unittest rt)
+  target_link_libraries(unittest rt)
 endif()
 
 enable_testing()
