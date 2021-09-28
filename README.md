@@ -16,20 +16,20 @@
 ## Test Environments
 
 - Windows 10
-   - Visual Studio 2008 SP1, 2010, 2017, 2019
-   - MSYS2
-     - MSYS (GCC 10.2.0)
-     - MinGW32 (GCC 10.3.0)
-     - MinGW64 (GCC 10.3.0)
-     - CLANG32 (Clang 12.0.1)
-     - CLANG64 (Clang 12.0.1)
-     - UCRT64 (GCC 10.3.0)
+  - Visual Studio 2008 SP1, 2010, 2017, 2019
+  - MSYS2
+    - MSYS (GCC 10.2.0)
+    - MinGW32 (GCC 10.3.0)
+    - MinGW64 (GCC 10.3.0)
+    - CLANG32 (Clang 12.0.1)
+    - CLANG64 (Clang 12.0.1)
+    - UCRT64 (GCC 10.3.0)
 
 - macOS 10.14, macOS 10.15
-   - Clang 10.0.0, 11.0.0
+  - Clang 10.0.0, 11.0.0
 
 - Linux (Ubuntu 18.04.3 LTS / Debian 10 / Gooroom 2.0, 2.3)
-   - GCC 7.5.0, 8.3.0
+  - GCC 7.5.0, 8.3.0
 
 ---
 
@@ -221,4 +221,25 @@ mkdir build && cd build
 cmake ..
 cmake --build .
 ./unittest
+```
+
+## Usage
+
+### CMakeLists.txt
+
+```cmake
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+# create project
+project(MyProject)
+
+# add executable
+add_executable(tests tests.cpp)
+
+# add dependencies
+include(cmake/CPM.cmake)
+CPMAddPackage("gh:ntoskrnl7/ext@0.1.0")
+
+# link dependencies
+target_link_libraries(tests ext)
 ```

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+include(../cmake/CPM.cmake)
+
 if (CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE Debug)
   message("CMAKE_BUILD_TYPE (default) : " ${CMAKE_BUILD_TYPE})
@@ -7,65 +9,35 @@ else()
   message("CMAKE_BUILD_TYPE : " ${CMAKE_BUILD_TYPE})
 endif()
 
-project(unittest)
+project(unittest LANGUAGES C CXX)
 
-# gtest를 다운로드 받아서 빌드합니다.
+CPMAddPackage(NAME ext SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
+
 if (MSVC_VERSION LESS_EQUAL 1700)
-if (MSVC_VERSION GREATER_EQUAL 1600)
-add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
-endif()
-configure_file(CMakeLists.1.7.0.txt.in googletest-download/CMakeLists.txt)
+  if (MSVC_VERSION GREATER_EQUAL 1600)
+    add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
+  endif()
+  CPMAddPackage(
+    NAME googletest
+    GITHUB_REPOSITORY google/googletest
+    GIT_TAG release-1.7.0
+    VERSION 1.4.0
+    OPTIONS "INSTALL_GTEST OFF" "gtest_force_shared_crt"
+  )
 else()
-configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
+  CPMAddPackage(
+    NAME googletest
+    GITHUB_REPOSITORY google/googletest
+    GIT_TAG release-1.10.0
+    VERSION 1.10.0
+    OPTIONS "INSTALL_GTEST OFF" "gtest_force_shared_crt"
+  )
 endif()
 
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
-if(result)
-  message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-endif()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
-if(result)
-  message(FATAL_ERROR "Build step for googletest failed: ${result}")
-endif()
-
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-                 ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-                 EXCLUDE_FROM_ALL)
-
-include_directories("${gtest_SOURCE_DIR}/include")
-
-
-#  포함 경로를 설정합니다.
-if (WIN32)
-  include_directories("../platforms/windows/")
-elseif(APPLE)
-  include_directories("../platforms/macos/")
-elseif(UNIX)
-  include_directories("../platforms/linux/")
-endif()
-include_directories("../include")
-
-
-# 소스 파일을 설정합니다.
-if (WIN32)
-  file(GLOB PLATFORMS_SOURCE_FILES ./platforms/windows/*.cpp)
-elseif(APPLE)
-  file(GLOB PLATFORMS_SOURCE_FILES ./platforms/macos/*.cpp)
-elseif(UNIX)
-  file(GLOB PLATFORMS_SOURCE_FILES ./platforms/linux/*.cpp)
-endif()
 file(GLOB SOURCE_FILES ./*.cpp)
 
-
-# 실행 파일 빌드 설정
 add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
-target_link_libraries(unittest gtest gtest_main)
+target_link_libraries(unittest ext gtest gtest_main)
 
 if (MSVC_VERSION LESS_EQUAL 1600)
 add_definitions("/EHsc")
