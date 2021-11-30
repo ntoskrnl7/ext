@@ -2,6 +2,7 @@
  * @file any_function
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
  * @brief This Module implements any_function template class.
+ *          - std::any required.
  *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
@@ -18,15 +19,15 @@
 #ifndef _EXT_ANY_FUNCTION_
 #define _EXT_ANY_FUNCTION_
 
+#include "type_traits"
+#include "typeinfo"
+
 #include <any>
 #include <functional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
-
-#include "type_traits"
-#include "typeinfo"
 
 namespace ext {
 class invalid_argument_type : public std::invalid_argument {

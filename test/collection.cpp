@@ -10,8 +10,9 @@
 #define CXX_USE_NULLPTR
 #endif
 
-#include <ext/collection>
 #include <ext/shared_recursive_mutex>
+
+#include <ext/collection>
 #include <ext/typeinfo>
 #include <gtest/gtest.h>
 

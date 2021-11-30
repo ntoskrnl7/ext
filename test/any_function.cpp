@@ -1,8 +1,6 @@
 ﻿#include <ext/any_function>
 #include <gtest/gtest.h>
 
-#include <ext/collection>
-
 #ifdef _EXT_ANY_FUNCTION_
 TEST(any_function_test, call_operator_test) {
   ext::any_function fn_strlen(strlen);

@@ -14,12 +14,19 @@
 #define CXX_USE_STD_SHARED_MUTEX
 #include <boost/thread/shared_mutex.hpp>
 #endif
+
 #define CXX_USE_STD_MAKE_UNIQUE
 #include "stl_compat"
+
+#if !defined(_EXT_STD_MUTEX_) && !defined(CXX_STD_MUTEX_NOT_SUPPORTED)
+#include <mutex>
+#endif
+
 #if !defined(_EXT_STD_SHARED_MUTEX_) &&                                        \
     !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED)
 #include <shared_mutex>
 #endif
+
 #include "stl_compat"
 
 #include <list>

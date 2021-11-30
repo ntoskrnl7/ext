@@ -2,11 +2,19 @@
  * @file safe_object
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
  * @brief This module implements a template class for object thread-safe.
+ *          - std::shared_mutex or ext::shared_recursive_mutex required.
  *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
 #pragma once
+#ifdef CXX_USE_BOOST
+#ifndef _EXT_SHARED_RECURSIVE_MUTEX_
+#define CXX_USE_STD_SHARED_MUTEX
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#endif
+#endif
 
 #include "stl_compat"
 
@@ -14,18 +22,33 @@
 #ifndef _EXT_SAFE_OBJECT_
 #define _EXT_SAFE_OBJECT_
 
-#include <functional>
-#include <shared_mutex>
-#include <utility>
-
 #include <algorithm>
 #include <atomic>
+#include <functional>
 #include <list>
+#include <mutex>
 #include <sstream>
 #include <thread>
+#include <utility>
+
+#ifndef _EXT_SHARED_RECURSIVE_MUTEX_
+#if !defined(_EXT_STD_SHARED_MUTEX_) &&                                        \
+    !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED)
+#include <shared_mutex>
+#endif
+#endif
+
+#include "stl_compat"
 
 #include "singleton"
 #include "typeinfo"
+
+/// Defines the mutex class to use as the default.
+#ifdef _EXT_SHARED_RECURSIVE_MUTEX_
+#define _EXT_SAFE_OBJECT_MUTEX_ ext::shared_recursive_mutex
+#else
+#define _EXT_SAFE_OBJECT_MUTEX_ CXX_SHARED_MUTEX
+#endif
 
 namespace ext {
 /**
@@ -144,7 +167,7 @@ public:
   template <class R = const T &> return_type<true, R> operator()() {
     return OBJECT;
   }
-  
+
   template <class R = T &> return_type<false, R> operator()() { return OBJECT; }
 
 private:
@@ -285,7 +308,7 @@ private:
   std::atomic<unsigned long long> lockCount_;
   std::atomic<unsigned long long> unlockCount_;
   std::atomic<unsigned long long> waitCount_;
-  CXX_SHARED_MUTEX untrackedThreadsMutex_;
+  _EXT_SAFE_OBJECT_MUTEX_ untrackedThreadsMutex_;
   std::list<std::thread::id> untrackedThreads_;
 
   // safe_object_with_trace클래스에서는 멤버에 접근할 수 있도록 정의.

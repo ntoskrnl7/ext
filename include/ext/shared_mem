@@ -5,7 +5,6 @@
 
 #define CXX_USE_NULLPTR
 #include "stl_compat"
-
 #include "platforms/misc.h"
 
 #include <sys/types.h>
