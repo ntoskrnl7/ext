@@ -35,6 +35,11 @@ else()
   )
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(gtest INTERFACE -Wno-deprecated-copy)
+    target_compile_options(gtest_main INTERFACE -Wno-deprecated-copy)
+endif()
+
 file(GLOB SOURCE_FILES ./*.cpp)
 
 add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
