@@ -1,19 +1,35 @@
-#!/usr/bash
+#!/usr/bin/bash
+#
+# ./init-msys2.sh package...
+#
+# example
+#   ./init-msys2.sh gcc cmake
+#
 
-pacman -Syu
-pacman -Su
-pacman -S --needed base-devel git
+pacman -Syu --noconfirm
+pacman -Su --noconfirm
+pacman -S --noconfirm --needed base-devel git
 
 case "${MSYSTEM}" in
-    "MINGW32") pacman -S --needed mingw-w64-i686-toolchain mingw-w64-i686-cmake;;
-    "MINGW64") pacman -S --needed mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake;;
+    "MINGW32") TARGET=mingw-w64-i686;;
+    "MINGW64") TARGET=mingw-w64-x86_64;;
     "CLANG32")
         sed -i '1s|^|[staging]\nServer = https://repo.msys2.org/staging/\nSigLevel = Never\n[clang32]\nInclude = /etc/pacman.d/mirrorlist.clang32\n|' /etc/pacman.conf
         pacman -Syu
-        pacman -S --needed mingw-w64-clang-i686-toolchain mingw-w64-clang-i686-cmake;;
-    "CLANG64") pacman -S --needed mingw-w64-clang-x86_64-toolchain mingw-w64-clang-x86_64-cmake;;
-    "CLANGARM64") pacman -S --needed mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake;;
-    "UCRT64") pacman -S --needed mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake;;
-    # "MSYS") pacman -S --needed gcc cmake;;
-    *) pacman -S --needed gcc cmake;;
+        TARGET=mingw-w64-clang-i686;;
+    "CLANG64") TARGET=mingw-w64-clang-x86_64;;
+    "CLANGARM64") TARGET=mingw-w64-clang-aarch64;;
+    "UCRT64") TARGET=mingw-w64-ucrt-x86_64;;
+    *) unset TARGET;;
 esac
+
+if [ -n "$TARGET" ]; then
+    echo pacman -S --noconfirm --needed $TARGET-toolchain
+    pacman -S --noconfirm --needed $TARGET-toolchain
+    TARGET=$TARGET-
+fi
+
+for pkg in "$@"; do
+    echo pacman -S --noconfirm --needed "$TARGET$pkg"
+    pacman -S --noconfirm --needed "$TARGET$pkg"
+done
