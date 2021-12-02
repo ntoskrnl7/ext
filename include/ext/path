@@ -25,14 +25,14 @@ template <> inline const char seperator<char>() {
 #if defined(_WIN32)
   return '\\';
 #else
-  return '/'
+  return '/';
 #endif
 }
 template <> inline const wchar_t seperator<wchar_t>() {
 #if defined(_WIN32)
   return L'\\';
 #else
-  return L'/'
+  return L'/';
 #endif
 }
 
