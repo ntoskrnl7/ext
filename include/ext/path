@@ -88,9 +88,9 @@ inline void join(std::basic_string<T> &path, const A0 &a0) {
   std::basic_string<T> &ret = path;
   std::basic_string<T> arg = a0;
   if (!arg.empty()) {
-    std::basic_string<T>::size_type cur = 0;
+    typename std::basic_string<T>::size_type cur = 0;
     do {
-      std::basic_string<T>::size_type pos;
+      typename std::basic_string<T>::size_type pos;
       pos = arg.find(parent_seperator<T>(), cur);
       if (pos == std::basic_string<T>::npos) {
         pos = arg.find(current_seperator<T>(), cur);
