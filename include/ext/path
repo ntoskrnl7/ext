@@ -20,11 +20,19 @@
 
 namespace ext {
 namespace path {
-template <typename T> inline const T seperator() {
+template <typename T> inline const T seperator();
+template <> inline const char seperator<char>() {
 #if defined(_WIN32)
-  return static_cast<T>('\\');
+  return '\\';
 #else
-  return static_cast<T>('/');
+  return '/'
+#endif
+}
+template <> inline const wchar_t seperator<wchar_t>() {
+#if defined(_WIN32)
+  return L'\\';
+#else
+  return L'/'
 #endif
 }
 
@@ -46,16 +54,80 @@ inline std::basic_string<T> dirname(const std::basic_string<T> &path) {
   return std::move(path.substr(0, pos));
 }
 
+template <typename T> inline std::basic_string<T> basename(const T *path) {
+  return basename(std::basic_string<T>(path));
+}
+
+template <typename T> inline std::basic_string<T> dirname(const T *path) {
+  return dirname(std::basic_string<T>(path));
+}
+
+namespace internal {
+template <typename T> inline const T *parent_seperator();
+template <> inline const char *parent_seperator<char>() {
+  static char val[] = {'.', '.', seperator<char>(), '\0'};
+  return val;
+}
+template <> inline const wchar_t *parent_seperator<wchar_t>() {
+  static wchar_t val[] = {L'.', L'.', seperator<wchar_t>(), L'\0'};
+  return val;
+}
+
+template <typename T> inline const T *current_seperator();
+template <> inline const char *current_seperator<char>() {
+  static char val[] = {'.', seperator<char>(), '\0'};
+  return val;
+}
+template <> inline const wchar_t *current_seperator<wchar_t>() {
+  static wchar_t val[] = {L'.', seperator<wchar_t>(), L'\0'};
+  return val;
+}
+
+template <typename T, typename A0>
+inline void join(std::basic_string<T> &path, const A0 &a0) {
+  std::basic_string<T> &ret = path;
+  std::basic_string<T> arg = a0;
+  if (!arg.empty()) {
+    std::basic_string<T>::size_type cur = 0;
+    do {
+      std::basic_string<T>::size_type pos;
+      pos = arg.find(parent_seperator<T>(), cur);
+      if (pos == std::basic_string<T>::npos) {
+        pos = arg.find(current_seperator<T>(), cur);
+        if (pos != std::basic_string<T>::npos) {
+          arg = &arg[pos + 2];
+          cur = 0;
+          continue;
+        }
+      } else {
+        if (!ret.empty()) {
+          if ((ret[ret.size() - 1] != seperator<T>()))
+            ret = ext::path::dirname(ret);
+          else
+            ret = ext::path::dirname(ret.substr(0, ret.size() - 1));
+          if (ret.empty())
+            return;
+        }
+        arg = &arg[pos + 3];
+        cur = 0;
+        continue;
+      }
+      cur = pos;
+    } while (cur != std::basic_string<T>::npos);
+    if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
+      ret += seperator<T>();
+    ret += arg;
+  }
+}
+} // namespace internal
+
 #if defined(__cpp_variadic_templates) && defined(__cpp_lib_integer_sequence)
 namespace internal {
 template <typename T, typename Tup, std::size_t... I>
 inline void join(std::basic_string<T> &ret, std::index_sequence<I...>,
                  const Tup &tup) {
-  for (auto path : std::vector<std::basic_string<T>>({std::get<I>(tup)...})) {
-    if (ret.back() != seperator<T>() && path[0] != seperator<T>())
-      ret += seperator<T>();
-    ret += path;
-  }
+  for (auto path : std::vector<std::basic_string<T>>({std::get<I>(tup)...}))
+    internal::join(ret, path);
 }
 } // namespace internal
 
@@ -77,9 +149,7 @@ template <typename T, typename A0>
 inline std::basic_string<T> join(const std::basic_string<T> &path,
                                  const A0 &a0) {
   std::basic_string<T> ret = path;
-  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
-    ret += seperator<T>();
-  ret += a0;
+  internal::join(ret, a0);
   return std::move(ret);
 }
 
@@ -92,12 +162,8 @@ template <typename T, typename A0, typename A1>
 inline std::basic_string<T> join(const std::basic_string<T> &path, const A0 &a0,
                                  const A1 &a1) {
   std::basic_string<T> ret = path;
-  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
-    ret += seperator<T>();
-  ret += a0;
-  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
-    ret += seperator<T>();
-  ret += a1;
+  internal::join(ret, a0);
+  internal::join(ret, a1);
   return std::move(ret);
 }
 
@@ -110,15 +176,9 @@ template <typename T, typename A0, typename A1, typename A2>
 inline std::basic_string<T> join(const std::basic_string<T> &path, const A0 &a0,
                                  const A1 &a1, const A2 &a2) {
   std::basic_string<T> ret = path;
-  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
-    ret += seperator<T>();
-  ret += a0;
-  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
-    ret += seperator<T>();
-  ret += a1;
-  if ((!ret.empty()) && (ret[ret.size() - 1] != seperator<T>()))
-    ret += seperator<T>();
-  ret += a2;
+  internal::join(ret, a0);
+  internal::join(ret, a1);
+  internal::join(ret, a2);
   return std::move(ret);
 }
 
@@ -126,6 +186,23 @@ template <typename T, typename A0, typename A1, typename A2>
 inline std::basic_string<T> join(const T *path, const A0 &a0, const A1 &a1,
                                  const A2 &a2) {
   return std::move(join(std::basic_string<T>(path), a0, a1, a2));
+}
+
+template <typename T, typename A0, typename A1, typename A2, typename A3>
+inline std::basic_string<T> join(const std::basic_string<T> &path, const A0 &a0,
+                                 const A1 &a1, const A2 &a2, const A3 &a3) {
+  std::basic_string<T> ret = path;
+  internal::join(ret, a0);
+  internal::join(ret, a1);
+  internal::join(ret, a2);
+  internal::join(ret, a3);
+  return std::move(ret);
+}
+
+template <typename T, typename A0, typename A1, typename A2, typename A3>
+inline std::basic_string<T> join(const T *path, const A0 &a0, const A1 &a1,
+                                 const A2 &a2, const A3 &a3) {
+  return std::move(join(std::basic_string<T>(path), a0, a1, a2, a3));
 }
 #endif // defined(__cpp_variadic_templates) &&
        // defined(__cpp_lib_integer_sequence)
