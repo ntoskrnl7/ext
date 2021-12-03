@@ -31,7 +31,7 @@ TEST(process_test, run_list_working_directory_cmd) {
 #else
   ext::process process("ls", {"-al", "."});
   EXPECT_TRUE(process.joinable());
-  EXPECT_STREQ(process.get_cmdline().c_str(), "ls -al");
+  EXPECT_STREQ(process.get_cmdline().c_str(), "ls -al .");
 #endif
   process.join();
   EXPECT_EQ(process.exit_code(), EXIT_SUCCESS);
