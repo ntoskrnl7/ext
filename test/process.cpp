@@ -1,8 +1,7 @@
+#include <ext/path>
 #include <ext/process>
 
-#ifdef _EXT_PROCESS_
 #define GTEST_HAS_TR1_TUPLE 0
-#include <ext/path>
 #include <gtest/gtest.h>
 
 TEST(process_test, run_invalid_cmd) {
@@ -27,10 +26,13 @@ TEST(process_test, run_list_working_directory_cmd) {
   args.push_back(".");
   ext::process process("cmd", args);
 #endif // __cpp_initializer_lists
+  EXPECT_TRUE(process.joinable());
+  EXPECT_STREQ(process.get_cmdline().c_str(), "cmd /c dir .");
 #else
   ext::process process("ls", {"-al", "."});
-#endif
   EXPECT_TRUE(process.joinable());
+  EXPECT_STREQ(process.get_cmdline().c_str(), "ls -al");
+#endif
   process.join();
   EXPECT_EQ(process.exit_code(), EXIT_SUCCESS);
 }
@@ -59,10 +61,13 @@ TEST(process_test,
   args.push_back(".");
   ext::process process("cmd", args, systemDrive.c_str());
 #endif // __cpp_initializer_lists
+  EXPECT_TRUE(process.joinable());
+  EXPECT_STREQ(process.get_cwd().c_str(), systemDrive.c_str());
 #else
   ext::process process("ls", {"-al", "."}, "/");
-#endif
   EXPECT_TRUE(process.joinable());
+  EXPECT_STREQ(process.get_cwd().c_str(), "/");
+#endif
   process.join();
   EXPECT_EQ(process.exit_code(), EXIT_SUCCESS);
 }
@@ -74,6 +79,8 @@ TEST(process_test, this_process_test) {
 #else
   EXPECT_EQ(pid, ext::process::id(getpid()));
 #endif
+  std::string cwd = ext::this_process::get_cwd();
+  EXPECT_FALSE(cwd.empty());
   std::string cmdline = ext::this_process::get_cmdline();
   EXPECT_FALSE(cmdline.empty());
   std::string name = ext::path::basename(cmdline);
@@ -171,6 +178,9 @@ TEST(process_test, process_pipe_operator_test) {
 #include <condition_variable>
 #include <mutex>
 #include <sstream>
+#include <thread>
+
+#include <ext/string>
 
 TEST(process_test, process_stdout_test) {
   ext::process process("find", {"/", "-name", "*.service"});
@@ -189,11 +199,14 @@ TEST(process_test, process_stdout_test) {
         << "---------------------------------------------------------------"
            "-"
         << std::endl;
-    wc.in() << ss.str();
-    // wc.in() << process.out().rdbuf();
 
-    wc.in().close();
-    std::cout << wc.out().rdbuf();
+    try {
+      wc.in() << ss.str();
+      wc.in().close();
+      std::cout << wc.out().rdbuf();
+    } catch (const std::exception &e) {
+      std::cerr << e.what() << '\n';
+    }
     if (wc.joinable())
       wc.join();
   });
@@ -284,5 +297,4 @@ TEST(process_test, process_pipe_operator_test2) {
   if (result.joinable())
     result.join();
 }
-#endif
 #endif

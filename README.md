@@ -94,9 +94,7 @@
 13. process
     - GCC 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1, 2010+ (with Boost 1.69.0)
-    - Visual Studio 2017+
-    - std::thread required
+    - Visual Studio 2008 SP1, 2010+
 14. property
     - GCC 8.3.0+
     - Clang 10.0+

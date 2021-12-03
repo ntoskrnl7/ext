@@ -16,32 +16,34 @@
 #define CXX_USE_STD_MOVE
 #include "stl_compat"
 
-#if (!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_)
 #ifndef _EXT_PROCESS_
 #define _EXT_PROCESS_
 
 #if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <Windows.h>
 #else
 #include <csignal>
 #include <limits.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <thread>
+#include <unistd.h>
+#endif
+
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <libproc.h>
 #endif
 
 #include <list>
 #include <string>
 
 #include "pipe"
-
-#if !defined(CXX_STD_THREAD_NOT_SUPPORTED)
-#include <thread>
-#endif
-
-#if defined(__APPLE__) || defined(__FreeBSD__)
-#include <libproc.h>
-#endif
 
 namespace ext {
 /**
@@ -262,6 +264,8 @@ public:
 
   const std::string &get_cmdline() const { return cmdline_; }
 
+  const std::string &get_cwd() const { return cwd_; }
+
   void kill() {
 #if defined(_WIN32)
     TerminateProcess(handle_, EXIT_FAILURE);
@@ -276,6 +280,7 @@ private:
                 const std::list<std::string> &arguments) {
     last_error_ = no_error;
     cmdline_ = command;
+    cwd_ = working_directory;
     CXX_FOR(const std::string &arg, arguments) { cmdline_ += " " + arg; }
 
     ext::pipe in;
@@ -422,6 +427,7 @@ private:
   mutable ipstream out_;
   mutable ipstream err_;
   std::string cmdline_;
+  std::string cwd_;
 };
 
 namespace this_process {
@@ -468,7 +474,23 @@ inline std::string &get_cmdline() {
 #endif
   return cmdline_;
 }
+inline std::string get_cwd() {
+#if defined(_WIN32)
+  std::string cwd(MAX_PATH, '\0');
+  size_t length = ::GetCurrentDirectoryA((DWORD)cwd.size(), &cwd[0]);
+  if (length > cwd.size()) {
+    cwd.resize(length);
+    length = ::GetCurrentDirectoryA((DWORD)cwd.size(), &cwd[0]);
+  }
+  cwd.resize(length);
+  return cwd;
+#else
+  char *buf = getcwd(NULL, 0);
+  std::string cwd = buf;
+  free(buf);
+  return cwd;
+#endif
+}
 } // namespace this_process
 } // namespace ext
-#endif // _EXT_PROCES_
-#endif
+#endif // _EXT_PROCESS_
