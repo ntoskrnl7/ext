@@ -18,17 +18,25 @@
 #define CXX_USE_STD_MOVE
 #include "stl_compat"
 
+#if defined(_MSC_VER) && defined(_WIN32)
+#include <Shlwapi.h>
+#pragma comment(lib, "Shlwapi.lib")
+#else
+#include <ext/string>
+#include <sys/stat.h>
+#endif
+
 namespace ext {
 namespace path {
-template <typename T> inline const T seperator();
-template <> inline const char seperator<char>() {
+template <typename T> inline T seperator();
+template <> inline char seperator<char>() {
 #if defined(_WIN32)
   return '\\';
 #else
   return '/';
 #endif
 }
-template <> inline const wchar_t seperator<wchar_t>() {
+template <> inline wchar_t seperator<wchar_t>() {
 #if defined(_WIN32)
   return L'\\';
 #else
@@ -206,6 +214,48 @@ inline std::basic_string<T> join(const T *path, const A0 &a0, const A1 &a1,
 }
 #endif // defined(__cpp_variadic_templates) &&
        // defined(__cpp_lib_integer_sequence)
+
+template <typename T>
+inline bool is_relative(const std::basic_string<T> &path) {
+  if ((path.rfind(internal::current_seperator<T>()) == 0) && (path.size() > 2))
+    return true;
+  return (path.rfind(internal::parent_seperator<T>()) == 0) &&
+         (path.size() > 3);
+}
+template <typename T> inline bool is_relative(const T *path) {
+  return is_relative(std::basic_string<T>(path));
+}
+
+template <typename T> inline bool exists(const T *path);
+template <typename T> inline bool exists(const std::basic_string<T> &path);
+#if defined(_MSC_VER) && defined(_WIN32)
+template <> inline bool exists<char>(const char *path) {
+  return PathFileExistsA(path) == TRUE;
+}
+template <> inline bool exists<char>(const std::string &path) {
+  return exists(path.c_str());
+}
+template <> inline bool exists<wchar_t>(const wchar_t *path) {
+  return PathFileExistsW(path) == TRUE;
+}
+template <> inline bool exists<wchar_t>(const std::wstring &path) {
+  return exists(path.c_str());
+}
+#else
+template <> inline bool exists<char>(const char *path) {
+  struct stat st;
+  return stat(path, &st) == 0;
+}
+template <> inline bool exists<char>(const std::string &path) {
+  return exists(path.c_str());
+}
+template <> inline bool exists<wchar_t>(const wchar_t *path) {
+  return exists<char>((!std::wstring(path)));
+}
+template <> inline bool exists<wchar_t>(const std::wstring &path) {
+  return exists(path.c_str());
+}
+#endif
 } // namespace path
 } // namespace ext
 #endif // _EXT_PATH_

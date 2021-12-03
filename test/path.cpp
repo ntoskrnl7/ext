@@ -3,14 +3,58 @@
 #define GTEST_HAS_TR1_TUPLE 0
 #include <gtest/gtest.h>
 
-TEST(path_test, test) {
+TEST(path_test, is_relative) {
+#if defined(_WIN32)
+  EXPECT_TRUE(ext::path::is_relative(".\\test"));
+  EXPECT_TRUE(ext::path::is_relative("..\\test"));
+  EXPECT_FALSE(ext::path::is_relative(".\\"));
+  EXPECT_FALSE(ext::path::is_relative("..\\"));
+  EXPECT_FALSE(ext::path::is_relative("."));
+  EXPECT_FALSE(ext::path::is_relative(".."));
+
+  EXPECT_TRUE(ext::path::is_relative(L".\\test"));
+  EXPECT_TRUE(ext::path::is_relative(L"..\\test"));
+  EXPECT_FALSE(ext::path::is_relative(L".\\"));
+  EXPECT_FALSE(ext::path::is_relative(L"..\\"));
+  EXPECT_FALSE(ext::path::is_relative(L"."));
+  EXPECT_FALSE(ext::path::is_relative(L".."));
+#else
+  EXPECT_TRUE(ext::path::is_relative("./test"));
+  EXPECT_TRUE(ext::path::is_relative("../test"));
+  EXPECT_FALSE(ext::path::is_relative("./"));
+  EXPECT_FALSE(ext::path::is_relative("../"));
+  EXPECT_FALSE(ext::path::is_relative("."));
+  EXPECT_FALSE(ext::path::is_relative(".."));
+
+  EXPECT_TRUE(ext::path::is_relative(L"./test"));
+  EXPECT_TRUE(ext::path::is_relative(L"../test"));
+  EXPECT_FALSE(ext::path::is_relative(L"./"));
+  EXPECT_FALSE(ext::path::is_relative(L"../"));
+  EXPECT_FALSE(ext::path::is_relative(L"."));
+  EXPECT_FALSE(ext::path::is_relative(L".."));
+#endif
+}
+
+#include <ext/process>
+
+TEST(path_test, exists) {
+  const std::string &cmdline = ext::this_process::get_cmdline();
+  if (!cmdline.empty())
+    EXPECT_TRUE(ext::path::exists(cmdline));
+
+  std::string cwd = ext::this_process::get_cwd();
+  if (!cwd.empty())
+    EXPECT_TRUE(ext::path::exists(cwd));
+}
+
+TEST(path_test, join) {
 #if defined(_WIN32)
   std::string r = ext::path::join("c:", "dir");
   EXPECT_STREQ(r.c_str(), "c:\\dir");
 
   r = ext::path::dirname("c:\\dir\\test\\test");
   EXPECT_STREQ(r.c_str(), "c:\\dir\\test");
-  
+
   r = ext::path::basename("c:\\dir\\test\\test\\abc");
   EXPECT_STREQ(r.c_str(), "abc");
 
