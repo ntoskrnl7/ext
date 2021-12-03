@@ -123,6 +123,8 @@ private:
  */
 template <class T, class L> class collection_base {
 public:
+  typedef _EXT_COLLECTION_MUTEX_ mutex_type;
+
   /**
    * @brief The collection item class
    */
