@@ -1,4 +1,4 @@
-#include <ext/url>
+﻿#include <ext/url>
 #include <gtest/gtest.h>
 
 TEST(url_test, invalid_url_test) {
@@ -49,4 +49,11 @@ TEST(url_test, wstring_url_test) {
   EXPECT_EQ(u.port, 8443);
   EXPECT_STREQ(u.path.c_str(), "/test");
   EXPECT_STREQ(u.protocol_host_port().c_str(), "https://localhost:8443");
+}
+
+TEST(url_test, url_encode) {
+  EXPECT_STREQ(ext::url::encode("한글").c_str(), "%C7%D1%B1%DB"); // EUC-KR
+#if defined(__cpp_unicode_literals)
+  EXPECT_STREQ(ext::url::encode(u8"한글").c_str(), "%ED%95%9C%EA%B8%80"); // UTF-8
+#endif
 }

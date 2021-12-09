@@ -14,8 +14,8 @@
 #include <ctype.h>
 #include <functional>
 #include <iomanip>
-#include <sstream>
 #include <iterator>
+#include <sstream>
 #include <string>
 
 #include "stl_compat"
@@ -76,7 +76,8 @@ public:
     for (std::string::const_iterator i = value.begin(), n = value.end(); i != n;
          ++i) {
       std::string::value_type c = (*i);
-      if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      if (std::isalnum(c, std::locale::classic()) || c == '-' || c == '_' ||
+          c == '.' || c == '~') {
         escaped << c;
         continue;
       }
