@@ -52,9 +52,6 @@ TEST(url_test, wstring_url_test) {
 }
 
 TEST(url_test, url_encode) {
-#if defined(_MSC_VER)
-  EXPECT_STREQ(ext::url::encode("한글").c_str(), "%C7%D1%B1%DB"); // EUC-KR
-#endif
 #if defined(__cpp_unicode_literals)
   EXPECT_STREQ(ext::url::encode(u8"한글").c_str(), "%ED%95%9C%EA%B8%80"); // UTF-8
 #endif
