@@ -50,13 +50,25 @@ template <typename _CharT>
 class basic_pipebuf : public std::basic_filebuf<_CharT> {
   typedef std::basic_filebuf<_CharT> T;
 
+  int openmode_to_flags(std::ios::openmode mode) {
+    if (mode & std::ios::binary)
+      return (mode & std::ios::out) ? _O_RDWR | _O_BINARY
+                                    : _O_RDONLY | _O_BINARY;
+    return (mode & std::ios::out) ? _O_RDWR : _O_RDONLY;
+  }
+
+  const char *openmode_to_str(std::ios::openmode mode) {
+    if (mode & std::ios::binary)
+      return (mode & std::ios::out) ? "r+b" : "rb";
+    return (mode & std::ios::out) ? "r+" : "r";
+  }
+
 public:
   basic_pipebuf() : T(NULL), handle_(NULL) {}
   basic_pipebuf(HANDLE handle, std::ios::openmode mode)
-      : std::basic_filebuf<_CharT>(_fdopen(
-            _open_osfhandle((intptr_t)handle,
-                            (mode & std::ios::out) ? _O_RDWR : _O_RDONLY),
-            ((mode & std::ios::out) ? "r+" : "r"))),
+      : std::basic_filebuf<_CharT>(
+            _fdopen(_open_osfhandle((intptr_t)handle, openmode_to_flags(mode)),
+                    openmode_to_str(mode))),
         handle_(handle) {}
 
 public:
@@ -259,7 +271,7 @@ private:
 };
 #endif
 
-typedef pstream<std::ios::in, std::istream> ipstream;
-typedef pstream<std::ios::out, std::ostream> opstream;
+typedef pstream<std::ios::in | std::ios::binary, std::istream> ipstream;
+typedef pstream<std::ios::out | std::ios::binary, std::ostream> opstream;
 } // namespace ext
 #endif // _EXT_PSTREAM_

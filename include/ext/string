@@ -64,10 +64,13 @@ typedef std::basic_string<wchar_t> wstring;
 } // namespace movable
 
 namespace internal {
-template <typename T> inline const T *trim_str() {
-  CXX_IF_CONSTEXPR(std::is_same<T, char>::value)
-  return (const T *)" \t\n\r\f\v";
-  else return (const T *)L" \t\n\r\f\v";
+template <typename T> inline const std::basic_string<T> trim_str();
+template <> inline const std::string trim_str<char>() {
+  return std::string(" \t\n\r\f\v\0", sizeof(" \t\n\r\f\v\0") - 1);
+}
+template <> inline const std::wstring trim_str<wchar_t>() {
+  return std::wstring(L" \t\n\r\f\v\0",
+                      (sizeof(" \t\n\r\f\v\0") / sizeof(wchar_t)) - 1);
 }
 } // namespace internal
 
