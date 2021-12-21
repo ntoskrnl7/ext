@@ -173,7 +173,7 @@ public:
         std::make_shared<std::packaged_task<void>>(fn);
     {
       std::unique_lock<std::mutex> lock(mtx_);
-#if defiend(__cpp_lambdas)
+#if defined(__cpp_lambdas)
       queue_.push([task]() { (*task)(); });
 #else
       queue_.push(std::bind(push_task_, task));
