@@ -14,22 +14,35 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #endif
+
+#define CXX_USE_STD_MUTEX
+#include <boost/thread/mutex.hpp>
+
+#define CXX_USE_STD_ATOMIC
+#include <boost/atomic.hpp>
+
+#define CXX_USE_STD_THREAD
+#include <boost/thread.hpp>
 #endif
 
 #include "stl_compat"
 
-#ifdef CXX_SHARED_MUTEX
+#if defined(CXX_SHARED_MUTEX) && defined(__cpp_decltype)
 #ifndef _EXT_SAFE_OBJECT_
 #define _EXT_SAFE_OBJECT_
 
 #include <algorithm>
+#if !defined(_EXT_STD_ATOMIC_)
 #include <atomic>
-#include <functional>
-#include <list>
+#endif
+
+#if !defined(_EXT_STD_MUTEX_)
 #include <mutex>
-#include <sstream>
+#endif
+
+#if !defined(_EXT_STD_THREAD_)
 #include <thread>
-#include <utility>
+#endif
 
 #ifndef _EXT_SHARED_RECURSIVE_MUTEX_
 #if !defined(_EXT_STD_SHARED_MUTEX_) &&                                        \
@@ -37,6 +50,11 @@
 #include <shared_mutex>
 #endif
 #endif
+
+#include <functional>
+#include <list>
+#include <sstream>
+#include <utility>
 
 #include "stl_compat"
 
@@ -51,6 +69,7 @@
 #endif
 
 namespace ext {
+
 /**
  * @brief The safe_object_base class
  *
