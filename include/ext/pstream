@@ -50,25 +50,79 @@ template <typename _CharT>
 class basic_pipebuf : public std::basic_filebuf<_CharT> {
   typedef std::basic_filebuf<_CharT> T;
 
-  int openmode_to_flags(std::ios::openmode mode) {
+private:
+  static int openmode_to_oflag(std::ios::openmode mode) {
+    int oflag = (mode & std::ios::out) ? _O_RDWR : _O_RDONLY;
     if (mode & std::ios::binary)
-      return (mode & std::ios::out) ? _O_RDWR | _O_BINARY
-                                    : _O_RDONLY | _O_BINARY;
-    return (mode & std::ios::out) ? _O_RDWR : _O_RDONLY;
+      oflag |= _O_BINARY;
+    if (mode & std::ios::trunc)
+      oflag |= _O_TRUNC;
+    if (mode & std::ios::app)
+      oflag |= _O_APPEND;
+    if (mode & std::ios::ate)
+      oflag |= _O_APPEND;
+    return oflag;
   }
 
-  const char *openmode_to_str(std::ios::openmode mode) {
-    if (mode & std::ios::binary)
-      return (mode & std::ios::out) ? "r+b" : "rb";
-    return (mode & std::ios::out) ? "r+" : "r";
+  static std::string openmode_to_mode(std::ios::openmode mode) {
+    // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fopen-wfopen
+    int oflag = openmode_to_oflag(mode);
+    std::string op1;
+
+    if (oflag & _O_APPEND) {
+      if (oflag & _O_WRONLY) // (usually _O_WRONLY | _O_CREAT | _O_APPEND)
+        op1 = "a";
+      else if (oflag & _O_RDWR) // (usually _O_RDWR | _O_APPEND | _O_CREAT )
+        op1 = "a+";
+    } else {
+      if (oflag & _O_RDWR)
+        op1 = "r+";
+      else if (oflag & _O_WRONLY) // (usually _O_WRONLY | _O_CREAT | _O_TRUNC)
+        op1 = "w";
+      else if (oflag == _O_RDWR) // (usually _O_RDWR | _O_CREAT | _O_TRUNC)
+        op1 = "w+";
+    }
+    if (op1.empty())
+      op1 = "r";
+
+    std::string op2;
+    if (oflag & _O_BINARY)
+      op2 += "b";
+    if (oflag & _O_TEXT)
+      op2 += "t";
+    if (oflag & _O_EXCL)
+      op2 += "x";
+
+    if (oflag & _O_SEQUENTIAL)
+      op2 += "S";
+    if (oflag & _O_RANDOM)
+      op2 += "R";
+#if defined(_O_SHORTLIVED)
+    if (oflag & _O_SHORTLIVED)
+      op2 += "T";
+#endif
+    if (oflag & _O_TEMPORARY)
+      op2 += "D";
+
+    if (oflag & _O_WTEXT)
+      op2 += ",ccs=UNICODE";
+#if defined(_O_UTF8)
+    if (oflag & _O_UTF8)
+      op2 += ",ccs=UTF-8";
+#endif
+#if defined(_O_UTF16)
+    if (oflag & _O_UTF16)
+      op2 += ",ccs=UTF-16LE";
+#endif
+    return op1 + op2;
   }
 
 public:
   basic_pipebuf() : T(NULL), handle_(NULL) {}
   basic_pipebuf(HANDLE handle, std::ios::openmode mode)
       : std::basic_filebuf<_CharT>(
-            _fdopen(_open_osfhandle((intptr_t)handle, openmode_to_flags(mode)),
-                    openmode_to_str(mode))),
+            _fdopen(_open_osfhandle((intptr_t)handle, openmode_to_oflag(mode)),
+                    openmode_to_mode(mode).c_str())),
         handle_(handle) {}
 
 public:

@@ -27,6 +27,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#include <functional>
 #else
 #include <csignal>
 #include <limits.h>
@@ -121,6 +122,23 @@ public:
       : last_error_(no_error), exit_code_(exit_success) {
     execute_(command, working_directory, arguments);
   }
+
+#if defined(_WIN32)
+  process(const std::function<BOOL(
+              LPCSTR lpApplicationName, LPSTR lpCommandLine,
+              LPSECURITY_ATTRIBUTES lpProcessAttributes,
+              LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles,
+              DWORD dwCreationFlags, LPVOID lpEnvironment,
+              LPCSTR lpCurrentDirectory, LPSTARTUPINFOA lpStartupInfo,
+              LPPROCESS_INFORMATION lpProcessInformation)>
+              create_process_fn,
+          const std::string &command,
+          const std::list<std::string> &arguments = std::list<std::string>(),
+          const std::string &working_directory = std::string())
+      : last_error_(no_error), exit_code_(exit_success) {
+    execute_(command, working_directory, arguments, create_process_fn);
+  }
+#endif
 
 #ifdef __cpp_rvalue_references
   process(process &&other) CXX_NOEXCEPT : last_error_(no_error),
@@ -275,9 +293,22 @@ public:
   }
 
 private:
-  bool execute_(const std::string &command,
-                const std::string &working_directory,
-                const std::list<std::string> &arguments) {
+  bool execute_(
+      const std::string &command, const std::string &working_directory,
+      const std::list<std::string> &arguments
+#if defined(_WIN32)
+      ,
+      /* CreateProcessA */
+      const std::function<BOOL(LPCSTR lpApplicationName, LPSTR lpCommandLine,
+                               LPSECURITY_ATTRIBUTES lpProcessAttributes,
+                               LPSECURITY_ATTRIBUTES lpThreadAttributes,
+                               BOOL bInheritHandles, DWORD dwCreationFlags,
+                               LPVOID lpEnvironment, LPCSTR lpCurrentDirectory,
+                               LPSTARTUPINFOA lpStartupInfo,
+                               LPPROCESS_INFORMATION lpProcessInformation)>
+          create_process_fn = CreateProcessA
+#endif
+  ) {
     last_error_ = no_error;
     cmdline_ = command;
     cwd_ = working_directory;
@@ -319,10 +350,10 @@ private:
     SetHandleInformation(out_.native_handle(), HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(err_.native_handle(), HANDLE_FLAG_INHERIT, 0);
 #endif // defined(__GLIBCXX__)
-    if (!CreateProcessA(NULL, &cmdline_[0], NULL, NULL, TRUE, 0, NULL,
-                        working_directory.empty() ? NULL
-                                                  : working_directory.c_str(),
-                        &si, &pi)) {
+    if (!create_process_fn(
+            NULL, &cmdline_[0], NULL, NULL, TRUE, 0, NULL,
+            working_directory.empty() ? NULL : working_directory.c_str(), &si,
+            &pi)) {
       last_error_ = GetLastError();
       return false;
     }

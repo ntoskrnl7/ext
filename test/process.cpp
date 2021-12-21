@@ -28,11 +28,16 @@ TEST(process_test, run_list_working_directory_cmd) {
 #endif // __cpp_initializer_lists
   EXPECT_TRUE(process.joinable());
   EXPECT_STREQ(process.get_cmdline().c_str(), "cmd /c dir .");
+#if defined(_MSC_VER) || _MSC_VER <= 1600
+  std::stringstream ss;
+  ss << process.out().rdbuf();
+#endif
 #else
   ext::process process("ls", {"-al", "."});
   EXPECT_TRUE(process.joinable());
   EXPECT_STREQ(process.get_cmdline().c_str(), "ls -al .");
 #endif
+
   process.join();
   EXPECT_EQ(process.exit_code(), EXIT_SUCCESS);
 }
@@ -63,6 +68,10 @@ TEST(process_test,
 #endif // __cpp_initializer_lists
   EXPECT_TRUE(process.joinable());
   EXPECT_STREQ(process.get_cwd().c_str(), systemDrive.c_str());
+#if defined(_MSC_VER) || _MSC_VER <= 1600
+  std::stringstream ss;
+  ss << process.out().rdbuf();
+#endif
 #else
   ext::process process("ls", {"-al", "."}, "/");
   EXPECT_TRUE(process.joinable());
@@ -173,7 +182,77 @@ TEST(process_test, process_pipe_operator_test) {
 //     result.join();
 // }
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#include <Win32Ex/System/Process.h>
+#if !defined(__cpp_lambdas)
+BOOL CreateProcessWrapper(_In_opt_ LPCSTR lpApplicationName,
+                          _Inout_opt_ LPSTR lpCommandLine,
+                          _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
+                          _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
+                          _In_ BOOL bInheritHandles, _In_ DWORD dwCreationFlags,
+                          _In_opt_ LPVOID lpEnvironment,
+                          _In_opt_ LPCSTR lpCurrentDirectory,
+                          _In_ LPSTARTUPINFOA lpStartupInfo,
+                          _Out_ LPPROCESS_INFORMATION lpProcessInformation) {
+  return CreateSystemAccountProcess(
+      WTSGetActiveConsoleSessionId(), lpApplicationName, lpCommandLine,
+      lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags,
+      lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+}
+#endif
+
+TEST(process_test, system_process_test) {
+  if (IsUserAdmin()) {
+#if defined(__cpp_lambdas)
+#ifdef __cpp_initializer_lists
+    ext::process process(
+        [](_In_opt_ LPCSTR lpApplicationName, _Inout_opt_ LPSTR lpCommandLine,
+           _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
+           _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
+           _In_ BOOL bInheritHandles, _In_ DWORD dwCreationFlags,
+           _In_opt_ LPVOID lpEnvironment, _In_opt_ LPCSTR lpCurrentDirectory,
+           _In_ LPSTARTUPINFOA lpStartupInfo,
+           _Out_ LPPROCESS_INFORMATION lpProcessInformation) -> BOOL {
+          return CreateSystemAccountProcess(
+              WTSGetActiveConsoleSessionId(), lpApplicationName, lpCommandLine,
+              lpProcessAttributes, lpThreadAttributes, bInheritHandles,
+              dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo,
+              lpProcessInformation);
+        },
+        "cmd.exe", {"/c", "echo", "test-1-2-3"});
+#else
+    std::list<std::string> args;
+    args.push_back("/c");
+    args.push_back("echo");
+    args.push_back("test-1-2-3");
+    ext::process process(
+        [](_In_opt_ LPCSTR lpApplicationName, _Inout_opt_ LPSTR lpCommandLine,
+           _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
+           _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
+           _In_ BOOL bInheritHandles, _In_ DWORD dwCreationFlags,
+           _In_opt_ LPVOID lpEnvironment, _In_opt_ LPCSTR lpCurrentDirectory,
+           _In_ LPSTARTUPINFOA lpStartupInfo,
+           _Out_ LPPROCESS_INFORMATION lpProcessInformation) -> BOOL {
+          return CreateSystemAccountProcess(
+              WTSGetActiveConsoleSessionId(), lpApplicationName, lpCommandLine,
+              lpProcessAttributes, lpThreadAttributes, bInheritHandles,
+              dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo,
+              lpProcessInformation);
+        },
+        "cmd.exe", args);
+#endif
+#else
+    std::list<std::string> args;
+    args.push_back("/c");
+    args.push_back("echo");
+    args.push_back("test-1-2-3");
+    ext::process process(CreateProcessWrapper, "cmd.exe", args);
+#endif
+    EXPECT_TRUE(process.joinable());
+    process.join();
+  }
+}
+#else
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
