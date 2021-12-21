@@ -18,8 +18,7 @@ TEST(wordexp, basic_test) {
   std::string home_path = ext::wordexp("$HOME");
   std::string user = ext::wordexp("$USER");
 
-  EXPECT_EQ(windir.rfind("/"), 0);
-  EXPECT_EQ(user_profile.rfind("/"), 0);
+  EXPECT_EQ(home_path.find("/"), 0);
   EXPECT_NE(home_path.find(user), std::string::npos);
 #endif
 }
