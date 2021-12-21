@@ -27,7 +27,8 @@
 
 #include "stl_compat"
 
-#if defined(CXX_SHARED_MUTEX) && defined(__cpp_decltype)
+#if defined(CXX_SHARED_MUTEX) && defined(__cpp_decltype) &&                    \
+    defined(__cpp_alias_templates)
 #ifndef _EXT_SAFE_OBJECT_
 #define _EXT_SAFE_OBJECT_
 
