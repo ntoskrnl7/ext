@@ -42,7 +42,7 @@
 2. async_iterator
    - GCC 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1, 2010+ (with Boost 1.69.0)
+   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
    - Visual Studio 2017+
 3. base64
    - GCC 8.3.0+
@@ -51,7 +51,7 @@
 4. callback
    - GCC 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1, 2010+ (with Boost 1.69.0)
+   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
    - Visual Studio 2017+
 5. cdbg
    - GCC 8.3.0+
@@ -68,19 +68,19 @@
 8. collection
    - GCC 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1+, 2010 (with Boost 1.69.0)
+   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
    - Visual Studio 2017+
    - std::shared_mutex or std::shared_timed_mutex required
 9. ini
    - GCC 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
+   - Visual Studio 2008 SP1 (with Boost 1.69.0)
    - Visual Studio 2010+
    - std::regex required
 10. observable
     - GCC 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1+, 2010 (with Boost 1.69.0)
+    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
 11. path
@@ -113,7 +113,7 @@
 17. shared_recursive_mutex
     - GCC 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1, 2010+ (with Boost 1.69.0)
+    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
 18. shared_mem
@@ -154,7 +154,11 @@
     - Clang 10.0+
     - Visual Studio 2008 SP1 (with Boost 1.69.0)
     - Visual Studio 2010+
-    - std::regex
+    - std::regex required
+27. wordexp
+    - GCC 8.3.0+
+    - Clang 10.0+
+    - Visual Studio 2008 SP1+
 
 ---
 
@@ -236,7 +240,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.4.0")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.0")
 
 # link dependencies
 target_link_libraries(tests ext)

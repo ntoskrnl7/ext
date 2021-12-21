@@ -2,5 +2,5 @@
 #pragma once
 
 #define EXT_VERSION_MAJOR 0
-#define EXT_VERSION_MINOR 4
+#define EXT_VERSION_MINOR 5
 #define EXT_VERSION_PATCH 0

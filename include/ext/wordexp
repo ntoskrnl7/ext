@@ -1,0 +1,49 @@
+/**
+ * @file wordexp
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements wordexp function.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+
+#if defined(_WIN32)
+#if !defined(NOMINMAX)
+#define NOMINMAX
+#endif
+#if !defined(WIN32_LEAN_AND_MEAN)
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#else
+#include <wordexp.h>
+#endif
+
+#include <string>
+
+namespace ext {
+inline std::string wordexp(const std::string &words) {
+#if defined(_WIN32)
+  std::string words_expanded(words.size() + 1024, '\0');
+  DWORD len = ExpandEnvironmentStringsA(words.c_str(), &words_expanded[0],
+                                        (DWORD)words_expanded.size());
+  if (len > words_expanded.size()) {
+    words_expanded.resize(len);
+    len = ExpandEnvironmentStringsA(words.c_str(), &words_expanded[0],
+                                    (DWORD)words_expanded.size());
+  }
+  words_expanded.resize(len - 1);
+  return words_expanded;
+#else
+  std::string words_expanded;
+  wordexp_t p;
+  if (::wordexp(words.c_str(), &p, 0) != 0)
+    return "";
+  if (!p.we_wordv)
+    return "";
+  words_expanded = *p.we_wordv;
+  wordfree(&p);
+  return words_expanded;
+#endif
+}
+} // namespace ext
