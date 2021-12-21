@@ -2,9 +2,10 @@
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
-#include "win32-ex/include/Security/Descriptor.h"
 #include <Windows.h>
 #include <sddl.h>
+
+#include <Win32Ex/Security/Descriptor.h>
 
 typedef PSECURITY_DESCRIPTOR perm;
 typedef ACCESS_MASK access_mask;

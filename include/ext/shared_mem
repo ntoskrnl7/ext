@@ -5,14 +5,15 @@
 
 #define CXX_USE_NULLPTR
 #include "stl_compat"
+
 #include "platforms/misc.h"
 
 #include <sys/types.h>
 
 #if defined(_WIN32)
 #include "platforms/windows/perm.h"
-#include "platforms/windows/win32-ex/include/Security/Token.h"
-#include "platforms/windows/win32-ex/include/System/Object.h"
+#include <Win32Ex/Security/Token.h>
+#include <Win32Ex/System/Object.h>
 #elif defined(__linux__) || defined(__APPLE__) || defined(__GNUC__)
 #include "platforms/posix/perm.h"
 #include <fcntl.h>

@@ -94,7 +94,7 @@
 13. process
     - GCC 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1, 2010+
+    - Visual Studio 2008 SP1+
 14. property
     - GCC 8.3.0+
     - Clang 10.0+
@@ -236,7 +236,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.2.0")
+CPMAddPackage("gh:ntoskrnl7/ext@0.3.0")
 
 # link dependencies
 target_link_libraries(tests ext)
