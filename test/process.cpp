@@ -201,10 +201,11 @@ BOOL CreateProcessWrapper(_In_opt_ LPCSTR lpApplicationName,
 }
 #endif
 
+#include <ext/string>
+
 TEST(process_test, system_process_test) {
   if (IsUserAdmin()) {
 #if defined(__cpp_lambdas)
-#ifdef __cpp_initializer_lists
     ext::process process(
         [](_In_opt_ LPCSTR lpApplicationName, _Inout_opt_ LPSTR lpCommandLine,
            _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
@@ -219,36 +220,14 @@ TEST(process_test, system_process_test) {
               dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo,
               lpProcessInformation);
         },
-        "cmd.exe", {"/c", "echo", "test-1-2-3"});
+        "whoami");
 #else
-    std::list<std::string> args;
-    args.push_back("/c");
-    args.push_back("echo");
-    args.push_back("test-1-2-3");
-    ext::process process(
-        [](_In_opt_ LPCSTR lpApplicationName, _Inout_opt_ LPSTR lpCommandLine,
-           _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
-           _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
-           _In_ BOOL bInheritHandles, _In_ DWORD dwCreationFlags,
-           _In_opt_ LPVOID lpEnvironment, _In_opt_ LPCSTR lpCurrentDirectory,
-           _In_ LPSTARTUPINFOA lpStartupInfo,
-           _Out_ LPPROCESS_INFORMATION lpProcessInformation) -> BOOL {
-          return CreateSystemAccountProcess(
-              WTSGetActiveConsoleSessionId(), lpApplicationName, lpCommandLine,
-              lpProcessAttributes, lpThreadAttributes, bInheritHandles,
-              dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo,
-              lpProcessInformation);
-        },
-        "cmd.exe", args);
-#endif
-#else
-    std::list<std::string> args;
-    args.push_back("/c");
-    args.push_back("echo");
-    args.push_back("test-1-2-3");
-    ext::process process(CreateProcessWrapper, "cmd.exe", args);
+    ext::process process(CreateProcessWrapper, "whoami");
 #endif
     EXPECT_TRUE(process.joinable());
+    std::stringstream ss;
+    ss << process.out().rdbuf();
+    EXPECT_STRCASEEQ(ext::trim(ss.str()).c_str(), "nt authority\\system");
     process.join();
   }
 }
