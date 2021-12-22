@@ -143,8 +143,8 @@ TEST(observable_test, observer_with_one_arg) {
   std::mutex mtx;
   std::condition_variable cv;
 
-  bool running = true;
-  bool ready = false;
+  bool volatile running = true;
+  bool volatile ready = false;
 
   std::thread t([&]() {
     ready = true;
