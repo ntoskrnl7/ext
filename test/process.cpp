@@ -194,7 +194,7 @@ BOOL CreateProcessWrapper(_In_opt_ LPCSTR lpApplicationName,
                           _In_opt_ LPCSTR lpCurrentDirectory,
                           _In_ LPSTARTUPINFOA lpStartupInfo,
                           _Out_ LPPROCESS_INFORMATION lpProcessInformation) {
-  return CreateSystemAccountProcess(
+  return CreateSystemAccountProcessT<CHAR>(
       WTSGetActiveConsoleSessionId(), lpApplicationName, lpCommandLine,
       lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags,
       lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
@@ -214,7 +214,7 @@ TEST(process_test, system_process_test) {
            _In_opt_ LPVOID lpEnvironment, _In_opt_ LPCSTR lpCurrentDirectory,
            _In_ LPSTARTUPINFOA lpStartupInfo,
            _Out_ LPPROCESS_INFORMATION lpProcessInformation) -> BOOL {
-          return CreateSystemAccountProcess(
+          return CreateSystemAccountProcessT<CHAR>(
               WTSGetActiveConsoleSessionId(), lpApplicationName, lpCommandLine,
               lpProcessAttributes, lpThreadAttributes, bInheritHandles,
               dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo,

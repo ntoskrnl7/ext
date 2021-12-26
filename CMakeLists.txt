@@ -17,7 +17,7 @@ target_include_directories(ext INTERFACE
 )
 
 if (WIN32)
-    CPMAddPackage("gh:ntoskrnl7/win32-ex@0.6.0")
+    CPMAddPackage("gh:ntoskrnl7/win32-ex@0.8.3")
     target_link_libraries(ext INTERFACE win32ex)
 endif()
 

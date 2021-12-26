@@ -31,19 +31,35 @@ jobs:
       working-directory: test
 
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       working-directory: test/build
       
     - name: Build
-      # Build your program with the given configuration
+      if: ${{ matrix.os != 'windows-latest' }}
       run: cmake --build . --config ${{env.BUILD_TYPE}}
       working-directory: test/build
 
     - name: Test
+      if: ${{ matrix.os != 'windows-latest' }}
       working-directory: ${{github.workspace}}/test/build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}} --verbose
-      
+
+    - name: Build (MultiByte)
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: cmake --build . --config ${{env.BUILD_TYPE}} -- /p:CharacterSet=MultiByte
+      working-directory: test/build
+
+    - name: Test (MultiByte)
+      if: ${{ matrix.os == 'windows-latest' }}
+      working-directory: ${{github.workspace}}/test/build
+      run: ctest -C ${{env.BUILD_TYPE}} --verbose
+
+    - name: Build (Unicode)
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: cmake --build . --config ${{env.BUILD_TYPE}} -- /p:CharacterSet=Unicode
+      working-directory: test/build
+
+    - name: Test (Unicode)
+      if: ${{ matrix.os == 'windows-latest' }}
+      working-directory: ${{github.workspace}}/test/build
+      run: ctest -C ${{env.BUILD_TYPE}} --verbose
