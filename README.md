@@ -240,7 +240,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.1")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.2")
 
 # link dependencies
 target_link_libraries(tests ext)

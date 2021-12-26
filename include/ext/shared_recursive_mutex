@@ -45,7 +45,8 @@
 #include <thread>
 #endif
 
-#if defined(__cpp_lib_shared_mutex) || defined(__cpp_lib_shared_timed_mutex)
+#if !defined(CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED) ||                      \
+    !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED)
 #include <shared_mutex>
 #endif
 
