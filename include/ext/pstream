@@ -45,7 +45,7 @@ public:
     return __gnu_cxx::stdio_filebuf<_CharT, _Traits>::fd();
   }
 };
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && (_MSC_VER != 1700)
 template <typename _CharT>
 class basic_pipebuf : public std::basic_filebuf<_CharT> {
   typedef std::basic_filebuf<_CharT> T;
@@ -150,7 +150,11 @@ public:
   typedef std::basic_streambuf<char_type, traits_type> streambuf_type;
 #if defined(_WIN32)
   typedef HANDLE native_handle_t;
+#if defined(_MSC_VER) && (_MSC_VER == 1700)
+  const CXX_CONSTEXPR static unsigned long long invalid_handle = NULL;
+#else
   const CXX_CONSTEXPR static native_handle_t invalid_handle = NULL;
+#endif
 #else
   typedef int native_handle_t;
   const CXX_CONSTEXPR static native_handle_t invalid_handle = -1;

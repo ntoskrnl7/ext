@@ -201,6 +201,7 @@ BOOL CreateProcessWrapper(_In_opt_ LPCSTR lpApplicationName,
 }
 #endif
 
+#if !defined(_VARIADIC_EXPAND_0X)
 #include <ext/string>
 
 TEST(process_test, system_process_test) {
@@ -231,6 +232,8 @@ TEST(process_test, system_process_test) {
     process.join();
   }
 }
+#endif // !defined(_VARIADIC_EXPAND_0X)
+
 #else
 #include <atomic>
 #include <condition_variable>

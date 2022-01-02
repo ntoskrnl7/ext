@@ -2,7 +2,8 @@
 #include <gtest/gtest.h>
 
 TEST(base64_test, mbcs_test) {
-#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) || defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
+#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
+    defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
   std::string encoded_mbcs_text_mbcs = ext::base64::encode<char>("1234");
   std::wstring encoded_mbcs_text_wcs = ext::base64::encode<wchar_t>("1234");
   std::vector<std::byte> decoded_mbcs_text_vec =
@@ -24,12 +25,12 @@ TEST(base64_test, mbcs_test) {
   EXPECT_STREQ((char *)&decoded_mbcs_text_vec[0], "1234");
 
   // decode_str
-#ifdef CXX_AUTO_TYPE_NOT_SUPPORTED
+#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
+    defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
   std::string decoded_mbcs_text_mbcs =
       ext::base64::decode_str<char>(encoded_mbcs_text_mbcs);
 #else
-  auto decoded_mbcs_text_mbcs =
-      ext::base64::decode_str<char>(encoded_mbcs_text_wcs);
+  auto decoded_mbcs_text_mbcs = ext::base64::decode_str(encoded_mbcs_text_wcs);
 #endif
   EXPECT_STREQ(decoded_mbcs_text_mbcs.c_str(), "1234");
 
@@ -55,7 +56,8 @@ TEST(base64_test, mbcs_test) {
 }
 
 TEST(base64_test, wcs_test) {
-#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) || defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
+#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
+    defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
   std::string encoded_wcs_text_mbcs = ext::base64::encode<char>(L"1234");
   std::wstring encoded_wcs_text_wcs = ext::base64::encode<wchar_t>(L"1234");
 #else
@@ -106,7 +108,8 @@ TEST(base64_test, wcs_test) {
   decoded_wcs_text_wcs = ext::base64::decode_str<wchar_t>(encoded_wcs_text_wcs);
   EXPECT_STREQ(decoded_wcs_text_wcs.c_str(), L"1234");
 
-#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) || defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
+#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
+    defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
   std::wstring decoded_wcs_text_mbcs =
       ext::base64::decode_str<wchar_t>(encoded_wcs_text_mbcs);
 #else
@@ -128,7 +131,8 @@ TEST(base64_test, wcs_test) {
 }
 
 TEST(base64_test, long_mbcs_test) {
-#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) || defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
+#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
+    defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
   std::string encoded_mbcs_text_mbcs = ext::base64::encode<char>(
       "Man is distinguished, not only by his reason, but by this "
       "singular passion from other animals, which is a lust of the "
@@ -198,7 +202,8 @@ TEST(base64_test, long_mbcs_test) {
                "vehemence of any carnal pleasure.");
 
   // decode_str
-#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) || defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
+#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
+    defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
   std::string decoded_mbcs_text_mbcs =
       ext::base64::decode_str<char>(encoded_mbcs_text_mbcs);
 #else
@@ -247,7 +252,8 @@ TEST(base64_test, long_mbcs_test) {
                "vehemence of any carnal pleasure.");
 }
 
-#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) || defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
+#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
+    defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
 #else
 TEST(base64_test, long_wcs_test) {
   auto encoded_wcs_text_mbcs = ext::base64::encode(

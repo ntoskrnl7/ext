@@ -2,6 +2,27 @@
 #include <gtest/gtest.h>
 
 #ifdef _EXT_ANY_FUNCTION_
+TEST(any_function_test, basic_test) {
+  ext::any_function fn(strlen);
+
+  EXPECT_EQ(std::any_cast<decltype(fn)::result_type>(fn({"test"})), 4);
+  EXPECT_EQ(fn.call("test"), 4);
+
+  size_t len;
+  std::any result;
+  result = fn({"test"});
+  EXPECT_TRUE(result.has_value());
+  EXPECT_NO_THROW(len = std::any_cast<size_t>(result););
+  EXPECT_EQ(len, 4);
+
+  std::vector<std::any> args;
+  args.push_back("test");
+  result = fn(args);
+  EXPECT_TRUE(result.has_value());
+  EXPECT_NO_THROW(len = std::any_cast<size_t>(result););
+  EXPECT_EQ(len, 4);
+}
+
 TEST(any_function_test, call_operator_test) {
   ext::any_function fn_strlen(strlen);
   ext::any_function fn_lambda(
@@ -106,7 +127,7 @@ private:
 
 template <typename T>
 class command : public command_item, public ext::any_function<T> {
-  using type = ext::any_function<T>;\
+  using type = ext::any_function<T>;
 
 public:
   command(const command_desc &desc, T f)

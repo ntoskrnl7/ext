@@ -123,7 +123,7 @@ public:
     execute_(command, working_directory, arguments);
   }
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(_VARIADIC_EXPAND_0X)
   process(const std::function<BOOL(
               LPCSTR lpApplicationName, LPSTR lpCommandLine,
               LPSECURITY_ATTRIBUTES lpProcessAttributes,
@@ -293,20 +293,20 @@ public:
   }
 
 private:
-  bool execute_(
-      const std::string &command, const std::string &working_directory,
-      const std::list<std::string> &arguments
-#if defined(_WIN32)
-      ,
-      /* CreateProcessA */
-      const std::function<BOOL(LPCSTR lpApplicationName, LPSTR lpCommandLine,
-                               LPSECURITY_ATTRIBUTES lpProcessAttributes,
-                               LPSECURITY_ATTRIBUTES lpThreadAttributes,
-                               BOOL bInheritHandles, DWORD dwCreationFlags,
-                               LPVOID lpEnvironment, LPCSTR lpCurrentDirectory,
-                               LPSTARTUPINFOA lpStartupInfo,
-                               LPPROCESS_INFORMATION lpProcessInformation)>
-          create_process_fn = CreateProcessA
+  bool
+  execute_(const std::string &command, const std::string &working_directory,
+           const std::list<std::string> &arguments
+#if defined(_WIN32) && !defined(_VARIADIC_EXPAND_0X)
+           ,
+           /* CreateProcessA */
+           std::function<BOOL(LPCSTR lpApplicationName, LPSTR lpCommandLine,
+                              LPSECURITY_ATTRIBUTES lpProcessAttributes,
+                              LPSECURITY_ATTRIBUTES lpThreadAttributes,
+                              BOOL bInheritHandles, DWORD dwCreationFlags,
+                              LPVOID lpEnvironment, LPCSTR lpCurrentDirectory,
+                              LPSTARTUPINFOA lpStartupInfo,
+                              LPPROCESS_INFORMATION lpProcessInformation)>
+               create_process_fn = CreateProcessA
 #endif
   ) {
     last_error_ = no_error;
@@ -350,7 +350,11 @@ private:
     SetHandleInformation(out_.native_handle(), HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(err_.native_handle(), HANDLE_FLAG_INHERIT, 0);
 #endif // defined(__GLIBCXX__)
+#if defined(_VARIADIC_EXPAND_0X)
+    if (!CreateProcessA(
+#else
     if (!create_process_fn(
+#endif
             NULL, &cmdline_[0], NULL, NULL, TRUE, 0, NULL,
             working_directory.empty() ? NULL : working_directory.c_str(), &si,
             &pi)) {

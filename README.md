@@ -36,23 +36,94 @@
 ## Features
 
 1. any_function
-   - GCC 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2017+
-2. async_iterator
-   - GCC 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
-   - Visual Studio 2017+
+   - Compiler
+     - GCC 8.3.0+
+     - Clang 10.0+
+     - Visual Studio 2017+
+     - **std::any required**
+     - **if constexpr required**
+   - Example
+
+        ```C++
+        ext::any_function fn(strlen);
+
+        if (fn.call("test") == 4) {
+        }
+
+        if (std::any_cast<decltype(fn)::result_type>(fn({"test"})) == 4) {
+        }
+
+        size_t len;
+        std::any result;
+        result = fn({"test"});
+        if (result.has_value())
+            len = std::any_cast<size_t>(result);
+        
+        std::vector<std::any> args;
+        args.push_back("test");
+        result = fn(args);
+        if (result.has_value())
+            len = std::any_cast<size_t>(result);
+
+        ```
+
+2. async_result
+   - Compiler
+     - GCC 8.3.0+
+     - Clang 10.0+
+     - Visual Studio 2008 SP1+ with Boost 1.69.0
+     - Visual Studio 2017+
+   - Example
+
+        ```C++
+        #include <ext/async_result>
+
+        typedef ext::async_result<int> int_result;
+        int_result res([](int_result::context &ctx) {
+            ctx.push(1);
+            ctx.push(2);
+            ...
+        });
+
+        ....
+
+        for (auto &i : res) {
+            ...
+        }
+        ```
+
 3. base64
-   - GCC 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2008 SP1+
+   - Compiler
+     - GCC 8.3.0+
+     - Clang 10.0+
+     - Visual Studio 2008 SP1+
+   - Example
+
+        ```C++
+        #include <ext/base64>
+
+        std::string encoded = ext::base64::encode("1234");
+        std::string decoded = ext::base64::decode_str(encoded);
+        std::vector<std::byte> = ext::base64::decode(encoded);
+        ```
+
 4. callback
-   - GCC 8.3.0+
-   - Clang 10.0+
-   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
-   - Visual Studio 2017+
+   - Compiler
+     - GCC 8.3.0+
+     - Clang 10.0+
+     - Visual Studio 2008 SP1+ with Boost 1.69.0
+     - Visual Studio 2017+
+   - Example
+
+        ```C++
+        #include <ext/callback>
+
+        ext::callback<int> int_callback;
+        int_callback += [&sum](int val) { sum += val; };
+        int_callback += [&sum](int val) { sum += val; };
+        int_callback(1);
+        ```
+
 5. cdbg
    - GCC 8.3.0+
    - Clang 10.0+
@@ -68,19 +139,19 @@
 8. collection
    - GCC 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1+ (with Boost 1.69.0)
+   - Visual Studio 2008 SP1+ with Boost 1.69.0
    - Visual Studio 2017+
    - std::shared_mutex or std::shared_timed_mutex required
 9. ini
    - GCC 8.3.0+
    - Clang 10.0+
-   - Visual Studio 2008 SP1 (with Boost 1.69.0)
+   - Visual Studio 2008 SP1 with Boost 1.69.0
    - Visual Studio 2010+
    - std::regex required
 10. observable
     - GCC 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
+    - Visual Studio 2008 SP1+ with Boost 1.69.0
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
 11. path
@@ -113,7 +184,7 @@
 17. shared_recursive_mutex
     - GCC 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1+ (with Boost 1.69.0)
+    - Visual Studio 2008 SP1+ with Boost 1.69.0
     - Visual Studio 2017+
     - std::shared_mutex or std::shared_timed_mutex required
 18. shared_mem
@@ -145,17 +216,32 @@
     - GCC 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-25. url
+25. units
+    - Compiler
+      - GCC 8.3.0+
+      - Clang 10.0+
+      - Visual Studio 2008 SP1+
+    - Example
+
+        ```C++
+        #include <fstream>
+        std::ifstream ifs("~~~~");
+        ifs.seekg(0, std::ios::end);
+        ext::units::to_string(ifs.tellg(), ext::units::POLICY_IEC);
+        ext::units::to_string(ifs.tellg(), ext::units::POLICY_SI);
+        ```
+
+26. url
     - GCC 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
-26. version
+27. version
     - GCC 8.3.0+
     - Clang 10.0+
-    - Visual Studio 2008 SP1 (with Boost 1.69.0)
+    - Visual Studio 2008 SP1 with Boost 1.69.0
     - Visual Studio 2010+
     - std::regex required
-27. wordexp
+28. wordexp
     - GCC 8.3.0+
     - Clang 10.0+
     - Visual Studio 2008 SP1+
@@ -182,6 +268,7 @@ cd test
 mkdir build && cd build
 cmake ..
 cmake --build .
+ctest . -C Debug --verbose
 ```
 
 #### MSYS or MinGW(32/64/CLANG32/CLANG64/CLANGARM64/UCRT64)
@@ -212,7 +299,7 @@ else
 fi
 cmake --build .
 export LC_ALL=C; unset LANGUAGE
-./unittest
+ctest . --verbose
 ```
 
 ### Linux or macOS
@@ -222,7 +309,7 @@ cd test
 mkdir build && cd build
 cmake ..
 cmake --build .
-./unittest
+ctest . --verbose
 ```
 
 ## Usage
@@ -240,7 +327,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.2")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.3")
 
 # link dependencies
 target_link_libraries(tests ext)

@@ -362,11 +362,11 @@ typedef signed int int_least32_t;
 typedef unsigned int uint_least32_t;
 typedef signed long long int_least64_t;
 typedef unsigned long long uint_least64_t;
-#if _MSC_VER != 1600
+#if defined(_MSC_VER) && _MSC_VER < 1600
 typedef signed char int_fast8_t;
 #endif
 typedef unsigned char uint_fast8_t;
-#if _MSC_VER != 1600
+#if defined(_MSC_VER) && _MSC_VER < 1600
 typedef signed short int int_fast16_t;
 typedef unsigned short int uint_fast16_t;
 #endif
@@ -806,7 +806,7 @@ using namespace std::tr1::placeholders;
 #define __CXX_FOR_ARG__(...) __VA_ARGS__
 #define CXX_FOR(range_declaration, range_expression)                           \
   for                                                                          \
-  each(__CXX_FOR_ARG__(range_declaration) in range_expression)
+  each (__CXX_FOR_ARG__(range_declaration) in range_expression)
 #else // >= Visual Studio 2005 version 8.0
 #ifdef CXX_AUTO_TYPE_NOT_SUPPORTED
 #define __CXX_FOR_ARG__(...) __VA_ARGS__
@@ -942,7 +942,7 @@ using ext::move;
 namespace std {
 #ifdef __cpp_variadic_templates
 template <typename T, typename... Args>
-inline std::unique_ptr<T> make_unique(Args &&... __args) {
+inline std::unique_ptr<T> make_unique(Args &&...__args) {
   return std::unique_ptr<T>(new T(std::forward<Args>(__args)...));
 }
 #else
@@ -965,7 +965,7 @@ inline std::unique_ptr<T> make_unique(const A0 &a0) {
 namespace std {
 #ifdef __cpp_variadic_templates
 template <typename T, typename... Args>
-inline std::shared_ptr<T> make_shared(Args &&... __args) {
+inline std::shared_ptr<T> make_shared(Args &&...__args) {
   return std::shared_ptr<T>(new T(std::forward<Args>(__args)...));
 }
 #else

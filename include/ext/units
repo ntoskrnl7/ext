@@ -1,0 +1,198 @@
+﻿/**
+ * @file units
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements size units policy helper features.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+
+#pragma once
+#ifndef _EXT_UNITS_
+#define _EXT_UNITS_
+
+#include <functional>
+#include <string>
+
+#include "stl_compat"
+
+namespace ext {
+namespace units {
+
+#if SIZE_MAX <= UINT_MAX
+typedef unsigned long long size_t;
+#endif
+
+enum POLICY { POLICY_UNKNOWN, POLICY_IEC, POLICY_SI };
+
+namespace IEC {
+enum UNIT : size_t {
+  KiB = (size_t)1024,
+  MiB = KiB * (size_t)1024,
+  GiB = MiB * (size_t)1024,
+  TiB = GiB * (size_t)1024,
+  PiB = TiB * (size_t)1024,
+  EiB = PiB * (size_t)1024
+};
+
+inline std::pair<size_t, std::string> parse_size(size_t size) {
+  size_t size_calc;
+  std::string unit;
+  if (size > EiB) {
+    unit = "EiB";
+    size_calc = size / EiB;
+  } else if (size > PiB) {
+    unit = "PiB";
+    size_calc = size / PiB;
+  } else if (size > TiB) {
+    unit = "TiB";
+    size_calc = size / TiB;
+  } else if (size > GiB) {
+    unit = "GiB";
+    size_calc = size / GiB;
+  } else if (size > MiB) {
+    unit = "MiB";
+    size_calc = size / MiB;
+  } else if (size > KiB) {
+    unit = "KiB";
+    size_calc = size / KiB;
+  } else {
+    unit = "B";
+    size_calc = size;
+  }
+  return std::pair<size_t, std::string>(size_calc, unit);
+}
+
+inline std::string to_string(size_t size) {
+  std::pair<size_t, std::string> result = parse_size(size);
+  return std::to_string(result.first) + result.second;
+}
+} // namespace IEC
+
+namespace SI {
+enum UNIT : size_t {
+  kB = (size_t)1000,
+  mB = kB * (size_t)1000,
+  gB = mB * (size_t)1000,
+  tB = gB * (size_t)1000,
+  pB = tB * (size_t)1000,
+  eB = pB * (size_t)1000
+};
+
+inline std::pair<size_t, std::string> parse_size(size_t size) {
+  size_t size_calc;
+  std::string unit;
+  if (size > SI::eB) {
+    unit = "eB";
+    size_calc = size / eB;
+  } else if (size > pB) {
+    unit = "pB";
+    size_calc = size / pB;
+  } else if (size > tB) {
+    unit = "tB";
+    size_calc = size / tB;
+  } else if (size > gB) {
+    unit = "gB";
+    size_calc = size / gB;
+  } else if (size > mB) {
+    unit = "mB";
+    size_calc = size / mB;
+  } else if (size > kB) {
+    unit = "kB";
+    size_calc = size / kB;
+  } else {
+    unit = "B";
+    size_calc = size;
+  }
+  return std::pair<size_t, std::string>(size_calc, unit);
+}
+
+inline std::string to_string(size_t size) {
+  std::pair<size_t, std::string> result = parse_size(size);
+  return std::to_string(result.first) + result.second;
+}
+} // namespace SI
+
+inline std::string to_string(size_t size, POLICY policy) {
+  std::function<std::string(size_t)> parse_fn;
+  switch (policy) {
+  case POLICY_IEC:
+    parse_fn = IEC::to_string;
+    break;
+  case POLICY_SI:
+    parse_fn = SI::to_string;
+    break;
+  case POLICY_UNKNOWN:
+  default:
+    return std::to_string(size) + "B";
+  }
+  return parse_fn(size);
+}
+
+inline size_t to_size_t(const std::string &size) {
+  if ((size.size() < 3) && (size[size.size() - 1] != 'B'))
+    return 0;
+
+  size_t unit_size = 1;
+  ::size_t offset = 0;
+  char ch = size[size.size() - 2];
+  if (ch == 'i') {
+    if (size.size() < 4)
+      return 0;
+
+    ch = size[size.size() - 3];
+    offset = 3;
+    switch (ch) {
+    case 'E':
+      unit_size = IEC::EiB;
+      break;
+    case 'P':
+      unit_size = IEC::PiB;
+      break;
+    case 'T':
+      unit_size = IEC::TiB;
+      break;
+    case 'G':
+      unit_size = IEC::GiB;
+      break;
+    case 'M':
+      unit_size = IEC::MiB;
+      break;
+    case 'K':
+      unit_size = IEC::KiB;
+      break;
+    default:
+      return 0;
+      break;
+    }
+  } else {
+    offset = 2;
+    switch (ch) {
+    case 'e':
+      unit_size = SI::eB;
+      break;
+    case 'p':
+      unit_size = SI::pB;
+      break;
+    case 't':
+      unit_size = SI::tB;
+      break;
+    case 'g':
+      unit_size = SI::gB;
+      break;
+    case 'm':
+      unit_size = SI::mB;
+      break;
+    case 'k':
+      unit_size = SI::kB;
+      break;
+    default:
+      offset = 1;
+      break;
+    }
+  }
+  return std::stoull(size.substr(0, size.size() - offset)) * unit_size;
+}
+} // namespace units
+} // namespace ext
+#endif // _EXT_UNITS_
