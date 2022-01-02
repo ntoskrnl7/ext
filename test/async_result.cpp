@@ -4,12 +4,12 @@
 #define CXX_USE_STD_THREAD
 #include <boost/thread.hpp>
 #endif
-#include <ext/async_iterator>
+#include <ext/async_result>
 #include <gtest/gtest.h>
 
-#ifdef _EXT_ASYNC_ITERATOR_
-#ifdef __cpp_lambdas
-TEST(async_iterator_test, int_test) {
+#ifdef _EXT_ASYNC_RESULT_
+#if defined(__cpp_lambdas)
+TEST(async_result_test, int_test) {
   typedef ext::async_result<int> int_result;
   int_result res([](int_result::context &ctx) {
     ctx.begin(4);
@@ -57,7 +57,7 @@ TEST(async_iterator_test, int_test) {
   }
 }
 
-TEST(async_iterator_test, int_thread_test) {
+TEST(async_result_test, int_thread_test) {
   typedef ext::async_result<int> int_result;
   const int count = 1000;
   int_result res([count](int_result::context &ctx) {
@@ -78,7 +78,7 @@ TEST(async_iterator_test, int_thread_test) {
     t2.join();
 }
 
-TEST(async_iterator_test, int_thread_cancelable_test) {
+TEST(async_result_test, int_thread_cancelable_test) {
   typedef ext::async_result<int> int_result;
   const int count = 1000000;
   int processed = 0;
@@ -117,7 +117,7 @@ TEST(async_iterator_test, int_thread_cancelable_test) {
     t2.join();
 }
 
-TEST(async_iterator_test, string_test) {
+TEST(async_result_test, string_test) {
   typedef ext::async_result<std::string> str_result;
   str_result res([](str_result::context &ctx) {
     ctx.push("str 1");
@@ -134,7 +134,7 @@ TEST(async_iterator_test, string_test) {
   }
 }
 
-TEST(async_iterator_test, pair_test) {
+TEST(async_result_test, pair_test) {
   typedef ext::async_result<std::pair<std::string, size_t>> pair_result;
   pair_result res([](pair_result::context &ctx) {
     typedef ext::async_result<std::pair<std::string, size_t>> pair_result;
@@ -164,7 +164,7 @@ TEST(async_iterator_test, pair_test) {
     EXPECT_EQ(s.second, s.second);
   }
 }
-#else
+#else  // !defined(__cpp_lambdas)
 typedef ext::async_result<int> int_result;
 void int_test_phase0(int_result::context &ctx) {
   ctx.begin(4);
@@ -189,7 +189,7 @@ void int_test_phase1(int_result::context &ctx) {
   std::this_thread::sleep_for(std::chrono::seconds(3));
 }
 
-TEST(async_iterator_test, int_test) {
+TEST(async_result_test, int_test) {
   typedef ext::async_result<int> int_result;
   int_result res = int_test_phase0;
 
@@ -216,5 +216,5 @@ TEST(async_iterator_test, int_test) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
-#endif // __cpp_lambdas
-#endif // _EXT_ASYNC_ITERATOR_
+#endif // !defined(__cpp_lambdas)
+#endif // _EXT_ASYNC_RESULT_

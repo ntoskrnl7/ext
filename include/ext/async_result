@@ -1,7 +1,7 @@
 ﻿/**
- * @file async_iterator
+ * @file async_result
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
- * @brief This Module implements async_iterator template class.
+ * @brief This Module implements async_result template class.
  *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
@@ -34,8 +34,8 @@
     ((!defined(CXX_STD_MUTEX_NOT_SUPPORTED)) || defined(_EXT_STD_MUTEX_)) &&   \
     ((!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_))
 
-#ifndef _EXT_ASYNC_ITERATOR_
-#define _EXT_ASYNC_ITERATOR_
+#ifndef _EXT_ASYNC_RESULT_
+#define _EXT_ASYNC_RESULT_
 
 #include <functional>
 #include <memory>
@@ -287,5 +287,5 @@ private:
 #endif
 };
 } // namespace ext
-#endif // _EXT_ASYNC_ITERATOR_
+#endif // _EXT_ASYNC_RESULT_
 #endif
