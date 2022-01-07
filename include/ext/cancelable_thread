@@ -53,9 +53,14 @@
 #if !defined(EXT_CANCELABLE_THREAD_USE_PTHREAD)
 #if defined(_WIN32)
 #if defined(_INC__MINGW_H)
+#if defined(__clang__)
+// MinGW CLANG32 / CLANG64
+#define EXT_CANCELABLE_THREAD_USE_PTHREAD 0
+#else // !defined(__clang__)
 // MinGW32 / MinGW64
 #define EXT_CANCELABLE_THREAD_USE_PTHREAD 1
-#else // !defined(_INC__MINGW_H)
+#endif // !defined(__clang__)
+#else  // !defined(_INC__MINGW_H)
 // Windows
 #define EXT_CANCELABLE_THREAD_USE_PTHREAD 0
 #endif // !defined(_INC__MINGW_H)
