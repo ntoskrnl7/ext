@@ -28,6 +28,7 @@ public:
 };
 
 #ifdef __cpp_lambdas
+#if !(defined(_WIN32) && defined(_INC__MINGW_H) && defined(__clang__))
 TEST(cancelable_thread_test, cancel_immediately) {
   std::mutex mtx;
   bool reached = false;
@@ -76,6 +77,7 @@ TEST(cancelable_thread_test, cancel_immediately) {
     EXPECT_TRUE(false);
   }
 }
+#endif // !(defined(_WIN32) && defined(_INC__MINGW_H) && defined(__clang__))
 
 TEST(cancelable_thread_test, cancel) {
   std::mutex mtx;

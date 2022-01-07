@@ -28,7 +28,8 @@
     ((!defined(CXX_STD_MUTEX_NOT_SUPPORTED)) || defined(_EXT_STD_MUTEX_)) &&   \
     ((!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_)) && \
     ((!defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED)) ||                   \
-     defined(_EXT_STD_CONDITION_VARIABLE_))
+     defined(_EXT_STD_CONDITION_VARIABLE_)) &&                                 \
+    (!defined(__APPLE__))
 
 #ifndef _EXT_CANCELABLE_THREAD_
 #define _EXT_CANCELABLE_THREAD_
