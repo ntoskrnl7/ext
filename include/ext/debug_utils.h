@@ -1,5 +1,5 @@
 /**
- * @file debug_utils
+ * @file debug_utils.h
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
  * @brief This module implements debug helper features.
  *
@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef __DEBUG_UTIL_H__
-#define __DEBUG_UTIL_H__
+#ifndef __EXT_DEBUG_UTIL_H__
+#define __EXT_DEBUG_UTIL_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,4 +76,4 @@ inline bool wait_for_debugger(unsigned long timeout) {
 #ifdef __cplusplus
 }
 #endif
-#endif // __DEBUG_UTIL_H__
+#endif // __EXT_DEBUG_UTIL_H__

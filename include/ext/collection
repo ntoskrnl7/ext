@@ -208,6 +208,12 @@ public:
     return collection_base_data<T>::instance().items_.erase(position);
   }
 #endif
+  static size_t size()
+  {
+    std::shared_lock<_EXT_COLLECTION_MUTEX_> lk(collection_base_data<T>::instance().mutex_);
+    return collection_base_data<T>::instance().items_.size();
+  }
+
   _EXT_COLLECTION_MUTEX_ &mutex() {
     return collection_base_data<T>::instance().mutex_;
   }
@@ -282,6 +288,31 @@ public:
         collection_base_data<T>::instance().mutex_, std::defer_lock);
     collection_base_data<T>::instance().items_.remove(item);
     collection_base_data<T>::instance().const_items_.remove(item);
+  }
+
+
+  /**
+   * @brief Add items directly to the collection.
+   *
+   * @param item Items to add
+   */
+  void add(T &item) {
+    std::unique_lock<_EXT_COLLECTION_MUTEX_> lock(
+        collection_base_data<T>::instance().mutex_);
+    collection_base_data<T>::instance().items_.push_back(&item);
+    collection_base_data<T>::instance().const_items_.push_back(&item);
+  }
+
+  /**
+   * @brief Remove items directly to the collection.
+   *
+   * @param item Items to remove
+   */
+  void remove(T &item) {
+    std::unique_lock<_EXT_COLLECTION_MUTEX_> lock(
+        collection_base_data<T>::instance().mutex_, std::defer_lock);
+    collection_base_data<T>::instance().items_.remove(&item);
+    collection_base_data<T>::instance().const_items_.remove(&item);
   }
 };
 } // namespace ext

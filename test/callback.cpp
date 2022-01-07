@@ -6,7 +6,7 @@
 
 void sum_fn(int *sum, int val) { *sum += val; }
 
-TEST(callback_test, callback_test) {
+TEST(callback_test, callback_add) {
   ext::callback<int> int_callback;
   int sum = 0;
   int_callback += std::bind(&sum_fn, &sum, std::placeholders::_1);
@@ -21,6 +21,26 @@ TEST(callback_test, callback_test) {
 #else
   EXPECT_EQ(sum, 2);
 #endif
+}
+
+TEST(callback_test, callback_remove) {
+  int sum = 0;
+  ext::callback<int> int_callback;
+#ifdef __cpp_lambdas
+  int_callback += [&sum](int val) { sum += val; };
+  auto cookie = int_callback += [&sum](int val) { sum += val; };
+#else
+  int_callback += std::bind(&sum_fn, &sum, std::placeholders::_1);
+  ext::callback<int>::cookie cookie = int_callback +=
+      std::bind(&sum_fn, &sum, std::placeholders::_1);
+#endif
+  int_callback(1);
+  EXPECT_EQ(sum, 2);
+
+  int_callback -= cookie;
+  sum = 0;
+  int_callback(1);
+  EXPECT_EQ(sum, 1);
 }
 
 #ifdef __cpp_variadic_templates

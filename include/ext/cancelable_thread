@@ -1,0 +1,283 @@
+﻿/**
+ * @file cancelable_thread
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This Module implements cancelable_thread class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#ifdef CXX_USE_BOOST
+#define CXX_USE_STD_CHRONO
+#include <boost/chrono/chrono.hpp>
+
+#define CXX_USE_STD_MUTEX
+#include <boost/thread/mutex.hpp>
+
+#define CXX_USE_STD_THREAD
+#include <boost/thread/thread.hpp>
+
+#define CXX_USE_STD_CONDITION_VARIABLE
+#include <boost/thread/condition_variable.hpp>
+#endif // CXX_USE_BOOST
+
+#include "stl_compat"
+
+#if ((!defined(CXX_STD_CHRONO_NOT_SUPPORTED)) || defined(_EXT_STD_CHRONO_)) && \
+    ((!defined(CXX_STD_MUTEX_NOT_SUPPORTED)) || defined(_EXT_STD_MUTEX_)) &&   \
+    ((!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_)) && \
+    ((!defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED)) ||                   \
+     defined(_EXT_STD_CONDITION_VARIABLE_))
+
+#ifndef _EXT_CANCELABLE_THREAD_
+#define _EXT_CANCELABLE_THREAD_
+#include <functional>
+#include <memory>
+
+#ifndef _EXT_STD_MUTEX_
+#include <mutex>
+#endif
+#ifndef _EXT_STD_THREAD_
+#include <thread>
+#endif
+#ifndef _EXT_STD_CONDITION_VARIABLE_
+#include <condition_variable>
+#endif
+
+#if defined(_WIN32)
+#include <Windows.h>
+#include <string>
+#endif
+
+#if !defined(EXT_CANCELABLE_THREAD_USE_PTHREAD)
+#if defined(_WIN32)
+#if defined(_INC__MINGW_H)
+// MinGW32 / MinGW64
+#define EXT_CANCELABLE_THREAD_USE_PTHREAD 1
+#else // !defined(_INC__MINGW_H)
+// Windows
+#define EXT_CANCELABLE_THREAD_USE_PTHREAD 0
+#endif // !defined(_INC__MINGW_H)
+#else  // !defined(_WIN32)
+// POSIX (MSYS, Linux, macOS, ...)
+#define EXT_CANCELABLE_THREAD_USE_PTHREAD 1
+#endif // !defined(_WIN32)
+#endif // !defined(EXT_CANCELABLE_THREAD_USE_PTHREAD)
+
+#if EXT_CANCELABLE_THREAD_USE_PTHREAD
+#include <pthread.h>
+#endif
+
+namespace ext {
+class failure_exception : public std::runtime_error {
+public:
+  failure_exception(const char *message) : std::runtime_error(message) {}
+};
+
+class canceled_exception : public std::exception {};
+
+#if !EXT_CANCELABLE_THREAD_USE_PTHREAD
+namespace details {
+namespace cancelable_thread {
+inline void cleanup_and_thread_exit() {
+  SleepEx(INFINITE, TRUE);
+  ExitThread(0);
+}
+} // namespace cancelable_thread
+} // namespace details
+#endif // !EXT_CANCELABLE_THREAD_USE_PTHREAD
+
+class cancelable_thread {
+private:
+#if !EXT_CANCELABLE_THREAD_USE_PTHREAD
+  static VOID NTAPI apc_func(_In_ ULONG_PTR ptr) {
+    cancelable_thread *ctx = reinterpret_cast<cancelable_thread *>(ptr);
+    if (ctx && ctx->cleanup_) {
+      ctx->cleanup_();
+      ctx->cleanup_ = NULL;
+      ctx->canceled_ = true;
+      ctx->cv_.notify_all();
+    }
+  }
+#endif
+
+#ifndef __cpp_lambdas
+  void thread_proc_(std::function<void()> fn) {
+    try {
+      ready_ = true;
+      cv_.notify_all();
+      if (cancel_requsted_)
+        throw canceled_exception();
+      fn();
+      completed_ = true;
+    } catch (const canceled_exception &) {
+      canceled_ = true;
+    }
+    cv_.notify_all();
+  }
+#endif
+
+public:
+  cancelable_thread(std::function<void()> fn,
+                    std::function<void()> cleanup = std::function<void()>())
+      : cleanup_(cleanup), ready_(false), cancel_immediately_(cleanup != NULL),
+        cancel_requsted_(false), canceled_(false), completed_(false) {
+#if defined(__cpp_lambdas)
+    thread_ = std::thread([this, fn]() {
+#if EXT_CANCELABLE_THREAD_USE_PTHREAD
+      pthread_setcanceltype(cancel_immediately_ ? PTHREAD_CANCEL_ASYNCHRONOUS
+                                                : PTHREAD_CANCEL_DEFERRED,
+                            NULL);
+
+      void (*cancel_immediately_routine)(void *) = [](void *ptr) {
+        cancelable_thread *ctx = reinterpret_cast<cancelable_thread *>(ptr);
+        if (ctx && ctx->cleanup_) {
+          ctx->cleanup_();
+          ctx->cleanup_ = nullptr;
+          ctx->canceled_ = true;
+          ctx->cv_.notify_all();
+#if defined(_WIN32)
+          ExitThread(0);
+#endif
+        }
+      };
+
+      void (*cancel_routine)(void *) = [](void *ptr) {
+        cancelable_thread *ctx = reinterpret_cast<cancelable_thread *>(ptr);
+        ctx->canceled_ = true;
+        ctx->cv_.notify_all();
+        if (getenv("WINDIR"))
+          throw ext::canceled_exception();
+      };
+      pthread_cleanup_push(cancel_immediately_ ? cancel_immediately_routine
+                                               : cancel_routine,
+                           this);
+#endif
+      try {
+        ready_ = true;
+        cv_.notify_all();
+        if (cancel_requsted_)
+          throw canceled_exception();
+        fn();
+        completed_ = true;
+      } catch (const canceled_exception &) {
+        canceled_ = true;
+      }
+      cv_.notify_all();
+#if EXT_CANCELABLE_THREAD_USE_PTHREAD
+      pthread_cleanup_pop(0);
+#endif
+    });
+#else  // !defined(__cpp_lambdas)
+    thread_ =
+        std::thread(std::bind(&cancelable_thread::thread_proc_, this, fn));
+#endif // !defined(__cpp_lambdas)
+  }
+
+  bool ready() const { return ready_; }
+
+  bool completed() const { return completed_; }
+
+  bool canceled() const { return canceled_; }
+
+  bool cancel_request() {
+    if (!thread_.joinable())
+      return false;
+
+    cancel_requsted_ = true;
+
+    std::unique_lock<std::mutex> lk(mtx_);
+#ifdef __cpp_lambdas
+    cv_.wait(lk, [this]() { return ready_; });
+#else
+    cv_.wait(lk, std::bind(&cancelable_thread::ready, this));
+#endif
+    ready_ = false;
+    cv_.notify_all();
+
+#if EXT_CANCELABLE_THREAD_USE_PTHREAD
+    pthread_cancel(thread_.native_handle());
+#else // !EXT_CANCELABLE_THREAD_USE_PTHREAD
+    HANDLE handle = thread_.native_handle();
+#if (_WIN32_WINNT >= 0x0600)
+    if (!CancelSynchronousIo(handle) && (GetLastError() != ERROR_NOT_FOUND))
+      throw failure_exception(
+          ("Failed to CancelSynchronousIo : " +
+           std::to_string((unsigned long long)GetLastError()))
+              .c_str());
+#endif // (_WIN32_WINNT >= 0x0600)
+    QueueUserAPC(&apc_func, handle, reinterpret_cast<ULONG_PTR>(this));
+
+    if (cancel_immediately_) {
+#if !defined(_AMD64_) && !defined(_M_IX86) && !defined(_ARM_)
+      return false;
+#endif
+      if (SuspendThread(handle) == -1)
+        throw failure_exception("Failed to SuspendThread");
+      CONTEXT ctx;
+      ctx.ContextFlags = CONTEXT_CONTROL;
+      if (!GetThreadContext(handle, &ctx))
+        throw failure_exception("Failed to GetThreadContext");
+#if defined(_AMD64_)
+      ctx.Rip = reinterpret_cast<DWORD64>(
+          &details::cancelable_thread::cleanup_and_thread_exit);
+#elif defined(_M_IX86)
+      ctx.Eip = reinterpret_cast<DWORD>(
+          &details::cancelable_thread::cleanup_and_thread_exit);
+#elif defined(_ARM_)
+      ctx.Pc = reinterpret_cast<DWORD>(
+          &details::cancelable_thread::cleanup_and_thread_exit);
+#endif
+      if (!SetThreadContext(handle, &ctx))
+        throw failure_exception("Failed to SetThreadContext");
+      if (ResumeThread(handle) == -1)
+        throw failure_exception("Failed to ResumeThread");
+    }
+#endif // !EXT_CANCELABLE_THREAD_USE_PTHREAD
+    return true;
+  }
+
+  bool cancel() {
+    if (!cancel_request())
+      return false;
+    if (thread_.joinable())
+      thread_.join();
+    return canceled_;
+  }
+
+  bool joinable() const { return thread_.joinable(); }
+
+  void join() {
+    if (thread_.joinable())
+      thread_.join();
+  }
+
+  template <typename _Rep, typename _Period>
+  bool wait_for(const std::chrono::duration<_Rep, _Period> &time) {
+    std::unique_lock<std::mutex> lk(mtx_);
+#ifdef __cpp_lambdas
+    return cv_.wait_for(lk, time, [this]() { return completed_ || canceled_; });
+#else
+    return cv_.wait_for(lk, time,
+                        std::bind(&cancelable_thread::is_wait_, this));
+#endif
+  }
+
+private:
+  bool is_wait_() { return completed_ || canceled_; }
+
+  std::thread thread_;
+  std::mutex mtx_;
+  std::condition_variable cv_;
+  std::function<void()> cleanup_;
+  bool ready_;
+  bool cancel_immediately_;
+  bool cancel_requsted_;
+  bool canceled_;
+  bool completed_;
+};
+} // namespace ext
+
+#endif // _EXT_CANCELABLE_THREAD_
+#endif

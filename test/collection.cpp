@@ -38,9 +38,87 @@ typedef ext::const_collection<data> data_list_r;
 typedef ext::collection<managed_data> managed_data_list_rw;
 typedef ext::const_collection<managed_data> managed_data_list_r;
 
+data global_data_list[20];
+const size_t global_data_list_count = sizeof(global_data_list) / sizeof(data);
+
 managed_data global_managed_data_list[20];
 const size_t global_managed_data_list_count =
     sizeof(global_managed_data_list) / sizeof(managed_data);
+
+TEST(collection_test, managed_data_size) {
+  EXPECT_EQ(managed_data_list_r::size(), global_managed_data_list_count);
+  EXPECT_EQ(managed_data_list_rw::size(), global_managed_data_list_count);
+
+  managed_data data1;
+  EXPECT_EQ(managed_data_list_r::size(), global_managed_data_list_count + 1);
+  EXPECT_EQ(managed_data_list_rw::size(), global_managed_data_list_count + 1);
+
+  {
+    managed_data data2;
+    EXPECT_EQ(managed_data_list_r::size(), global_managed_data_list_count + 2);
+    EXPECT_EQ(managed_data_list_rw::size(), global_managed_data_list_count + 2);
+  }
+  EXPECT_EQ(managed_data_list_r::size(), global_managed_data_list_count + 1);
+  EXPECT_EQ(managed_data_list_rw::size(), global_managed_data_list_count + 1);
+
+  managed_data *ptr = new managed_data;
+  if (ptr) {
+    EXPECT_EQ(managed_data_list_r::size(), global_managed_data_list_count + 2);
+    EXPECT_EQ(managed_data_list_rw::size(), global_managed_data_list_count + 2);
+
+    managed_data data3;
+    EXPECT_EQ(managed_data_list_r::size(), global_managed_data_list_count + 3);
+    EXPECT_EQ(managed_data_list_rw::size(), global_managed_data_list_count + 3);
+
+    delete ptr;
+    EXPECT_EQ(managed_data_list_r::size(), global_managed_data_list_count + 2);
+    EXPECT_EQ(managed_data_list_rw::size(), global_managed_data_list_count + 2);
+  }
+  EXPECT_EQ(managed_data_list_r::size(), global_managed_data_list_count + 1);
+  EXPECT_EQ(managed_data_list_rw::size(), global_managed_data_list_count + 1);
+}
+
+TEST(collection_test, unmanaged_data_size) {
+  EXPECT_EQ(data_list_r::size(), 0);
+  EXPECT_EQ(data_list_rw::size(), 0);
+
+  data data1;
+  EXPECT_EQ(data_list_r::size(), 0);
+  EXPECT_EQ(data_list_rw::size(), 0);
+
+  {
+    data data2;
+    EXPECT_EQ(data_list_r::size(), 0);
+    EXPECT_EQ(data_list_rw::size(), 0);
+  }
+  EXPECT_EQ(data_list_r::size(), 0);
+  EXPECT_EQ(data_list_rw::size(), 0);
+
+  data *ptr = new data;
+  if (ptr) {
+    EXPECT_EQ(data_list_r::size(), 0);
+    EXPECT_EQ(data_list_rw::size(), 0);
+
+    data data3;
+    EXPECT_EQ(data_list_r::size(), 0);
+    EXPECT_EQ(data_list_rw::size(), 0);
+
+    ext::collection_mgr<data> mgr;
+    mgr.add(data3);
+    EXPECT_EQ(data_list_r::size(), 1);
+    EXPECT_EQ(data_list_rw::size(), 1);
+
+    delete ptr;
+    EXPECT_EQ(data_list_r::size(), 1);
+    EXPECT_EQ(data_list_rw::size(), 1);
+
+    mgr.remove(data3);
+    EXPECT_EQ(data_list_r::size(), 0);
+    EXPECT_EQ(data_list_rw::size(), 0);
+  }
+  EXPECT_EQ(data_list_r::size(), 0);
+  EXPECT_EQ(data_list_rw::size(), 0);
+}
 
 TEST(collection_test, manual_add) {
   ext::collection_mgr<data> mgr;

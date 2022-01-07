@@ -19,6 +19,7 @@
 #define CXX_USE_STD_REMOVE_REF
 #define CXX_USE_STD_REMOVE_CVREF_T
 #define CXX_USE_NULLPTR
+#define CXX_USE_STD_MOVE
 #include "stl_compat"
 #include "type_traits"
 
@@ -117,14 +118,17 @@ public:
       return static_cast<T &>(*chain_);
     }
 
-    R get() {
-      if (state_ == result::done)
+    const R &get() {
+      switch (state_) {
+      case result::done:
         return value_;
-      else if (state_ == result::aborted)
+      case result::aborted:
         throw chain_aborted(cause_);
-      else if (state_ == result::end_of_chain)
+      case result::end_of_chain:
         throw chain::end_of_chain();
-      return R();
+      default:
+        throw std::runtime_error("unreachable");
+      }
     }
 
     operator T &() {

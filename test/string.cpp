@@ -1,4 +1,6 @@
 ﻿#define CXX_USE_NULLPTR
+#define CXX_USE_STD_MOVE
+#define EXT_USE_STRING_MOVABLE
 #include <ext/string>
 #include <gtest/gtest.h>
 
@@ -82,6 +84,24 @@ TEST(string_test, movable_string_test) {
   movable::wstring aw(512, L'a');
   movable::wstring bw(aw.begin(), aw.end());
   EXPECT_EQ(aw, bw);
+
+  a = std::move(b);
+#if !defined(_WIN32)
+  char *msystem = getenv("MSYSTEM");
+  if (!(msystem && strcmp(msystem, "MSYS") == 0))
+#endif
+    EXPECT_TRUE(b.empty());
+  aw = std::move(bw);
+#if !defined(_WIN32)
+  if (!(msystem && strcmp(msystem, "MSYS") == 0))
+#endif
+    EXPECT_TRUE(bw.empty());
+
+  movable::string a1 = std::move(a);
+  EXPECT_TRUE(a.empty());
+
+  movable::wstring aw1 = std::move(aw);
+  EXPECT_TRUE(aw.empty());
 }
 
 TEST(string_test, printable_test) {

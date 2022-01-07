@@ -40,7 +40,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(gtest_main INTERFACE -Wno-deprecated-copy)
 endif()
 
-file(GLOB SOURCE_FILES ./*.cpp)
+file(GLOB SOURCE_FILES ./*.cpp ./*.c)
 
 add_executable(unittest ${SOURCE_FILES} ${PLATFORMS_SOURCE_FILES})
 target_link_libraries(unittest ext gtest gtest_main)

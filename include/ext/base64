@@ -126,6 +126,29 @@ public:
     return std::move(out);
   }
 
+  template <typename D, typename T> static void decode(const T *data, D &out) {
+    decode<D>(std::basic_string<T>(data), out);
+  }
+
+  template <typename D, typename T>
+  static void decode(const std::basic_string<T> &in, D &out) {
+    size_t in_len = get_size(in);
+    if (in_len % 4 != 0)
+      throw std::runtime_error("Data size is not a multiple of 4");
+
+    size_t out_len = in_len / 4 * 3;
+    if (in[in_len - 1] == '=')
+      out_len--;
+    if (in[in_len - 2] == '=')
+      out_len--;
+
+    if (sizeof(D) < out_len)
+      out_len = sizeof(D);
+
+    size_t ret = decode(in, &out, out_len);
+    assert(ret >= out_len);
+  }
+
   template <typename D, typename T>
   static std::shared_ptr<D> decode_shared_ptr(const T *data) {
     return std::move(decode_shared_ptr<D>(std::basic_string<T>(data)));
@@ -134,23 +157,8 @@ public:
   template <typename D, typename T>
   static std::shared_ptr<D>
   decode_shared_ptr(const std::basic_string<T> &data) {
-    size_t in_len = get_size(data);
-    if (in_len % 4 != 0)
-      throw std::runtime_error("Data size is not a multiple of 4");
-
-    size_t out_len = in_len / 4 * 3;
-    if (data[in_len - 1] == '=')
-      out_len--;
-    if (data[in_len - 2] == '=')
-      out_len--;
-
-    if (sizeof(D) < out_len)
-      out_len = sizeof(D);
-
     std::shared_ptr<D> out = std::shared_ptr<D>(new D());
-    size_t ret = decode(data, out.get(), out_len);
-    assert(ret >= out_len);
-
+    decode(data, *out);
     return std::move(out);
   }
 

@@ -1,20 +1,21 @@
 /**
- * @file url
+ * @file uri
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
- * @brief This module implements url helper features.
+ * @brief This module implements uri helper features.
  *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
 #pragma once
-#ifndef _EXT_URL_
-#define _EXT_URL_
+#ifndef _EXT_URI_
+#define _EXT_URI_
 
 #include <algorithm>
 #include <ctype.h>
 #include <functional>
 #include <iomanip>
 #include <iterator>
+#include <map>
 #include <sstream>
 #include <string>
 
@@ -24,33 +25,55 @@
 namespace ext {
 using ext::string::operator!;
 
-struct url {
-  url(const std::wstring &url_s) { *this = url(!url_s); }
+struct uri {
+  typedef std::map<std::string, std::string> query_map;
+  typedef std::map<std::wstring, std::wstring> wquery_map;
 
-  url(const std::string &url_s) : port(0) {
-    value = url_s;
+  uri(const std::string &uri_s) : port(0) {
+    value = uri_s;
     const std::string prot_end("://");
     std::string::const_iterator prot_i = std::search(
-        url_s.begin(), url_s.end(), prot_end.begin(), prot_end.end());
-    protocol.reserve(distance(url_s.begin(), prot_i));
-    std::transform(url_s.begin(), prot_i, back_inserter(protocol), tolower);
-    if (prot_i == url_s.end())
+        uri_s.begin(), uri_s.end(), prot_end.begin(), prot_end.end());
+    protocol.reserve(distance(uri_s.begin(), prot_i));
+    std::transform(uri_s.begin(), prot_i, back_inserter(protocol), tolower);
+    if (prot_i == uri_s.end())
       return;
     advance(prot_i, prot_end.length());
-    std::string::const_iterator path_i = find(prot_i, url_s.end(), '/');
+    std::string::const_iterator path_i = find(prot_i, uri_s.end(), '/');
     host.reserve(distance(prot_i, path_i));
     std::transform(prot_i, path_i, back_inserter(host), tolower);
-    std::string::const_iterator query_i = find(path_i, url_s.end(), '?');
+    std::string::const_iterator query_i = find(path_i, uri_s.end(), '?');
     path.assign(path_i, query_i);
-    if (query_i != url_s.end())
+    if (query_i != uri_s.end())
       ++query_i;
-    query.assign(query_i, url_s.end());
+
+    query.assign(query_i, uri_s.end());
 
     std::string::size_type pos = host.find(':');
     if (pos != std::string::npos) {
       port = (unsigned short)std::stoul(host.substr(pos + 1));
       host = host.substr(0, pos);
     }
+  }
+
+  uri(const std::string &uri_s, const query_map query) {
+    *this = uri(uri_s);
+    CXX_FOR(query_map::value_type q, query) {
+      this->query += "&" + q.first + "=" + q.second;
+    }
+    if (this->query.size() > 2) {
+      this->query = "?" + this->query.substr(1);
+      value += this->query;
+    }
+  }
+
+  uri(const std::wstring &uri_s) { *this = uri(!uri_s); }
+  uri(const std::wstring &uri_s, const wquery_map &query) {
+    query_map tmp;
+    CXX_FOR(wquery_map::value_type q, query) {
+      tmp.insert(std::pair<std::string, std::string>(!q.first, !q.second));
+    }
+    *this = uri(!uri_s, tmp);
   }
 
   std::string protocol_host_port() {
@@ -60,6 +83,8 @@ struct url {
       return value;
     return value.substr(0, pos);
   }
+
+  operator const std::string &() { return value; }
 
   std::string value;
   std::string protocol;
@@ -89,4 +114,4 @@ public:
   }
 };
 } // namespace ext
-#endif // _EXT_URL_
+#endif // _EXT_URI_
