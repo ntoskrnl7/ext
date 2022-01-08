@@ -328,8 +328,6 @@ for (auto &i : res) {
 
 ### cancelable_thread
 
-- **macOS is not supported**
-
 #### Compiler
 
 - GCC 8.3.0+
@@ -364,7 +362,7 @@ for (auto &i : res) {
 
 - Cancel immediately.
   - **Use this method with extreme caution**
-  - **MinGW Clang32/Clang64 is not supported.**
+  - **macOS and MinGW Clang32/Clang64 is not supported.**
   - Like PTHREAD_CANCEL_ASYNCHRONOUS
 
     ```C++
@@ -1017,7 +1015,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.5")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.6")
 
 # link dependencies
 target_link_libraries(tests ext)
