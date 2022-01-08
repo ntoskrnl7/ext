@@ -28,8 +28,7 @@
     ((!defined(CXX_STD_MUTEX_NOT_SUPPORTED)) || defined(_EXT_STD_MUTEX_)) &&   \
     ((!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_)) && \
     ((!defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED)) ||                   \
-     defined(_EXT_STD_CONDITION_VARIABLE_)) &&                                 \
-    (!defined(__APPLE__))
+     defined(_EXT_STD_CONDITION_VARIABLE_))
 
 #ifndef _EXT_CANCELABLE_THREAD_
 #define _EXT_CANCELABLE_THREAD_
@@ -81,7 +80,7 @@ public:
   failure_exception(const char *message) : std::runtime_error(message) {}
 };
 
-class canceled_exception : public std::exception {};
+class canceled_exception {};
 
 #if !EXT_CANCELABLE_THREAD_USE_PTHREAD
 namespace details {
@@ -155,6 +154,9 @@ public:
         ctx->cv_.notify_all();
         if (getenv("WINDIR"))
           throw ext::canceled_exception();
+#if defined(__APPLE__)
+        throw ext::canceled_exception();
+#endif // defined(__APPLE__)
       };
       pthread_cleanup_push(cancel_immediately_ ? cancel_immediately_routine
                                                : cancel_routine,
