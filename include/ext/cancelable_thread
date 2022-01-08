@@ -152,10 +152,9 @@ public:
         cancelable_thread *ctx = reinterpret_cast<cancelable_thread *>(ptr);
         ctx->canceled_ = true;
         ctx->cv_.notify_all();
-#if defined(_WIN32_)
         if (getenv("WINDIR"))
           throw ext::canceled_exception();
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
         throw ext::canceled_exception();
 #endif // defined(__APPLE__)
       };
