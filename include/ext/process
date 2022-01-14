@@ -186,11 +186,11 @@ public:
     GetExitCodeProcess(handle_, &exit_code);
     if (exit_code != STILL_ACTIVE) {
       exit_code_ = exit_code;
+      CloseHandle(InterlockedExchangePointer(&handle_, NULL));
       in_.close();
       out_.close();
       err_.close();
       id_ = invalid_id;
-      CloseHandle(InterlockedExchangePointer(&handle_, NULL));
     }
 #else
     int status = 0;
@@ -222,16 +222,17 @@ public:
     if (!joinable())
       return;
 #if defined(_WIN32)
-    if (WaitForSingleObject(handle_, INFINITE) != WAIT_OBJECT_0) {
+    if (WaitForSingleObjectEx(handle_, INFINITE, TRUE) != WAIT_OBJECT_0) {
+      CloseHandle(InterlockedExchangePointer(&handle_, NULL));
       last_error_ = GetLastError();
       in_.close();
       out_.close();
       err_.close();
+      id_ = invalid_id;
       return;
     }
     if (!GetExitCodeProcess(handle_, &exit_code_))
       last_error_ = GetLastError();
-
     CloseHandle(InterlockedExchangePointer(&handle_, NULL));
 #else
     int status = 0;
@@ -240,6 +241,7 @@ public:
       in_.close();
       out_.close();
       err_.close();
+      id_ = invalid_id;
       return;
     }
     if (WIFEXITED(status))
