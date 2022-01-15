@@ -2,89 +2,6 @@
 
 [![CMake](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml/badge.svg)](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml) [![MSYS2](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml/badge.svg)](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml) ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/ntoskrnl7/ext)
 
-## Contents
-
-- [C++ Extended Template Library](#c-extended-template-library)
-  - [Contents](#contents)
-  - [Requirements](#requirements)
-  - [Test Environments](#test-environments)
-  - [Features](#features)
-    - [any_function](#any_function)
-      - [Compiler](#compiler)
-      - [Example](#example)
-    - [async_result](#async_result)
-      - [Compiler](#compiler-1)
-      - [Example](#example-1)
-    - [base64](#base64)
-      - [Compiler](#compiler-2)
-      - [Example](#example-2)
-    - [callback](#callback)
-      - [Compiler](#compiler-3)
-      - [Example](#example-3)
-    - [cancelable_thread](#cancelable_thread)
-      - [Compiler](#compiler-4)
-      - [Example](#example-4)
-    - [cdbg](#cdbg)
-      - [Compiler](#compiler-5)
-      - [Example](#example-5)
-    - [chain](#chain)
-      - [Compiler](#compiler-6)
-      - [Example](#example-6)
-    - [debug_utils](#debug_utils)
-      - [Compiler](#compiler-7)
-      - [Example](#example-7)
-    - [collection](#collection)
-      - [Compiler](#compiler-8)
-      - [Example](#example-8)
-    - [ini](#ini)
-      - [Compiler](#compiler-9)
-      - [Example](#example-9)
-    - [observable](#observable)
-      - [Compiler](#compiler-10)
-    - [path](#path)
-    - [Compiler](#compiler-11)
-    - [pipe](#pipe)
-      - [Compiler](#compiler-12)
-    - [process](#process)
-      - [Compiler](#compiler-13)
-    - [property](#property)
-      - [Compiler](#compiler-14)
-    - [pstream](#pstream)
-      - [Compiler](#compiler-15)
-    - [safe_object](#safe_object)
-      - [Compiler](#compiler-16)
-    - [shared_recursive_mutex](#shared_recursive_mutex)
-      - [Compiler](#compiler-17)
-    - [shared_mem](#shared_mem)
-      - [Compiler](#compiler-18)
-    - [singleton](#singleton)
-      - [Compiler](#compiler-19)
-    - [string](#string)
-      - [Compiler](#compiler-20)
-      - [Compiler](#compiler-21)
-    - [stl_compat](#stl_compat)
-    - [thread_pool](#thread_pool)
-      - [Compiler](#compiler-22)
-    - [type_traits](#type_traits)
-      - [Compiler](#compiler-23)
-    - [typeinfo](#typeinfo)
-      - [Compiler](#compiler-24)
-    - [units](#units)
-      - [Compiler](#compiler-25)
-    - [url](#url)
-      - [Compiler](#compiler-26)
-    - [version](#version)
-      - [Compiler](#compiler-27)
-    - [wordexp](#wordexp)
-      - [Compiler](#compiler-28)
-  - [Test](#test)
-    - [Windows](#windows)
-      - [Visual Studio](#visual-studio)
-      - [MSYS or MinGW(32/64/CLANG32/CLANG64/CLANGARM64/UCRT64)](#msys-or-mingw3264clang32clang64clangarm64ucrt64)
-    - [Linux or macOS](#linux-or-macos)
-  - [Usage](#usage)
-    - [CMakeLists.txt](#cmakeliststxt)
-
 ## Requirements
 
 - GCC 8.3.0+
@@ -95,6 +12,90 @@
 - CMake 3.10+
 
 ---
+
+## Contents
+
+- [C++ Extended Template Library](#c-extended-template-library)
+  - [Requirements](#requirements)
+  - [Contents](#contents)
+  - [Test Environments](#test-environments)
+  - [Features](#features)
+    - [any_function](#any_function)
+      - [Requirements](#requirements-1)
+      - [Example](#example)
+    - [async_result](#async_result)
+      - [Requirements](#requirements-2)
+      - [Example](#example-1)
+    - [base64](#base64)
+      - [Requirements](#requirements-3)
+      - [Example](#example-2)
+    - [callback](#callback)
+      - [Requirements](#requirements-4)
+      - [Example](#example-3)
+    - [cancelable_thread](#cancelable_thread)
+      - [Requirements](#requirements-5)
+      - [Example](#example-4)
+    - [cdbg](#cdbg)
+      - [Requirements](#requirements-6)
+      - [Example](#example-5)
+    - [chain](#chain)
+      - [Requirements](#requirements-7)
+      - [Example](#example-6)
+    - [debug_utils](#debug_utils)
+      - [Requirements](#requirements-8)
+      - [Example](#example-7)
+    - [collection](#collection)
+      - [Requirements](#requirements-9)
+      - [Example](#example-8)
+    - [ini](#ini)
+      - [Requirements](#requirements-10)
+      - [Example](#example-9)
+    - [observable](#observable)
+      - [Requirements](#requirements-11)
+      - [Example](#example-10)
+    - [path](#path)
+    - [Compiler](#compiler)
+    - [pipe](#pipe)
+      - [Requirements](#requirements-12)
+    - [process](#process)
+      - [Requirements](#requirements-13)
+    - [property](#property)
+      - [Requirements](#requirements-14)
+    - [pstream](#pstream)
+      - [Requirements](#requirements-15)
+    - [safe_object](#safe_object)
+      - [Requirements](#requirements-16)
+    - [shared_recursive_mutex](#shared_recursive_mutex)
+      - [Requirements](#requirements-17)
+    - [shared_mem](#shared_mem)
+      - [Requirements](#requirements-18)
+    - [singleton](#singleton)
+      - [Requirements](#requirements-19)
+    - [string](#string)
+      - [Requirements](#requirements-20)
+      - [Requirements](#requirements-21)
+    - [stl_compat](#stl_compat)
+    - [thread_pool](#thread_pool)
+      - [Requirements](#requirements-22)
+    - [type_traits](#type_traits)
+      - [Requirements](#requirements-23)
+    - [typeinfo](#typeinfo)
+      - [Requirements](#requirements-24)
+    - [units](#units)
+      - [Requirements](#requirements-25)
+    - [url](#url)
+      - [Requirements](#requirements-26)
+    - [version](#version)
+      - [Requirements](#requirements-27)
+    - [wordexp](#wordexp)
+      - [Requirements](#requirements-28)
+  - [Test](#test)
+    - [Windows](#windows)
+      - [Visual Studio](#visual-studio)
+      - [MSYS or MinGW(32/64/CLANG32/CLANG64/CLANGARM64/UCRT64)](#msys-or-mingw3264clang32clang64clangarm64ucrt64)
+    - [Linux or macOS](#linux-or-macos)
+  - [Usage](#usage)
+    - [CMakeLists.txt](#cmakeliststxt)
 
 ## Test Environments
 
@@ -120,7 +121,7 @@
 
 ### any_function
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -155,7 +156,7 @@ if (result.has_value())
 
 ### async_result
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -183,7 +184,7 @@ for (auto &i : res) {
 
 ### base64
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -272,7 +273,7 @@ for (auto &i : res) {
 
 ### callback
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -328,7 +329,7 @@ for (auto &i : res) {
 
 ### cancelable_thread
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -387,7 +388,7 @@ for (auto &i : res) {
 
 ### cdbg
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -414,7 +415,7 @@ for (auto &i : res) {
 
 ### chain
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -545,7 +546,7 @@ for (auto &i : res) {
 
 ### debug_utils
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -569,7 +570,7 @@ for (auto &i : res) {
 
 ### collection
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -694,7 +695,7 @@ for (auto &i : res) {
 
 ### ini
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -768,13 +769,19 @@ for (auto &i : res) {
 
 ### observable
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+ with **Boost 1.69.0+**
 - Visual Studio 2017+
 - **std::shared_mutex or std::shared_timed_mutex required**
+
+#### Example
+
+```C++
+
+```
 
 ### path
 
@@ -786,7 +793,7 @@ for (auto &i : res) {
 
 ### pipe
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -794,7 +801,7 @@ for (auto &i : res) {
 
 ### process
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -802,7 +809,7 @@ for (auto &i : res) {
 
 ### property
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -811,7 +818,7 @@ for (auto &i : res) {
 
 ### pstream
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -819,7 +826,7 @@ for (auto &i : res) {
 
 ### safe_object
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -829,7 +836,7 @@ for (auto &i : res) {
 
 ### shared_recursive_mutex
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -839,7 +846,7 @@ for (auto &i : res) {
 
 ### shared_mem
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -847,7 +854,7 @@ for (auto &i : res) {
 
 ### singleton
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -855,9 +862,9 @@ for (auto &i : res) {
 
 ### string
 
-#### Compiler
+#### Requirements
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -865,19 +872,18 @@ for (auto &i : res) {
 
 ### stl_compat
 
-
 ### thread_pool
 
-#### Compiler
+#### Requirements
 
-  - GCC 8.3.0+
-  - Clang 10.0+
-  - Visual Studio 2017+
-  - C++14 or later
+- GCC 8.3.0+
+- Clang 10.0+
+- Visual Studio 2017+
+- C++14 or later
 
 ### type_traits
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -885,7 +891,7 @@ for (auto &i : res) {
 
 ### typeinfo
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -893,7 +899,7 @@ for (auto &i : res) {
 
 ### units
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -910,7 +916,7 @@ for (auto &i : res) {
 
 ### url
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -918,7 +924,7 @@ for (auto &i : res) {
 
 ### version
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -928,7 +934,7 @@ for (auto &i : res) {
 
 ### wordexp
 
-#### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
@@ -950,6 +956,7 @@ for (auto &i : res) {
   - cmake -DCMAKE_CXX_STANDARD=14  ..
   - cmake -DCMAKE_CXX_STANDARD=17  ..
   - cmake -G "Visual Studio 10 2010" -DCXX_USE_BOOST=On ..
+  - cmake -DEXT_NO_WIN32_EX=On ..
 
 ```batch
 cd test
