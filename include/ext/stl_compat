@@ -23,6 +23,8 @@
  * std::remove_if
  * std::remove_cv
  * std::remove_cv_t
+ * std::remove_const
+ * std::remove_const_t
  * std::remove_reference
  * std::remove_reference_t
  * std::remove_cvref
@@ -34,6 +36,15 @@
  * std::stoul
  * std::stoull
  * nullptr
+ * std::is_same
+ * std::is_reference
+ * std::enable_if
+ * std::integral_constant
+ * std::true_type
+ * std::false_type
+ * std::void_t
+ * std::unordered_map
+ * std::hash
  *
  * CXX_USE_ALL_FEATURES
  * CXX_USE_STD_BYTE
@@ -46,6 +57,8 @@
  * CXX_USE_STD_REMOVE_IF
  * CXX_USE_STD_REMOVE_CV
  * CXX_USE_STD_REMOVE_CV_T (with CXX_USE_STD_REMOVE_CV)
+ * CXX_USE_STD_REMOVE_CONST
+ * CXX_USE_STD_REMOVE_CONST_T (with CXX_USE_STD_REMOVE_CONST)
  * CXX_USE_STD_REMOVE_REF
  * CXX_USE_STD_REMOVE_REF_T (with CXX_USE_STD_REMOVE_REF)
  * CXX_USE_STD_REMOVE_CVREF
@@ -57,6 +70,7 @@
  * CXX_USE_MAKE_SHARED (with CXX_USE_SHARED_PTR)
  * CXX_USE_NULLPTR
  * CXX_USE_STD_IS_SAME
+ * CXX_USE_STD_IS_REF
  * CXX_USE_STD_ENABLE_IF
  * CXX_USE_STD_INTEGRAL_CONSTANT
  * CXX_USE_STD_TRUE_TYPE
@@ -125,6 +139,7 @@
 #define CXX_DELETED_FUNCTIONS_NOT_SUPPORTED
 #define CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CV_NOT_SUPPORTED
+#define CXX_STD_REMOVE_CONST_NOT_SUPPORTED
 #define CXX_STD_REMOVE_REF_NOT_SUPPORTED
 #define CXX_STD_THREAD_NOT_SUPPORTED
 #define CXX_STD_ATOMIC_NOT_SUPPORTED
@@ -142,6 +157,7 @@
 #define CXX_STD_MAKE_SHARED_NOT_SUPPORTED
 #define CXX_STD_SYSTEM_ERROR_NOT_SUPPORTED
 #define CXX_STD_IS_SAME_NOT_SUPPORTED
+#define CXX_STD_IS_REF_NOT_SUPPORTED
 #define CXX_STD_ENABLE_IF_NOT_SUPPORTED
 #define CXX_STD_INTEGRAL_CONSTANT_NOT_SUPPORTED
 #define CXX_STD_TRUE_TYPE_NOT_SUPPORTED
@@ -152,6 +168,7 @@
 #if CXX_VER < 201402L
 #define CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CV_T_NOT_SUPPORTED
+#define CXX_STD_REMOVE_CONST_T_NOT_SUPPORTED
 #define CXX_STD_REMOVE_REF_T_NOT_SUPPORTED
 #define CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED
 #endif
@@ -194,12 +211,15 @@
 #define CXX_USE_STD_APPLY
 #define CXX_USE_STD_REMOVE_CV
 #define CXX_USE_STD_REMOVE_CV_T
+#define CXX_USE_STD_REMOVE_CONST
+#define CXX_USE_STD_REMOVE_CONST_T
 #define CXX_USE_STD_REMOVE_REF
 #define CXX_USE_STD_REMOVE_REF_T
 #define CXX_USE_STD_REMOVE_CVREF
 #define CXX_USE_STD_REMOVE_CVREF_T
 #define CXX_USE_NULLPTR
 #define CXX_USE_STD_IS_SAME
+#define CXX_USE_STD_IS_REF
 #define CXX_USE_STD_ENABLE_IF
 #define CXX_USE_STD_VOID_T
 #define CXX_USE_STD_REGEX
@@ -219,6 +239,10 @@
 
 #ifdef CXX_USE_STD_REMOVE_CV_T
 #define CXX_USE_STD_REMOVE_CV
+#endif
+
+#ifdef CXX_USE_STD_REMOVE_CONST_T
+#define CXX_USE_STD_REMOVE_CONST
 #endif
 
 #ifdef CXX_USE_STD_REMOVE_REF_T
@@ -255,6 +279,9 @@
 #endif
 #if !defined(CXX_STD_IS_SAME_NOT_SUPPORTED)
 #undef CXX_USE_STD_IS_SAME
+#endif
+#if !defined(CXX_STD_IS_REF_NOT_SUPPORTED)
+#undef CXX_USE_STD_IS_REF
 #endif
 #if !defined(CXX_STD_ENABLE_IF_NOT_SUPPORTED)
 #undef CXX_USE_STD_ENABLE_IF
@@ -320,6 +347,14 @@
 #if defined(CXX_STD_REMOVE_CV_T_NOT_SUPPORTED) ||                              \
     !defined(__cpp_alias_templates)
 #undef CXX_USE_STD_REMOVE_CV_T
+#endif
+#if !defined(CXX_STD_REMOVE_CONST_NOT_SUPPORTED) ||                            \
+    !(defined(_MSC_VER) && _MSC_VER < 1600)
+#undef CXX_USE_STD_REMOVE_CONST
+#endif
+#if !defined(CXX_STD_REMOVE_CONST_T_NOT_SUPPORTED) ||                          \
+    !defined(__cpp_alias_templates)
+#undef CXX_USE_STD_REMOVE_CONST_T
 #endif
 #if !defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) ||                              \
     !(defined(_MSC_VER) && _MSC_VER < 1600)
@@ -395,6 +430,19 @@ using boost::remove_cv;
 #endif // _EXT_STD_REMOVE_CV_
 #endif // defined(CXX_STD_REMOVE_CV_NOT_SUPPORTED) &&
        // defined(BOOST_TT_REMOVE_CV_HPP_INCLUDED)
+
+#if defined(CXX_USE_STD_REMOVE_CONST) &&                                       \
+    defined(CXX_STD_REMOVE_CONST_NOT_SUPPORTED) &&                             \
+    defined(BOOST_TT_REMOVE_CONST_HPP_INCLUDED)
+#ifndef _EXT_STD_REMOVE_CONST_
+#define _EXT_STD_REMOVE_CONST_
+namespace std {
+using boost::remove_const;
+}
+#undef CXX_USE_STD_REMOVE_CONST
+#endif // _EXT_STD_REMOVE_CONST_
+#endif // defined(CXX_STD_REMOVE_CONST_NOT_SUPPORTED) &&
+       // defined(BOOST_TT_REMOVE_CONST_HPP_INCLUDED)
 
 #if defined(CXX_USE_STD_REMOVE_REF) &&                                         \
     defined(CXX_STD_REMOVE_REF_NOT_SUPPORTED) &&                               \
@@ -1186,6 +1234,16 @@ typedef integral_constant<bool, false> false_type;
 #endif // _EXT_STD_FALSE_TYPE_
 #endif // CXX_USE_STD_FALSE_TYPE
 
+#ifdef CXX_USE_STD_IS_REF
+#ifndef _EXT_STD_IS_REF_
+#define _EXT_STD_IS_REF_
+namespace std {
+template <class T> struct is_reference : std::false_type {};
+template <class T> struct is_reference<T &> : std::true_type {};
+} // namespace std
+#endif // _EXT_STD_IS_REF_
+#endif // CXX_USE_STD_IS_REF
+
 ///
 // std::is_same
 //
@@ -1240,6 +1298,20 @@ template <class T> using remove_cv_t = typename remove_cv<T>::type;
 } // namespace std
 #endif // _EXT_STD_REMOVE_CV_T_
 #endif // CXX_USE_STD_REMOVE_CV_T
+
+///
+/// std::remove_const
+///
+#ifdef CXX_USE_STD_REMOVE_CONST
+#ifndef _EXT_STD_REMOVE_CONST_
+#define _EXT_STD_REMOVE_CONST_
+#include <type_traits>
+namespace std {
+template <class T> struct remove_const { typedef T type; };
+template <class T> struct remove_const<const T> { typedef T type; };
+} // namespace std
+#endif // _EXT_STD_REMOVE_CONST_
+#endif // CXX_USE_STD_REMOVE_CONST
 
 ///
 /// std::remove_reference
