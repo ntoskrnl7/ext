@@ -1,0 +1,153 @@
+﻿/**
+ * @file lang
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements language helper features.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+
+#pragma once
+
+#ifndef _EXT_LANG_
+#define _EXT_LANG_
+
+#include "string"
+
+namespace ext {
+namespace lang {
+namespace ko_kr {
+namespace syllable {
+inline wchar_t onset(wchar_t c) {
+  if (L'ㄱ' <= c && c <= L'ㅎ')
+    return c;
+  static const wchar_t data[] = {
+      L'ㄱ', L'ㄲ', L'ㄴ', L'ㄷ', L'ㄸ', L'ㄹ', L'ㅁ', L'ㅂ', L'ㅃ', L'ㅅ',
+      L'ㅆ', L'ㅇ', L'ㅈ', L'ㅉ', L'ㅊ', L'ㅋ', L'ㅌ', L'ㅍ', L'ㅎ'};
+  const size_t index = (c - 0xAC00) / (21 * 28);
+  if ((sizeof(data) / sizeof(wchar_t)) > index)
+    return data[index];
+  return L'\0';
+}
+
+inline wchar_t nucleus(wchar_t c) {
+  static const wchar_t data[] = {L'ㅏ', L'ㅐ', L'ㅑ', L'ㅒ', L'ㅓ', L'ㅔ',
+                                 L'ㅕ', L'ㅖ', L'ㅗ', L'ㅘ', L'ㅙ', L'ㅚ',
+                                 L'ㅛ', L'ㅜ', L'ㅝ', L'ㅞ', L'ㅟ', L'ㅠ',
+                                 L'ㅡ', L'ㅢ', L'ㅣ'};
+  if (L'ㅏ' <= c && c <= L'ㅣ')
+    return c;
+  const size_t index = (c - 0xAC00) % (21 * 28) / 28;
+  if ((sizeof(data) / sizeof(wchar_t)) > index)
+    return data[index];
+  return L'\0';
+}
+
+inline wchar_t coda(wchar_t c) {
+  static const wchar_t data[] = {
+      L'\0', L'ㄱ', L'ㄲ', L'ㄳ', L'ㄴ', L'ㄵ', L'ㄶ', L'ㄷ', L'ㄹ', L'ㄺ',
+      L'ㄻ', L'ㄼ', L'ㄽ', L'ㄾ', L'ㄿ', L'ㅀ', L'ㅁ', L'ㅂ', L'ㅄ', L'ㅅ',
+      L'ㅆ', L'ㅇ', L'ㅈ', L'ㅊ', L'ㅋ', L'ㅌ', L'ㅍ', L'ㅎ'};
+  return data[(c - 0xAC00) % 28];
+}
+
+struct letter {
+  letter(wchar_t c)
+      : value(c), onset(syllable::onset(c)), nucleus(syllable::nucleus(c)),
+        coda(syllable::coda(c)) {}
+  wchar_t onset;
+  wchar_t nucleus;
+  wchar_t coda;
+  wchar_t value;
+  bool valid() const { return onset && nucleus; }
+};
+} // namespace syllable
+
+/**
+ * @brief https://en.wikipedia.org/wiki/Korean_postpositions
+ */
+namespace postposition {
+inline const std::wstring &eul() {
+  static const std::wstring eul = L"을";
+  return eul;
+}
+inline const std::wstring &reul() {
+  static const std::wstring reul = L"를";
+  return reul;
+}
+inline const std::wstring &eun() {
+  static const std::wstring eun = L"은";
+  return eun;
+}
+inline const std::wstring &neun() {
+  static const std::wstring neun = L"는";
+  return neun;
+}
+inline const std::wstring &i() {
+  static const std::wstring i = L"이";
+  return i;
+}
+inline const std::wstring &ga() {
+  static const std::wstring ga = L"가";
+  return ga;
+}
+inline const std::wstring &euro() {
+  static const std::wstring euro = L"으로";
+  return euro;
+}
+inline const std::wstring &ro() {
+  static const std::wstring ro = L"로";
+  return ro;
+}
+inline const std::wstring &wa() {
+  static const std::wstring wa = L"와";
+  return wa;
+}
+inline const std::wstring &gwa() {
+  static const std::wstring gwa = L"과";
+  return gwa;
+}
+inline const std::wstring &a() {
+  static const std::wstring a = L"아";
+  return a;
+}
+inline const std::wstring &ya() {
+  static const std::wstring ya = L"야";
+  return ya;
+}
+inline const std::wstring &iyeo() {
+  static const std::wstring iyeo = L"이여";
+  return iyeo;
+}
+inline const std::wstring &yeo() {
+  static const std::wstring yeo = L"여";
+  return yeo;
+}
+inline const std::wstring &topic(const std::wstring &nouns) {
+  return (syllable::coda(ext::back(nouns)) ? eun() : neun());
+}
+inline const std::wstring &identifier(const std::wstring &nouns) {
+  return (syllable::coda(ext::back(nouns)) ? i() : ga());
+}
+inline const std::wstring &objective(const std::wstring &nouns) {
+  return (syllable::coda(ext::back(nouns)) ? eul() : reul());
+}
+inline const std::wstring &destination(const std::wstring &nouns) {
+  wchar_t w = syllable::coda(ext::back(nouns));
+  return (w == '\0' || (w == L'ㄹ') ? ro() : euro());
+}
+inline const std::wstring &conjunction(const std::wstring &nouns) {
+  return (syllable::coda(ext::back(nouns)) ? gwa() : wa());
+}
+inline const std::wstring &vocative(const std::wstring &nouns) {
+  return (syllable::coda(ext::back(nouns)) ? a() : ya());
+}
+inline const std::wstring &exclamation(const std::wstring &nouns) {
+  return (syllable::coda(ext::back(nouns)) ? iyeo() : yeo());
+}
+} // namespace postposition
+} // namespace ko_kr
+} // namespace lang
+} // namespace ext
+
+#endif // _EXT_LANG_

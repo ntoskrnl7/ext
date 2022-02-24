@@ -29,6 +29,15 @@
 #endif //  (!defined(CXX_STD_U8STRING_NOT_SUPPORTED)) &&
        //  defined(CXX_USE_STD_U8STRING)
 
+#if defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&                                 \
+    defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
+typedef unsigned char char8_t;
+namespace ext {
+typedef std::basic_string<char8_t> u8string;
+}
+#endif // defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&
+       // defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
+
 namespace ext {
 namespace string {
 
@@ -424,6 +433,16 @@ inline std::vector<std::string> split(const std::string &str,
   return tokens;
 }
 
+template <typename T> T back(const std::basic_string<T> str) {
+  if (str.empty())
+    return (T)0;
+#if CXX_VER < 201103L
+  return str[str.size() - 1];
+#else
+  return str.back();
+#endif
+}
+
 template <typename SRC_T, typename DST_T>
 bool convert(const std::basic_string<SRC_T> &SourceString,
              std::basic_string<DST_T> &dstinationString,
@@ -513,13 +532,6 @@ inline std::wstring operator!(const std::string &rhs) {
 inline std::string operator!(const std::wstring &rhs) {
   return convert<char>(rhs);
 }
-
-#if defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&                                 \
-    defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
-typedef unsigned char char8_t;
-typedef std::basic_string<char8_t> u8string;
-#endif // defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&
-       // defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
 } // namespace string
 using namespace string;
 } // namespace ext
@@ -527,7 +539,7 @@ using namespace string;
 #if defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&                                 \
     defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
 namespace std {
-using ext::string::u8string;
+using ext::u8string;
 } // namespace std
 #endif // defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&
        // defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
