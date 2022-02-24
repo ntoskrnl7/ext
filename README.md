@@ -954,7 +954,7 @@ total.value(); // 60
 
   result = err_fn();
   if (!result) { // false
-    result.err(); // EBUSY
+    result.error(); // EBUSY
   }
   ```
 
@@ -970,12 +970,12 @@ total.value(); // 60
 
   ext::result<int, error_t> result = ok_fn();
   if (result) { // true
-    result.ok(); // 10
+    result.get(); // 10
   }
 
   result = err_fn();
   if (!result) { // false
-    result.err(); // EBUSY
+    result.error(); // EBUSY
   }
   ```
 
