@@ -3,6 +3,8 @@
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
  * @brief This module implements string helper features.
  *
+ * CXX_USE_STD_U8STRING
+ *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
@@ -21,6 +23,11 @@
 #define CXX_USE_STD_MOVE
 #define CXX_USE_STD_IS_SAME
 #include "stl_compat"
+
+#if (!defined(CXX_STD_U8STRING_NOT_SUPPORTED)) && defined(CXX_USE_STD_U8STRING)
+#undef CXX_USE_STD_U8STRING
+#endif //  (!defined(CXX_STD_U8STRING_NOT_SUPPORTED)) &&
+       //  defined(CXX_USE_STD_U8STRING)
 
 namespace ext {
 namespace string {
@@ -384,96 +391,6 @@ inline std::basic_string<T> replace_all(const std::basic_string<T> &str,
                      std::basic_string<T>(new_str), case_sensitive);
 }
 
-template <typename SRC_T, typename DST_T>
-bool convert(const std::basic_string<SRC_T> &SourceString,
-             std::basic_string<DST_T> &DestinationString,
-             const std::locale Locale = std::locale("")) {
-#if CXX_VER >= 201103
-  if (std::is_same<SRC_T, DST_T>::value)
-#else
-  if (typeid(SRC_T) == typeid(DST_T))
-#endif
-  {
-    DestinationString = (std::basic_string<DST_T> &)SourceString;
-    return true;
-  }
-
-  typedef std::codecvt<wchar_t, char, std::mbstate_t> codecvt_wchar;
-
-  const codecvt_wchar &convert = std::use_facet<codecvt_wchar>(Locale);
-
-  std::mbstate_t state = std::mbstate_t();
-  size_t sourceLength = SourceString.length();
-
-  if (sourceLength == 0) {
-    DestinationString.resize(0);
-    return true;
-  }
-
-  const SRC_T *source = SourceString.c_str();
-  const SRC_T *sourceNext = source;
-
-  size_t destinationLength =
-      sourceLength * convert.max_length() + convert.max_length();
-  std::vector<DST_T> destination(destinationLength);
-  DST_T *destinationNext = &destination[0];
-
-  codecvt_wchar::result result = codecvt_wchar::noconv;
-#if CXX_VER >= 201103
-  CXX_IF_CONSTEXPR(std::is_same<DST_T, char>::value)
-#else
-  if (typeid(DST_T) == typeid(char))
-#endif
-  {
-    result = convert.out(
-        state, (const wchar_t *)source, (const wchar_t *)&source[sourceLength],
-        (const wchar_t *&)sourceNext, (char *)&destination[0],
-        (char *)&destination[destinationLength - 1], (char *&)destinationNext);
-  }
-#if CXX_VER >= 201103
-  CXX_IF_CONSTEXPR(std::is_same<DST_T, wchar_t>::value)
-#else
-  else if (typeid(DST_T) == typeid(wchar_t))
-#endif
-  {
-    result = convert.in(state, (const char *)source,
-                        (const char *)&source[sourceLength],
-                        (const char *&)sourceNext, (wchar_t *)&destination[0],
-                        (wchar_t *)&destination[destinationLength - 1],
-                        (wchar_t *&)destinationNext);
-  }
-
-  if (result == codecvt_wchar::ok) {
-    DestinationString = std::basic_string<DST_T>(
-        (const DST_T *)&destination[0], (const DST_T *)destinationNext);
-    return true;
-  }
-
-  return false;
-}
-
-template <typename DST_T, typename SRC_T>
-std::basic_string<DST_T> convert(const std::basic_string<SRC_T> &SourceString,
-                                 const std::locale Locale = std::locale("")) {
-  std::basic_string<DST_T> destinationString;
-
-  if (convert(SourceString, destinationString, Locale)) {
-    return destinationString;
-  }
-#ifdef __cpp_exceptions
-  throw std::runtime_error("Failed to convert :-(");
-#endif
-  return std::basic_string<DST_T>();
-}
-
-inline std::wstring operator!(const std::string &rhs) {
-  return convert<wchar_t>(rhs);
-}
-
-inline std::string operator!(const std::wstring &rhs) {
-  return convert<char>(rhs);
-}
-
 template <typename T>
 inline std::vector<T> split(const std::string &str, const std::string &delim,
                             std::function<T(const std::string &)> fn) {
@@ -506,8 +423,243 @@ inline std::vector<std::string> split(const std::string &str,
   } while (pos < str.length() && prev < str.length());
   return tokens;
 }
+
+template <typename SRC_T, typename DST_T>
+bool convert(const std::basic_string<SRC_T> &SourceString,
+             std::basic_string<DST_T> &dstinationString,
+             const std::locale Locale = std::locale("")) {
+#if CXX_VER >= 201103
+  if (std::is_same<SRC_T, DST_T>::value)
+#else
+  if (typeid(SRC_T) == typeid(DST_T))
+#endif
+  {
+    dstinationString = (std::basic_string<DST_T> &)SourceString;
+    return true;
+  }
+
+  typedef std::codecvt<wchar_t, char, std::mbstate_t> codecvt_wchar;
+
+  const codecvt_wchar &convert = std::use_facet<codecvt_wchar>(Locale);
+
+  std::mbstate_t state = std::mbstate_t();
+  size_t sourceLength = SourceString.length();
+
+  if (sourceLength == 0) {
+    dstinationString.resize(0);
+    return true;
+  }
+
+  const SRC_T *source = SourceString.c_str();
+  const SRC_T *sourceNext = source;
+
+  size_t dstinationLength =
+      sourceLength * convert.max_length() + convert.max_length();
+  std::vector<DST_T> dstination(dstinationLength);
+  DST_T *dstinationNext = &dstination[0];
+
+  codecvt_wchar::result result = codecvt_wchar::noconv;
+#if CXX_VER >= 201103
+  CXX_IF_CONSTEXPR(std::is_same<DST_T, char>::value)
+#else
+  if (typeid(DST_T) == typeid(char))
+#endif
+  {
+    result = convert.out(
+        state, (const wchar_t *)source, (const wchar_t *)&source[sourceLength],
+        (const wchar_t *&)sourceNext, (char *)&dstination[0],
+        (char *)&dstination[dstinationLength - 1], (char *&)dstinationNext);
+  }
+#if CXX_VER >= 201103
+  CXX_IF_CONSTEXPR(std::is_same<DST_T, wchar_t>::value)
+#else
+  else if (typeid(DST_T) == typeid(wchar_t))
+#endif
+  {
+    result = convert.in(state, (const char *)source,
+                        (const char *)&source[sourceLength],
+                        (const char *&)sourceNext, (wchar_t *)&dstination[0],
+                        (wchar_t *)&dstination[dstinationLength - 1],
+                        (wchar_t *&)dstinationNext);
+  }
+
+  if (result == codecvt_wchar::ok) {
+    dstinationString = std::basic_string<DST_T>((const DST_T *)&dstination[0],
+                                                (const DST_T *)dstinationNext);
+    return true;
+  }
+
+  return false;
+}
+
+template <typename DST_T, typename SRC_T>
+std::basic_string<DST_T> convert(const std::basic_string<SRC_T> &SourceString,
+                                 const std::locale Locale = std::locale("")) {
+  std::basic_string<DST_T> dstinationString;
+
+  if (convert(SourceString, dstinationString, Locale)) {
+    return dstinationString;
+  }
+#ifdef __cpp_exceptions
+  throw std::runtime_error("Failed to convert :-(");
+#endif
+  return std::basic_string<DST_T>();
+}
+
+inline std::wstring operator!(const std::string &rhs) {
+  return convert<wchar_t>(rhs);
+}
+
+inline std::string operator!(const std::wstring &rhs) {
+  return convert<char>(rhs);
+}
+
+#if defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&                                 \
+    defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
+typedef unsigned char char8_t;
+typedef std::basic_string<char8_t> u8string;
+#endif // defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&
+       // defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
 } // namespace string
 using namespace string;
 } // namespace ext
 
+#if defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&                                 \
+    defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
+namespace std {
+using ext::string::u8string;
+} // namespace std
+#endif // defined(CXX_STD_U8STRING_NOT_SUPPORTED) &&
+       // defined(CXX_USE_STD_U8STRING) && (!defined(__cpp_lib_char8_t))
+
+#if (!defined(CXX_STD_U8STRING_NOT_SUPPORTED)) ||                              \
+    defined(CXX_USE_STD_U8STRING) || defined(__cpp_lib_char8_t)
+namespace ext {
+inline std::u8string from_u8(const std::string &u8_str) {
+#if CXX_VER < 201103L
+  return reinterpret_cast<const std::u8string::value_type *>(u8_str.c_str());
+#else
+  return reinterpret_cast<const typename std::u8string::value_type *>(
+      u8_str.c_str());
+#endif
+}
+inline std::u8string from_u8(const std::u8string &u8_str) { return u8_str; }
+
+template <typename T>
+inline bool from_u8string(const std::u8string &src, std::basic_string<T> &dst,
+                          bool ignore_errors = true);
+
+template <>
+inline bool from_u8string<wchar_t>(const std::u8string &src, std::wstring &dst,
+                                   bool ignore_errors) {
+  dst.clear();
+  wchar_t w = 0;
+  int bytes = 0;
+  wchar_t err = L'�';
+  for (size_t i = 0; i < src.size(); i++) {
+    unsigned char c = (unsigned char)src[i];
+    if (c <= 0x7f) {
+      if (bytes) {
+        dst.push_back(err);
+        bytes = 0;
+      }
+      dst.push_back((wchar_t)c);
+    } else if (c <= 0xbf) {
+      if (bytes) {
+        w = ((w << 6) | (c & 0x3f));
+        bytes--;
+        if (bytes == 0)
+          dst.push_back(w);
+      } else
+        dst.push_back(err);
+    } else if (c <= 0xdf) {
+      bytes = 1;
+      w = c & 0x1f;
+    } else if (c <= 0xef) {
+      bytes = 2;
+      w = c & 0x0f;
+    } else if (c <= 0xf7) {
+      bytes = 3;
+      w = c & 0x07;
+    } else {
+      dst.push_back(err);
+      bytes = 0;
+    }
+  }
+  if (bytes)
+    dst.push_back(err);
+  return true;
+}
+
+template <>
+inline bool from_u8string<char>(const std::u8string &src, std::string &dst,
+                                bool ignore_errors) {
+  std::wstring wstr;
+  if (!from_u8string(src, wstr))
+    return false;
+  std::string str = !wstr;
+  dst.swap(str);
+  return true;
+}
+
+template <typename T>
+inline std::basic_string<T> from_u8string(const std::u8string &src) {
+  std::basic_string<T> ret;
+  if (from_u8string<T>(src, ret))
+    return std::move(ret);
+#ifdef __cpp_exceptions
+  throw std::runtime_error("Failed to from_u8string :-(");
+#else
+  return std::basic_string<T>();
+#endif
+}
+
+inline bool to_u8string(const std::wstring &src, std::u8string &dst,
+                        bool ignore_errors = true) {
+  dst.clear();
+  CXX_FOR(const wchar_t &w, src) {
+    if (w <= 0x7f)
+      dst.push_back((char)w);
+    else if (w <= 0x7ff) {
+      dst.push_back(0xc0 | ((w >> 6) & 0x1f));
+      dst.push_back(0x80 | (w & 0x3f));
+    } else if (w <= 0xffff) {
+      dst.push_back(0xe0 | ((w >> 12) & 0x0f));
+      dst.push_back(0x80 | ((w >> 6) & 0x3f));
+      dst.push_back(0x80 | (w & 0x3f));
+#if WCHAR_MAX > 0x0000ffff
+    } else if (w <= 0x10ffff) {
+      dst.push_back(0xf0 | ((w >> 18) & 0x07));
+      dst.push_back(0x80 | ((w >> 12) & 0x3f));
+      dst.push_back(0x80 | ((w >> 6) & 0x3f));
+      dst.push_back(0x80 | (w & 0x3f));
+#endif // WCHAR_MAX > UINT16_MAX
+    } else if (ignore_errors) {
+      dst.push_back('?');
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline std::u8string to_u8string(const std::wstring &src) {
+  std::u8string ret;
+  if (to_u8string(src, ret))
+    return std::move(ret);
+#ifdef __cpp_exceptions
+  throw std::runtime_error("Failed to to_u8string :-(");
+#else
+  return std::u8string();
+#endif
+}
+
+inline std::u8string to_u8string(const std::string &src) {
+  std::wstring wstr = !src;
+  return to_u8string(wstr);
+}
+} // namespace ext
+#define _EXT_U8STRING_
+#endif //(!defined(CXX_STD_U8STRING_NOT_SUPPORTED)) ||
+       // defined(CXX_USE_STD_U8STRING) || defined(__cpp_lib_char8_t)
 #endif // _EXT_STRING_

@@ -1,0 +1,85 @@
+/**
+ * @file result
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements result class.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#define CXX_USE_NULLPTR
+#include "stl_compat"
+
+#ifndef _EXT_RESULT_
+#define _EXT_RESULT_
+
+#include <string>
+
+namespace ext {
+template <typename T> struct ok;
+
+template <> struct ok<void> {
+  ok() {}
+};
+
+template <typename T> struct ok {
+  ok() {}
+  ok(T value) : value(value) {}
+  T value;
+  operator T() const { return value; }
+};
+
+template <typename T> struct err {
+  err() {}
+  err(T value) : value(value) {}
+  T value;
+  operator T() const { return value; }
+};
+
+template <typename T, typename E> class result {
+public:
+  result(ok<T> ok) : succeed_(true), ok_(ok) {}
+
+  result(err<E> error) : succeed_(false), err_(error) {}
+
+  result(err<E> error, const std::string &message)
+      : succeed_(false), err_(error), message_(message) {}
+
+  operator bool() const { return succeed_; }
+
+  const ok<T> &ok() const { return ok_; }
+
+  const err<E> &err() const { return err_; }
+
+  const std::string &what() const { return message_; }
+
+private:
+  ext::ok<T> ok_;
+  ext::err<E> err_;
+  std::string message_;
+  bool succeed_;
+};
+
+template <typename E> class void_result {
+public:
+  void_result(ok<void>) : succeed_(true) {}
+
+  void_result(err<E> error) : succeed_(false), err_(error) {}
+
+  void_result(err<E> error, const std::string &message)
+      : succeed_(false), err_(error), message_(message) {}
+
+  operator bool() const { return succeed_; }
+
+  const err<E> &err() const { return err_; }
+
+  const std::string &what() const { return message_; }
+
+private:
+  ext::err<E> err_;
+  std::string message_;
+  bool succeed_;
+};
+} // namespace ext
+#endif // _EXT_RESULT_

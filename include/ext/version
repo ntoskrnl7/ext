@@ -198,12 +198,12 @@ public:
       build_metadata_ = str;
   }
 
-  std::string str() const {
+  std::string str(bool with_meta = true) const {
     std::string s = std::to_string(major_) + '.' + std::to_string(minor_) +
                     '.' + std::to_string(patch_);
     if (!prerelease_.empty())
       s += '-' + prerelease_;
-    if (!build_metadata_.empty())
+    if (with_meta && !build_metadata_.empty())
       s += '+' + build_metadata_;
     return s;
   }
@@ -228,7 +228,7 @@ private:
 #endif
 template <> struct CXX_STD_HASH<ext::version> {
   size_t operator()(const ext::version &k) const {
-    return CXX_STD_HASH<std::string>()(k.str());
+    return CXX_STD_HASH<std::string>()(k.str(false));
   }
 };
 #undef CXX_STD_HASH
