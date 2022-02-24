@@ -48,9 +48,9 @@ public:
 
   operator bool() const { return succeed_; }
 
-  const ext::ok<T> &ok() const { return ok_; }
+  const ext::ok<T> &get() const { return ok_; }
 
-  const ext::err<E> &err() const { return err_; }
+  const ext::err<E> &error() const { return err_; }
 
   const std::string &what() const { return message_; }
 
@@ -72,7 +72,7 @@ public:
 
   operator bool() const { return succeed_; }
 
-  const ext::err<E> &err() const { return err_; }
+  const ext::err<E> &error() const { return err_; }
 
   const std::string &what() const { return message_; }
 

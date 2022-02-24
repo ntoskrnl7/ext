@@ -15,7 +15,7 @@ TEST(result_test, void_result_test) {
 
   result = void_result_err_fn();
   EXPECT_FALSE(result);
-  EXPECT_EQ((int)result.err(), 10);
+  EXPECT_EQ((int)result.error(), 10);
 }
 
 #if defined(__cpp_deduction_guides)
@@ -29,11 +29,11 @@ ext::result<int, int> int_result_err_fn() { return ext::err<int>(10); }
 TEST(result_test, int_result_test) {
   ext::result<int, int> result = int_result_ok_fn();
   EXPECT_TRUE(result);
-  EXPECT_EQ((int)result.ok(), 10);
+  EXPECT_EQ((int)result.get(), 10);
 
   result = int_result_err_fn();
   EXPECT_FALSE(result);
-  EXPECT_EQ((int)result.err(), 10);
+  EXPECT_EQ((int)result.error(), 10);
 }
 
 ext::result<short, int> short_int_result_ok_fn() { return ext::ok<short>(10); }
@@ -46,11 +46,11 @@ ext::result<short, int> short_int_result_err_fn() { return ext::err<int>(10); }
 TEST(result_test, short_int_result_test) {
   ext::result<short, int> result = short_int_result_ok_fn();
   EXPECT_TRUE(result);
-  EXPECT_EQ((short)result.ok(), 10);
+  EXPECT_EQ((short)result.get(), 10);
 
   result = short_int_result_err_fn();
   EXPECT_FALSE(result);
-  EXPECT_EQ((int)result.err(), 10);
+  EXPECT_EQ((int)result.error(), 10);
 }
 
 #include <errno.h>
@@ -76,9 +76,9 @@ ext::result<int, error_t> int_error_t_result_err_fn() {
 TEST(result_test, int_error_t_result_test) {
   ext::result<int, error_t> result = int_error_t_result_ok_fn();
   EXPECT_TRUE(result);
-  EXPECT_EQ(result.ok(), 10);
+  EXPECT_EQ(result.get(), 10);
 
   result = int_error_t_result_err_fn();
   EXPECT_FALSE(result);
-  EXPECT_EQ((error_t)result.err(), EBUSY);
+  EXPECT_EQ((error_t)result.error(), EBUSY);
 }
