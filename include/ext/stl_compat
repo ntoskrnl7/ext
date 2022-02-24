@@ -163,15 +163,15 @@
 #define CXX_STD_TRUE_TYPE_NOT_SUPPORTED
 #define CXX_STD_FALSE_TYPE_NOT_SUPPORTED
 #define CXX_STD_REGEX_NOT_SUPPORTED
-#endif
-#endif
+#endif // (!defined(_MSC_VER)) || (defined(_MSC_VER) && (_MSC_VER < 1600))
+#endif // CXX_VER < 201103L
 #if CXX_VER < 201402L
 #define CXX_STD_MAKE_UNIQUE_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CV_T_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CONST_T_NOT_SUPPORTED
 #define CXX_STD_REMOVE_REF_T_NOT_SUPPORTED
 #define CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED
-#endif
+#endif // CXX_VER < 201402L
 #if CXX_VER < 201703L
 #define CXX_STD_BYTE_NOT_SUPPORTED
 #define CXX_STD_APPLY_NOT_SUPPORTED
@@ -181,11 +181,27 @@
 #define CXX_STD_ANY_NOT_SUPPORTED
 #define CXX_STD_REMOVE_NOT_SUPPORTED
 #define CXX_STD_REMOVE_IF_NOT_SUPPORTED
-#endif
-#if CXX_VER <= 201703L
+#endif // CXX_VER < 201703L
+#if CXX_VER < 202002L
 #define CXX_STD_REMOVE_CVREF_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CVREF_T_NOT_SUPPORTED
-#endif
+#define CXX_STD_U8STRING_NOT_SUPPORTED
+#endif // CXX_VER < 201703L
+
+#if ((defined(__cpp_lib_remove_cvref) &&                                       \
+      (CXX_VER >= __cpp_lib_remove_cvref))) ||                                 \
+    (defined(_MSC_VER) && (CXX_VER >= 201704L))
+#undef CXX_STD_REMOVE_CVREF_NOT_SUPPORTED
+#undef CXX_STD_REMOVE_CVREF_T_NOT_SUPPORTED
+#endif // ((defined(__cpp_lib_remove_cvref) && (CXX_VER >=
+       // __cpp_lib_remove_cvref))) || (defined(_MSC_VER) && (CXX_VER >=
+       // 201704L))
+
+#if ((defined(__cpp_lib_char8_t) && (CXX_VER >= __cpp_lib_char8_t))) ||        \
+    (defined(_MSC_VER) && (CXX_VER >= 201704L))
+#undef CXX_STD_U8STRING_NOT_SUPPORTED
+#endif // ((defined(__cpp_lib_char8_t) && (CXX_VER >= __cpp_lib_char8_t))) ||
+       // (defined(_MSC_VER) && (CXX_VER >= 201704L))
 
 ///
 /// If CXX_USE_STD_ALL_FEATURES specified, enable all features.

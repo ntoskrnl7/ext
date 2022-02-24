@@ -1,6 +1,7 @@
 ﻿#define CXX_USE_NULLPTR
 #define CXX_USE_STD_MOVE
 #define EXT_USE_STRING_MOVABLE
+#define CXX_USE_STD_U8STRING
 #include <ext/string>
 #include <gtest/gtest.h>
 
@@ -230,7 +231,7 @@ TEST(string_test, split_test) {
   EXPECT_EQ(list[3], "d");
 }
 
-#ifdef __cpp_lambdas
+#if defined(__cpp_lambdas)
 TEST(string_test, split_int_test) {
   std::vector<int> list =
       ext::split<int>("10,20,30,40", ",",
@@ -260,4 +261,60 @@ TEST(string_test, split_any_test) {
   EXPECT_EQ(std::any_cast<std::string>(list[3]), "c");
 }
 #endif
+#endif // defined(__cpp_lambdas)
+
+#if defined(CXX_STD_U8STRING_NOT_SUPPORTED)
+TEST(string_test, u8string_test) {
+#if defined(__cpp_user_defined_literals) &&                                    \
+    (CXX_VER >= __cpp_user_defined_literals)
+  std::u8string str = ext::from_u8(u8"한글+english");
+  EXPECT_STREQ((const char *)str.c_str(), u8"한글+english");
+#else
+  std::u8string str = ext::to_u8string(L"한글+english");
+  EXPECT_STREQ((const char *)str.c_str(), "\xED\x95\x9C\xEA\xB8\x80+english");
 #endif
+}
+#endif // defined(CXX_STD_U8STRING_NOT_SUPPORTED)
+
+TEST(string_test, to_u8string) {
+  // EXPECT_STREQ(
+  //     (const char *)ext::from_u8(ext::to_u8string("한글+english")).c_str(),
+  //     "\xED\x95\x9C\xEA\xB8\x80+english");
+  EXPECT_STREQ(
+      (const char *)ext::from_u8(ext::to_u8string(L"한글+english")).c_str(),
+      "\xED\x95\x9C\xEA\xB8\x80+english");
+}
+
+TEST(string_test, from_u8) {
+#if defined(CXX_STD_U8STRING_NOT_SUPPORTED)
+#if defined(__cpp_user_defined_literals) &&                                    \
+    (CXX_VER >= __cpp_user_defined_literals)
+  EXPECT_STREQ((const char *)ext::from_u8(u8"한글+english").c_str(),
+               u8"한글+english");
+#else
+  EXPECT_STREQ(
+      (const char *)ext::from_u8(ext::to_u8string(L"한글+english")).c_str(),
+      "\xED\x95\x9C\xEA\xB8\x80+english");
+#endif
+#else
+  EXPECT_STREQ(ext::from_u8(u8"한글+english").c_str(), u8"한글+english");
+#endif
+}
+
+TEST(string_test, from_u8string) {
+#if defined(CXX_STD_U8STRING_NOT_SUPPORTED)
+#if defined(__cpp_user_defined_literals) &&                                    \
+    (CXX_VER >= __cpp_user_defined_literals)
+  std::u8string str = ext::from_u8(u8"한글+english");
+  EXPECT_STREQ((const char *)str.c_str(), u8"한글+english");
+#else
+  std::u8string str = ext::from_u8(ext::to_u8string(L"한글+english"));
+  EXPECT_STREQ((const char *)str.c_str(), "\xED\x95\x9C\xEA\xB8\x80+english");
+#endif
+#else
+  std::u8string str = ext::from_u8(u8"한글+english");
+  EXPECT_STREQ(str.c_str(), u8"한글+english");
+#endif
+  // EXPECT_STREQ(ext::from_u8string<char>(str).c_str(), "한글+english");
+  EXPECT_STREQ(ext::from_u8string<wchar_t>(str).c_str(), L"한글+english");
+}

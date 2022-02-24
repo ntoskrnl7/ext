@@ -50,8 +50,5 @@ TEST(type_traits_test, deduce_mem_fn_test) {
       ext::get_type_name<std::string(int, char, std::vector<std::string>)>()
           .c_str(),
       ext::get_type_name<ext::deduce_mem_fn<decltype(obj)>::type>().c_str());
-
-  void (test_callable_2::*ptr)(void) = &test_callable_2::operator();
-  auto ts = ext::get_type_name<ext::remove_class<decltype(ptr)>::type>();
 }
 #endif // _EXT_DEDUCE_MEM_FN_

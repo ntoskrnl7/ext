@@ -51,6 +51,9 @@ TEST(version_test, hash) {
   map.insert(
       std::pair<ext::version, std::string>(ext::version("5.0.0"), "def"));
 
+  map.insert(std::pair<ext::version, std::string>(
+      ext::version("1.2.3-prerelease"), "ghi"));
+
   ver_desc::iterator it = map.find(ext::version("1.2.3"));
   EXPECT_NE(it, map.end());
   EXPECT_EQ(it->second, "abc");
@@ -62,7 +65,15 @@ TEST(version_test, hash) {
   it = map.find(ext::version("1.2.0"));
   EXPECT_EQ(it, map.end());
 
+  it = map.find(ext::version("1.2.3-prerelease"));
+  EXPECT_NE(it, map.end());
+  EXPECT_EQ(it->second, "ghi");
+
   it = map.find(ext::version("1.2.3-prerelease+meta"));
+  EXPECT_NE(it, map.end());
+  EXPECT_EQ(it->second, "ghi");
+
+  it = map.find(ext::version("1.2.3-test+meta"));
   EXPECT_EQ(it, map.end());
 }
 

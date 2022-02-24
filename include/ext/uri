@@ -3,6 +3,8 @@
  * @author Jung-kang Lee (ntoskrnl7@gmail.com)
  * @brief This module implements uri helper features.
  *
+ * https://datatracker.ietf.org/doc/html/rfc3986
+ *
  * @copyright Copyright (c) 2020 C++ Extended template library Authors
  *
  */
@@ -23,95 +25,265 @@
 #include "string"
 
 namespace ext {
-using ext::string::operator!;
+namespace details {
+namespace uri {
+template <typename T> struct strings {};
 
-struct uri {
-  typedef std::map<std::string, std::string> query_map;
-  typedef std::map<std::wstring, std::wstring> wquery_map;
+template <> struct strings<char> {
+  static const std::string &scheme_end() {
+    static std::string str = "://";
+    return str;
+  }
+  static char slash() { return '/'; }
+  static char question() { return '?'; }
+  static char colon() { return ':'; }
+  static char assign() { return '='; }
+  static char ampersand() { return '&'; }
+  static char percent() { return '%'; }
+  static char zero() { return '0'; }
 
-  uri(const std::string &uri_s) : port(0) {
-    value = uri_s;
-    const std::string prot_end("://");
-    std::string::const_iterator prot_i = std::search(
-        uri_s.begin(), uri_s.end(), prot_end.begin(), prot_end.end());
-    protocol.reserve(distance(uri_s.begin(), prot_i));
-    std::transform(uri_s.begin(), prot_i, back_inserter(protocol), tolower);
-    if (prot_i == uri_s.end())
-      return;
-    advance(prot_i, prot_end.length());
-    std::string::const_iterator path_i = find(prot_i, uri_s.end(), '/');
-    host.reserve(distance(prot_i, path_i));
-    std::transform(prot_i, path_i, back_inserter(host), tolower);
-    std::string::const_iterator query_i = find(path_i, uri_s.end(), '?');
-    path.assign(path_i, query_i);
-    if (query_i != uri_s.end())
-      ++query_i;
-
-    query.assign(query_i, uri_s.end());
-
-    std::string::size_type pos = host.find(':');
-    if (pos != std::string::npos) {
-      port = (unsigned short)std::stoul(host.substr(pos + 1));
-      host = host.substr(0, pos);
-    }
+  static bool is_gen_delims(wchar_t c) {
+    return c == ':' || c == '/' || c == '?' || c == '#' || c == '[' ||
+           c == ']' || c == '@';
   }
 
-  uri(const std::string &uri_s, const query_map query) {
-    *this = uri(uri_s);
-    CXX_FOR(query_map::value_type q, query) {
-      this->query += "&" + q.first + "=" + q.second;
+  static bool is_sub_delims(wchar_t c) {
+    return c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' ||
+           c == ')' || c == '*' || c == '+' || c == ',' || c == ';' || c == '=';
+  }
+
+  static bool is_reserved(char c) {
+    return is_gen_delims(c) || is_sub_delims(c);
+  }
+
+  static bool is_unreserved(char c) {
+    return std::isalnum(c, std::locale::classic()) || c == '-' || c == '.' ||
+           c == '_' || c == '~';
+  }
+};
+
+template <> struct strings<wchar_t> {
+  static const std::wstring &scheme_end() {
+    static std::wstring str = L"://";
+    return str;
+  }
+  static wchar_t slash() { return L'/'; }
+  static wchar_t question() { return L'?'; }
+  static wchar_t colon() { return L':'; }
+  static wchar_t assign() { return L'='; }
+  static wchar_t ampersand() { return L'&'; }
+  static wchar_t percent() { return L'%'; }
+  static wchar_t zero() { return L'0'; }
+
+  static bool is_gen_delims(wchar_t c) {
+    return c == L':' || c == L'/' || c == L'?' || c == L'#' || c == L'[' ||
+           c == L']' || c == L'@';
+  }
+
+  static bool is_sub_delims(wchar_t c) {
+    return c == L'!' || c == L'$' || c == L'&' || c == L'\'' || c == L'(' ||
+           c == L')' || c == L'*' || c == L'+' || c == L',' || c == L';' ||
+           c == L'=';
+  }
+
+  static bool is_reserved(wchar_t c) {
+    return is_gen_delims(c) || is_sub_delims(c);
+  }
+
+  static bool is_unreserved(wchar_t c) {
+    return std::isalnum(c, std::locale::classic()) || c == L'-' || c == L'.' ||
+           c == L'_' || c == L'~';
+  }
+};
+} // namespace uri
+} // namespace details
+
+using namespace ext::details::uri;
+
+template <typename T, typename S>
+inline std::basic_string<T> encode_uri(const S &u8_str) {
+  std::basic_ostringstream<T> escaped;
+  escaped.fill(strings<T>::zero());
+  escaped << std::hex;
+  CXX_FOR(typename S::value_type c, u8_str) {
+    if (strings<char>::is_unreserved((char)c) ||
+        strings<char>::is_reserved((char)c)) {
+      escaped << (T)c;
+      continue;
+    }
+    escaped << std::uppercase;
+    escaped << strings<T>::percent() << std::setw(2)
+            << static_cast<int>((unsigned char)c);
+    escaped << std::nouppercase;
+  }
+  return escaped.str();
+}
+
+template <typename T, typename S>
+inline std::basic_string<T> encode_uri_component(const S &u8_str) {
+  std::basic_ostringstream<T> escaped;
+  escaped.fill(strings<T>::zero());
+  escaped << std::hex;
+  CXX_FOR(typename S::value_type c, u8_str) {
+    if (strings<char>::is_unreserved((char)c)) {
+      escaped << (T)c;
+      continue;
+    }
+    escaped << std::uppercase;
+    escaped << strings<T>::percent() << std::setw(2)
+            << static_cast<int>((unsigned char)c);
+    escaped << std::nouppercase;
+  }
+  return escaped.str();
+}
+
+template <typename T> struct basic_uri {
+  typedef std::basic_string<T> string_type;
+  typedef std::map<string_type, string_type> query_map;
+#if defined(_EXT_U8STRING_)
+  typedef std::map<std::u8string, std::u8string> u8query_map;
+
+  basic_uri(const std::u8string &url_str)
+#if CXX_VER < 201103L
+  {
+    swap(basic_uri(encode_uri<T>(url_str)));
+#else
+      : basic_uri(encode_uri<T>(url_str)) {
+#endif
+  }
+
+  basic_uri(const std::u8string &uri_str, const u8query_map &query)
+#if CXX_VER < 201103L
+  {
+    swap(basic_uri(uri_str));
+#else
+      : basic_uri(uri_str) {
+#endif
+    CXX_FOR(typename u8query_map::value_type q, query) {
+      this->query += static_cast<typename std::u8string::value_type>(
+                         strings<char>::ampersand()) +
+                     q.first +
+                     static_cast<typename std::u8string::value_type>(
+                         strings<char>::assign()) +
+                     q.second;
     }
     if (this->query.size() > 2) {
-      this->query = "?" + this->query.substr(1);
+      this->query = static_cast<typename std::u8string::value_type>(
+                        strings<T>::question()) +
+                    this->query.substr(1);
+      value += this->query;
+    }
+    if (!query.empty())
+      query = encode_uri_component<T, std::basic_string<T>>(query);
+  }
+#endif // defined(_EXT_U8STRING_)
+
+  basic_uri(const string_type &uri_str) : value(uri_str), port(0) {
+    static const string_type &scheme_end = strings<T>::scheme_end();
+
+    typename string_type::const_iterator scheme_end_it = std::search(
+        uri_str.begin(), uri_str.end(), scheme_end.begin(), scheme_end.end());
+    if (scheme_end_it == uri_str.end()) {
+      value.clear();
+      return;
+    }
+    scheme.reserve(distance(uri_str.begin(), scheme_end_it));
+    std::transform(uri_str.begin(), scheme_end_it, back_inserter(scheme),
+                   tolower);
+    advance(scheme_end_it, scheme_end.length());
+
+    typename string_type::const_iterator host_end_it =
+        find(scheme_end_it, uri_str.end(), strings<T>::slash());
+    if (host_end_it == uri_str.end())
+      host_end_it = find(scheme_end_it, uri_str.end(), strings<T>::question());
+
+    host.reserve(distance(scheme_end_it, host_end_it));
+    std::transform(scheme_end_it, host_end_it, back_inserter(host), tolower);
+    if (host_end_it == uri_str.end())
+      return;
+    typename string_type::size_type pos = host.find(strings<T>::colon());
+    if (pos != string_type::npos) {
+      port = static_cast<unsigned short>(std::stoul(host.substr(pos + 1)));
+      host.resize(pos);
+    }
+
+    typename string_type::const_iterator query_it =
+        find(host_end_it, uri_str.end(), strings<T>::question());
+    path.assign(host_end_it, query_it);
+
+    if (query_it != uri_str.end())
+      query.assign(query_it, uri_str.end());
+  }
+
+  basic_uri(const string_type &uri_str, const query_map &query)
+#if CXX_VER < 201103L
+  {
+    swap(basic_uri(uri_str));
+#else
+      : basic_uri(uri_str) {
+#endif
+    CXX_FOR(typename query_map::value_type q, query) {
+      this->query +=
+          strings<T>::ampersand() + q.first + strings<T>::assign() + q.second;
+    }
+    if (this->query.size() > 2) {
+      this->query = strings<T>::question() + this->query.substr(1);
       value += this->query;
     }
   }
 
-  uri(const std::wstring &uri_s) { *this = uri(!uri_s); }
-  uri(const std::wstring &uri_s, const wquery_map &query) {
-    query_map tmp;
-    CXX_FOR(wquery_map::value_type q, query) {
-      tmp.insert(std::pair<std::string, std::string>(!q.first, !q.second));
-    }
-    *this = uri(!uri_s, tmp);
-  }
-
-  std::string protocol_host_port() {
-    std::string::size_type pos =
-        value.find('/', protocol.size() + sizeof("://"));
-    if (pos == std::string::npos)
+  string_type scheme_host_port() {
+    typename string_type::size_type pos = value.find(
+        strings<T>::slash(), scheme.size() + strings<T>::scheme_end().size());
+    if (pos == string_type::npos)
       return value;
     return value.substr(0, pos);
   }
 
-  operator const std::string &() { return value; }
-
-  std::string value;
-  std::string protocol;
-  std::string host;
-  unsigned short port;
-  std::string path;
-  std::string query;
-
-public:
-  static std::string encode(const std::string &value) {
-    std::ostringstream escaped;
-    escaped.fill('0');
-    escaped << std::hex;
-    for (std::string::const_iterator i = value.begin(), n = value.end(); i != n;
-         ++i) {
-      std::string::value_type c = (*i);
-      if (std::isalnum(c, std::locale::classic()) || c == '-' || c == '_' ||
-          c == '.' || c == '~') {
-        escaped << c;
-        continue;
-      }
-      escaped << std::uppercase;
-      escaped << '%' << std::setw(2) << int((unsigned char)c);
-      escaped << std::nouppercase;
-    }
-    return escaped.str();
+  void swap(basic_uri &other) {
+    value.swap(other.value);
+    scheme.swap(other.scheme);
+    host.swap(other.host);
+    std::swap(port, other.port);
+    path.swap(other.path);
+    query.swap(other.query);
+    fragment.swap(other.fragment);
   }
+
+  bool valid() const { return !value.empty(); }
+
+  operator const string_type &() const { return value; }
+
+  string_type value;
+  string_type scheme;
+  string_type host;
+  unsigned short port;
+  string_type path;
+  string_type query;
+  string_type fragment;
+
+  static string_type encode_component(const std::string &u8_str) {
+    return encode_uri_component<T, std::string>(u8_str);
+  }
+#if defined(_EXT_U8STRING_)
+  static string_type encode_component(const std::u8string &u8_str) {
+    return encode_uri_component<T, std::u8string>(u8_str);
+  }
+#endif // defined(_EXT_U8STRING_)
 };
+
+typedef basic_uri<char> uri;
+typedef basic_uri<wchar_t> wuri;
+
+#if defined(__cpp_user_defined_literals)
+namespace literals {
+inline uri operator"" _uri(const char *url, size_t len) {
+  return {std::string(url, len)};
+}
+inline wuri operator"" _uri(const wchar_t *url, size_t len) {
+  return {std::wstring(url, len)};
+}
+} // namespace literals
+#endif
 } // namespace ext
 #endif // _EXT_URI_

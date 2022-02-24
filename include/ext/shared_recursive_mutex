@@ -8,9 +8,6 @@
  */
 #pragma once
 
-#ifndef _EXT_SHARED_RECURSIVE_MUTEX_
-#define _EXT_SHARED_RECURSIVE_MUTEX_
-
 #if CXX_USE_BOOST
 #define CXX_USE_STD_THREAD
 #include <boost/thread.hpp>
@@ -40,6 +37,9 @@
       !defined(CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED)) ||                   \
      defined(_EXT_STD_SHARED_MUTEX_)) &&                                       \
     ((!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_))
+
+#ifndef _EXT_SHARED_RECURSIVE_MUTEX_
+#define _EXT_SHARED_RECURSIVE_MUTEX_
 
 #if !defined(_EXT_STD_THREAD_) && !defined(CXX_STD_THREAD_NOT_SUPPORTED)
 #include <thread>
@@ -157,7 +157,7 @@ public:
     }
   }
 
-  bool has_recursion() const {
+  bool locked() const {
     const std::thread::id thread_id = std::this_thread::get_id();
     if (owner_ == thread_id)
       return true;

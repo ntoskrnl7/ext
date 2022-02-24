@@ -56,13 +56,16 @@ namespace ext {
 /**
  * @brief observable class
  *
- * @tparam T
+ * @tparam Self
  * @tparam Args
  */
-template <typename T, __TYPE_NAME__OBSERVABLE_ARGS__> class observable {
+template <typename Self, __TYPE_NAME__OBSERVABLE_ARGS__> class observable {
 public:
   class observer {
     friend class observable;
+
+  public:
+    typedef observable target;
 
   private:
     /**
@@ -70,7 +73,7 @@ public:
      *
      * @tparam Args
      */
-    virtual void update(T &, __OBSERVABLE_ARGS_DECLARATION__) = 0;
+    virtual void update(Self &, __OBSERVABLE_ARGS_DECLARATION__) = 0;
 
   public:
     ~observer() { unsubscribe(); }
@@ -165,7 +168,17 @@ protected:
         observable::global_lock_());
 #endif
     CXX_FOR(observer * observer, observers_) {
-      observer->update(static_cast<T &>(*this), __OBSERVABLE_ARGS__);
+      observer->update(static_cast<Self &>(*this), __OBSERVABLE_ARGS__);
+    }
+  }
+
+  void push(observable &observable) {
+#ifdef __OBSERVABLE_SHARED_MUTEX__
+    std::shared_lock<__OBSERVABLE_SHARED_MUTEX__> lk(
+        observable::global_lock_());
+#endif
+    CXX_FOR(observer * observer, observers_) {
+      observer->subscribe(observable);
     }
   }
 

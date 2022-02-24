@@ -27,106 +27,322 @@ enum POLICY { POLICY_UNKNOWN, POLICY_IEC, POLICY_SI };
 
 namespace IEC {
 enum UNIT : size_t {
+  B = (size_t)0,
   KiB = (size_t)1024,
   MiB = KiB * (size_t)1024,
   GiB = MiB * (size_t)1024,
   TiB = GiB * (size_t)1024,
   PiB = TiB * (size_t)1024,
-  EiB = PiB * (size_t)1024
+  EiB = PiB * (size_t)1024,
+  UNSPECIFIED = SIZE_MAX
 };
 
-inline std::pair<size_t, std::string> parse_size(size_t size) {
-  size_t size_calc;
-  std::string unit;
-  if (size > EiB) {
-    unit = "EiB";
-    size_calc = size / EiB;
-  } else if (size > PiB) {
-    unit = "PiB";
-    size_calc = size / PiB;
-  } else if (size > TiB) {
-    unit = "TiB";
-    size_calc = size / TiB;
-  } else if (size > GiB) {
-    unit = "GiB";
-    size_calc = size / GiB;
-  } else if (size > MiB) {
-    unit = "MiB";
-    size_calc = size / MiB;
-  } else if (size > KiB) {
-    unit = "KiB";
-    size_calc = size / KiB;
-  } else {
-    unit = "B";
-    size_calc = size;
+template <typename T, UNIT _Unit> struct unit_name;
+
+template <> struct unit_name<char, B> {
+  static const char *c_str() { return "B"; }
+};
+
+template <> struct unit_name<char, KiB> {
+  static const char *c_str() { return "KiB"; }
+};
+template <> struct unit_name<char, MiB> {
+  static const char *c_str() { return "MiB"; }
+};
+template <> struct unit_name<char, GiB> {
+  static const char *c_str() { return "GiB"; }
+};
+
+template <> struct unit_name<char, TiB> {
+  static const char *c_str() { return "TiB"; }
+};
+
+template <> struct unit_name<char, PiB> {
+  static const char *c_str() { return "PiB"; }
+};
+
+template <> struct unit_name<char, EiB> {
+  static const char *c_str() { return "EiB"; }
+};
+
+template <> struct unit_name<wchar_t, B> {
+  static const wchar_t *c_str() { return L"B"; }
+};
+
+template <> struct unit_name<wchar_t, KiB> {
+  static const wchar_t *c_str() { return L"KiB"; }
+};
+template <> struct unit_name<wchar_t, MiB> {
+  static const wchar_t *c_str() { return L"MiB"; }
+};
+template <> struct unit_name<wchar_t, GiB> {
+  static const wchar_t *c_str() { return L"GiB"; }
+};
+
+template <> struct unit_name<wchar_t, TiB> {
+  static const wchar_t *c_str() { return L"TiB"; }
+};
+
+template <> struct unit_name<wchar_t, PiB> {
+  static const wchar_t *c_str() { return L"PiB"; }
+};
+
+template <> struct unit_name<wchar_t, EiB> {
+  static const wchar_t *c_str() { return L"EiB"; }
+};
+
+template <UNIT _Unit> struct size {
+public:
+  size(size_t size) : value(size) {}
+
+  operator size_t() const { return value * _Unit; }
+
+  operator std::string() const {
+    return std::to_string(value) + unit_name<char, _Unit>::c_str();
   }
-  return std::pair<size_t, std::string>(size_calc, unit);
+
+  operator std::wstring() const {
+    return std::to_wstring(value) + unit_name<wchar_t, _Unit>::c_str();
+  }
+
+  size_t value;
+
+  static const UNIT unit = _Unit;
+};
+
+template <typename T>
+inline std::pair<size_t, std::basic_string<T>> parse_size(size_t size) {
+  UNIT unit;
+  std::basic_string<T> unit_str;
+  if (size > EiB) {
+    unit = EiB;
+    unit_str = unit_name<T, EiB>::c_str();
+  } else if (size > PiB) {
+    unit = PiB;
+    unit_str = unit_name<T, PiB>::c_str();
+  } else if (size > TiB) {
+    unit = TiB;
+    unit_str = unit_name<T, TiB>::c_str();
+  } else if (size > GiB) {
+    unit = GiB;
+    unit_str = unit_name<T, GiB>::c_str();
+  } else if (size > MiB) {
+    unit = MiB;
+    unit_str = unit_name<T, MiB>::c_str();
+  } else if (size > KiB) {
+    unit = KiB;
+    unit_str = unit_name<T, KiB>::c_str();
+  } else {
+    unit = B;
+    unit_str = unit_name<T, B>::c_str();
+  }
+  return std::pair<size_t, std::basic_string<T>>(size / unit, unit_str);
 }
 
-inline std::string to_string(size_t size) {
-  std::pair<size_t, std::string> result = parse_size(size);
+inline std::string to_string(size_t size, UNIT unit = UNSPECIFIED) {
+  std::pair<size_t, std::string> result = parse_size<char>(size);
   return std::to_string(result.first) + result.second;
 }
+
+inline std::wstring to_wstring(size_t size, UNIT unit = UNSPECIFIED) {
+  std::pair<size_t, std::wstring> result = parse_size<wchar_t>(size);
+  return std::to_wstring(result.first) + result.second;
+}
+
+#if defined(__cpp_user_defined_literals)
+namespace literals {
+inline size<units::IEC::KiB> operator"" _KiB(unsigned long long size) {
+  return size;
+}
+inline size<units::IEC::MiB> operator"" _MiB(unsigned long long size) {
+  return size;
+}
+inline size<units::IEC::GiB> operator"" _GiB(unsigned long long size) {
+  return size;
+}
+inline size<units::IEC::TiB> operator"" _TiB(unsigned long long size) {
+  return size;
+}
+inline size<units::IEC::PiB> operator"" _PiB(unsigned long long size) {
+  return size;
+}
+inline size<units::IEC::EiB> operator"" _EiB(unsigned long long size) {
+  return size;
+}
+} // namespace literals
+#endif // defined(__cpp_user_defined_literals)
 } // namespace IEC
 
 namespace SI {
 enum UNIT : size_t {
+  B = (size_t)0,
   kB = (size_t)1000,
   mB = kB * (size_t)1000,
   gB = mB * (size_t)1000,
   tB = gB * (size_t)1000,
   pB = tB * (size_t)1000,
-  eB = pB * (size_t)1000
+  eB = pB * (size_t)1000,
+  UNSPECIFIED = SIZE_MAX
 };
 
-inline std::pair<size_t, std::string> parse_size(size_t size) {
-  size_t size_calc;
-  std::string unit;
-  if (size > SI::eB) {
-    unit = "eB";
-    size_calc = size / eB;
-  } else if (size > pB) {
-    unit = "pB";
-    size_calc = size / pB;
-  } else if (size > tB) {
-    unit = "tB";
-    size_calc = size / tB;
-  } else if (size > gB) {
-    unit = "gB";
-    size_calc = size / gB;
-  } else if (size > mB) {
-    unit = "mB";
-    size_calc = size / mB;
-  } else if (size > kB) {
-    unit = "kB";
-    size_calc = size / kB;
-  } else {
-    unit = "B";
-    size_calc = size;
+template <typename T, UNIT _Unit> struct unit_name;
+
+template <> struct unit_name<char, B> {
+  static const char *c_str() { return "B"; }
+};
+
+template <> struct unit_name<char, kB> {
+  static const char *c_str() { return "kB"; }
+};
+template <> struct unit_name<char, mB> {
+  static const char *c_str() { return "mB"; }
+};
+template <> struct unit_name<char, gB> {
+  static const char *c_str() { return "gB"; }
+};
+
+template <> struct unit_name<char, tB> {
+  static const char *c_str() { return "tB"; }
+};
+
+template <> struct unit_name<char, pB> {
+  static const char *c_str() { return "pB"; }
+};
+
+template <> struct unit_name<char, eB> {
+  static const char *c_str() { return "eB"; }
+};
+
+template <> struct unit_name<wchar_t, B> {
+  static const wchar_t *c_str() { return L"B"; }
+};
+
+template <> struct unit_name<wchar_t, kB> {
+  static const wchar_t *c_str() { return L"kB"; }
+};
+template <> struct unit_name<wchar_t, mB> {
+  static const wchar_t *c_str() { return L"mB"; }
+};
+template <> struct unit_name<wchar_t, gB> {
+  static const wchar_t *c_str() { return L"gB"; }
+};
+
+template <> struct unit_name<wchar_t, tB> {
+  static const wchar_t *c_str() { return L"tB"; }
+};
+
+template <> struct unit_name<wchar_t, pB> {
+  static const wchar_t *c_str() { return L"pB"; }
+};
+
+template <> struct unit_name<wchar_t, eB> {
+  static const wchar_t *c_str() { return L"eB"; }
+};
+
+template <UNIT _Unit> struct size {
+public:
+  size(size_t size) : value(size) {}
+
+  operator size_t() const { return value * _Unit; }
+
+  operator std::string() const {
+    return std::to_string(value) + unit_name<char, _Unit>::c_str();
   }
-  return std::pair<size_t, std::string>(size_calc, unit);
+
+  operator std::wstring() const {
+    return std::to_wstring(value) + unit_name<wchar_t, _Unit>::c_str();
+  }
+
+  size_t value;
+
+  static const UNIT unit = _Unit;
+};
+
+template <typename T>
+inline std::pair<size_t, std::basic_string<T>> parse_size(size_t size) {
+  UNIT unit;
+  std::basic_string<T> unit_str;
+  if (size > eB) {
+    unit = eB;
+    unit_str = unit_name<T, eB>::c_str();
+  } else if (size > pB) {
+    unit = pB;
+    unit_str = unit_name<T, pB>::c_str();
+  } else if (size > tB) {
+    unit = tB;
+    unit_str = unit_name<T, tB>::c_str();
+  } else if (size > gB) {
+    unit = gB;
+    unit_str = unit_name<T, gB>::c_str();
+  } else if (size > mB) {
+    unit = mB;
+    unit_str = unit_name<T, mB>::c_str();
+  } else if (size > kB) {
+    unit = kB;
+    unit_str = unit_name<T, kB>::c_str();
+  } else {
+    unit = B;
+    unit_str = unit_name<T, B>::c_str();
+  }
+  return std::pair<size_t, std::basic_string<T>>(size / unit, unit_str);
 }
 
-inline std::string to_string(size_t size) {
-  std::pair<size_t, std::string> result = parse_size(size);
+inline std::string to_string(size_t size, UNIT unit = UNSPECIFIED) {
+  std::pair<size_t, std::string> result = parse_size<char>(size);
   return std::to_string(result.first) + result.second;
 }
+
+inline std::wstring to_wstring(size_t size, UNIT unit = UNSPECIFIED) {
+  std::pair<size_t, std::wstring> result = parse_size<wchar_t>(size);
+  return std::to_wstring(result.first) + result.second;
+}
+
+#if defined(__cpp_user_defined_literals)
+namespace literals {
+inline size<units::SI::kB> operator"" _kB(unsigned long long size) {
+  return size;
+}
+inline size<units::SI::mB> operator"" _mB(unsigned long long size) {
+  return size;
+}
+inline size<units::SI::gB> operator"" _gB(unsigned long long size) {
+  return size;
+}
+inline size<units::SI::tB> operator"" _tB(unsigned long long size) {
+  return size;
+}
+inline size<units::SI::pB> operator"" _pB(unsigned long long size) {
+  return size;
+}
+inline size<units::SI::eB> operator"" _eB(unsigned long long size) {
+  return size;
+}
+} // namespace literals
+#endif
 } // namespace SI
 
 inline std::string to_string(size_t size, POLICY policy) {
-  std::function<std::string(size_t)> parse_fn;
   switch (policy) {
   case POLICY_IEC:
-    parse_fn = IEC::to_string;
-    break;
+    return IEC::to_string(size);
   case POLICY_SI:
-    parse_fn = SI::to_string;
-    break;
+    return SI::to_string(size);
   case POLICY_UNKNOWN:
   default:
     return std::to_string(size) + "B";
   }
-  return parse_fn(size);
+}
+
+inline std::wstring to_wstring(size_t size, POLICY policy) {
+  switch (policy) {
+  case POLICY_IEC:
+    return IEC::to_wstring(size);
+  case POLICY_SI:
+    return SI::to_wstring(size);
+  case POLICY_UNKNOWN:
+  default:
+    return std::to_wstring(size) + L"B";
+  }
 }
 
 inline size_t to_size_t(const std::string &size) {
@@ -184,6 +400,71 @@ inline size_t to_size_t(const std::string &size) {
       unit_size = SI::mB;
       break;
     case 'k':
+      unit_size = SI::kB;
+      break;
+    default:
+      offset = 1;
+      break;
+    }
+  }
+  return std::stoull(size.substr(0, size.size() - offset)) * unit_size;
+}
+
+inline size_t to_size_t(const std::wstring &size) {
+  if ((size.size() < 3) && (size[size.size() - 1] != L'B'))
+    return 0;
+
+  size_t unit_size = 1;
+  ::size_t offset = 0;
+  wchar_t ch = size[size.size() - 2];
+  if (ch == L'i') {
+    if (size.size() < 4)
+      return 0;
+
+    ch = size[size.size() - 3];
+    offset = 3;
+    switch (ch) {
+    case L'E':
+      unit_size = IEC::EiB;
+      break;
+    case L'P':
+      unit_size = IEC::PiB;
+      break;
+    case L'T':
+      unit_size = IEC::TiB;
+      break;
+    case L'G':
+      unit_size = IEC::GiB;
+      break;
+    case L'M':
+      unit_size = IEC::MiB;
+      break;
+    case L'K':
+      unit_size = IEC::KiB;
+      break;
+    default:
+      return 0;
+      break;
+    }
+  } else {
+    offset = 2;
+    switch (ch) {
+    case L'e':
+      unit_size = SI::eB;
+      break;
+    case L'p':
+      unit_size = SI::pB;
+      break;
+    case L't':
+      unit_size = SI::tB;
+      break;
+    case L'g':
+      unit_size = SI::gB;
+      break;
+    case L'm':
+      unit_size = SI::mB;
+      break;
+    case L'k':
       unit_size = SI::kB;
       break;
     default:

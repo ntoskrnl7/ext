@@ -22,73 +22,92 @@
   - [Features](#features)
     - [any_function](#any_function)
       - [Requirements](#requirements-1)
-      - [Example](#example)
+      - [Examples](#examples)
     - [async_result](#async_result)
       - [Requirements](#requirements-2)
-      - [Example](#example-1)
+      - [Examples](#examples-1)
     - [base64](#base64)
       - [Requirements](#requirements-3)
-      - [Example](#example-2)
+      - [Examples](#examples-2)
     - [callback](#callback)
       - [Requirements](#requirements-4)
-      - [Example](#example-3)
+      - [Examples](#examples-3)
     - [cancelable_thread](#cancelable_thread)
       - [Requirements](#requirements-5)
-      - [Example](#example-4)
+      - [Examples](#examples-4)
     - [cdbg](#cdbg)
       - [Requirements](#requirements-6)
-      - [Example](#example-5)
+      - [Examples](#examples-5)
     - [chain](#chain)
       - [Requirements](#requirements-7)
-      - [Example](#example-6)
+      - [Examples](#examples-6)
     - [debug_utils](#debug_utils)
       - [Requirements](#requirements-8)
-      - [Example](#example-7)
+      - [Examples](#examples-7)
     - [collection](#collection)
       - [Requirements](#requirements-9)
-      - [Example](#example-8)
+      - [Examples](#examples-8)
     - [ini](#ini)
       - [Requirements](#requirements-10)
-      - [Example](#example-9)
+      - [Examples](#examples-9)
     - [observable](#observable)
       - [Requirements](#requirements-11)
-      - [Example](#example-10)
+      - [Examples](#examples-10)
     - [path](#path)
-    - [Compiler](#compiler)
-    - [pipe](#pipe)
       - [Requirements](#requirements-12)
-    - [process](#process)
+      - [Examples](#examples-11)
+    - [pipe](#pipe)
       - [Requirements](#requirements-13)
-    - [property](#property)
+      - [Examples](#examples-12)
+    - [process](#process)
       - [Requirements](#requirements-14)
-    - [pstream](#pstream)
+      - [Examples](#examples-13)
+    - [property](#property)
       - [Requirements](#requirements-15)
-    - [safe_object](#safe_object)
+      - [Examples](#examples-14)
+    - [pstream](#pstream)
       - [Requirements](#requirements-16)
-    - [shared_recursive_mutex](#shared_recursive_mutex)
+      - [Examples](#examples-15)
+    - [result](#result)
       - [Requirements](#requirements-17)
-    - [shared_mem](#shared_mem)
+      - [Examples](#examples-16)
+    - [safe_object](#safe_object)
       - [Requirements](#requirements-18)
-    - [singleton](#singleton)
+      - [Examples](#examples-17)
+    - [shared_recursive_mutex](#shared_recursive_mutex)
       - [Requirements](#requirements-19)
-    - [string](#string)
+      - [Examples](#examples-18)
+    - [shared_mem](#shared_mem)
       - [Requirements](#requirements-20)
+      - [Examples](#examples-19)
+    - [singleton](#singleton)
       - [Requirements](#requirements-21)
+      - [Examples](#examples-20)
+    - [string](#string)
+      - [Requirements](#requirements-22)
+      - [Examples](#examples-21)
     - [stl_compat](#stl_compat)
     - [thread_pool](#thread_pool)
-      - [Requirements](#requirements-22)
-    - [type_traits](#type_traits)
       - [Requirements](#requirements-23)
-    - [typeinfo](#typeinfo)
+      - [Examples](#examples-22)
+    - [type_traits](#type_traits)
       - [Requirements](#requirements-24)
-    - [units](#units)
+      - [Examples](#examples-23)
+    - [typeinfo](#typeinfo)
       - [Requirements](#requirements-25)
-    - [url](#url)
+      - [Examples](#examples-24)
+    - [units](#units)
       - [Requirements](#requirements-26)
-    - [version](#version)
+      - [Examples](#examples-25)
+    - [uri](#uri)
       - [Requirements](#requirements-27)
-    - [wordexp](#wordexp)
+      - [Examples](#examples-26)
+    - [version](#version)
       - [Requirements](#requirements-28)
+      - [Examples](#examples-27)
+    - [wordexp](#wordexp)
+      - [Requirements](#requirements-29)
+      - [Examples](#examples-28)
   - [Test](#test)
     - [Windows](#windows)
       - [Visual Studio](#visual-studio)
@@ -129,9 +148,11 @@
 - **std::any** required
 - **if constexpr** required
 
-#### Example
+#### Examples
 
 ```C++
+#include <ext/any_function>
+
 ext::any_function fn(strlen);
 
 if (fn.call("test") == 4) {
@@ -163,7 +184,7 @@ if (result.has_value())
 - Visual Studio 2008 SP1+ with **Boost 1.69.0+**
 - Visual Studio 2017+
 
-#### Example
+#### Examples
 
 ```C++
 #include <ext/async_result>
@@ -190,7 +211,7 @@ for (auto &i : res) {
 - Clang 10.0+
 - Visual Studio 2008 SP1+
 
-#### Example
+#### Examples
 
 - string
 
@@ -280,7 +301,7 @@ for (auto &i : res) {
 - Visual Studio 2008 SP1+ with **Boost 1.69.0+**
 - Visual Studio 2017+
 
-#### Example
+#### Examples
 
 - Register a callbacks.
 
@@ -336,7 +357,7 @@ for (auto &i : res) {
 - Visual Studio 2008 SP1+ with **Boost 1.69.0+**
 - Visual Studio 2017+
 
-#### Example
+#### Examples
 
 - Cancel
   - Like PTHREAD_CANCEL_DEFERRED
@@ -394,7 +415,7 @@ for (auto &i : res) {
 - Clang 10.0+
 - Visual Studio 2008 SP1+
 
-#### Example
+#### Examples
 
 - Sends a string to the debugger for display.
   - Like OutputDebugStringA
@@ -421,7 +442,7 @@ for (auto &i : res) {
 - Clang 10.0+
 - Visual Studio 2008 SP1+
 
-#### Example
+#### Examples
 
 - Implements an http request chain.
 
@@ -552,7 +573,7 @@ for (auto &i : res) {
 - Clang 10.0+
 - Visual Studio 2008 SP1+
 
-#### Example
+#### Examples
 
 - Wait for debugger **(C/C++)**
 
@@ -578,7 +599,7 @@ for (auto &i : res) {
 - Visual Studio 2017+
 - **std::shared_mutex** or **std::shared_timed_mutex** required
 
-#### Example
+#### Examples
 
 - Managed (Automatically add/remove items to the collection.)
 
@@ -703,7 +724,7 @@ for (auto &i : res) {
 - Visual Studio 2010+
 - **std::regex** required
 
-#### Example
+#### Examples
 
 - Create an ini file from a string.
 
@@ -777,19 +798,29 @@ for (auto &i : res) {
 - Visual Studio 2017+
 - **std::shared_mutex or std::shared_timed_mutex required**
 
-#### Example
+#### Examples
 
 ```C++
-
 ```
 
 ### path
 
-### Compiler
+#### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+
+
+#### Examples
+
+```C++
+#include <ext/path>
+
+ext::path::join("aaa", "bbb", "ccc"); // aaa/bbb/ccc
+ext::path::is_relative("./test"); // true
+ext::path::is_relative("/test"); // false
+ext::path::exists("/test");
+```
 
 ### pipe
 
@@ -799,6 +830,11 @@ for (auto &i : res) {
 - Clang 10.0+
 - Visual Studio 2008 SP1+
 
+#### Examples
+
+```C++
+```
+
 ### process
 
 #### Requirements
@@ -806,6 +842,50 @@ for (auto &i : res) {
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+
+
+#### Examples
+
+- stdout
+
+  ```C++
+  #include <ext/process>
+  
+  ext::process process("ls", {"-al", "."});
+  std::cout << process.get_cmdline() << std::endl;
+  std::cout << process.out().rdbuf() << std::endl;
+  if (process.joinable())
+    process.join();
+  ```
+
+- stdin
+
+  ```C++
+  #include <ext/process>
+  
+  ext::process process("more");
+  process.in() << "test 1\n";
+  process.in() << "test 2\ntest 3\n";
+  process.in().close();
+  std::cout << process.out().rdbuf() << std::endl;
+  if (process.joinable())
+    process.join();
+  ```
+
+- pipe (stdin, stdout)
+
+  ```C++
+  #include <ext/process>
+  
+  auto result = ext::process("ps", {"-ef"}) | ext::process("grep", {"root"}) |
+                ext::process("grep", {"/usr"}) | ext::process("wc", {"-l"});
+
+  result.get_cmdline(); // "ps -ef | grep root | grep /usr | wc -l"
+  
+  std::cout << "cmdline : " << result.get_cmdline() << std::endl;
+  std::cout << "result :" << result.out().rdbuf() << std::endl;
+  if (result.joinable())
+    result.join();
+  ```
 
 ### property
 
@@ -816,6 +896,25 @@ for (auto &i : res) {
 - Visual Studio 2017+
 - C++17 or later
 
+#### Examples
+
+```C++
+#include <ext/property>
+
+ext::property<size_t> val1;
+ext::property<size_t> val2;
+ext::property<size_t> total;
+
+val1 = 10;
+val2 = 0;
+total = val1 + val2;
+total.value(); // 10;
+
+val1 = 20;
+val2 = 40;
+total.value(); // 60
+```
+
 ### pstream
 
 #### Requirements
@@ -823,6 +922,62 @@ for (auto &i : res) {
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+
+
+#### Examples
+
+```C++
+```
+
+### result
+
+#### Requirements
+
+- GCC 8.3.0+
+- Clang 10.0+
+- Visual Studio 2008 SP1+
+
+#### Examples
+
+- ext::void_result<error_t>
+
+  ```C++
+  #include <ext/result>
+
+  #include <errno.h>
+
+  ext::void_result<error_t> ok_fn() { return ext::ok<void>(); }
+  ext::void_result<error_t> err_fn() { return ext::err(EBUSY); }
+  
+  ext::void_result<error_t> result = ok_fn();
+  if (result) { // true
+  }
+
+  result = err_fn();
+  if (!result) { // false
+    result.error(); // EBUSY
+  }
+  ```
+
+- ext::result<int, error_t>
+
+  ```C++
+  #include <ext/result>
+
+  #include <errno.h>
+
+  ext::result<int, error_t> ok_fn() { return ext::ok(10); }
+  ext::result<int, error_t> err_fn() { return ext::err(EBUSY); }
+
+  ext::result<int, error_t> result = ok_fn();
+  if (result) { // true
+    result.get(); // 10
+  }
+
+  result = err_fn();
+  if (!result) { // false
+    result.error(); // EBUSY
+  }
+  ```
 
 ### safe_object
 
@@ -834,6 +989,11 @@ for (auto &i : res) {
 - **std::shared_mutex** or **std::shared_timed_mutex** required
 - C++14 or later
 
+#### Examples
+
+```C++
+```
+
 ### shared_recursive_mutex
 
 #### Requirements
@@ -844,6 +1004,11 @@ for (auto &i : res) {
 - Visual Studio 2017+
 - **std::shared_mutex** or **std::shared_timed_mutex** required
 
+#### Examples
+
+```C++
+```
+
 ### shared_mem
 
 #### Requirements
@@ -851,6 +1016,47 @@ for (auto &i : res) {
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+
+
+#### Examples
+
+- Process A
+
+  ```C++
+  #include <ext/shared_mem>
+
+  struct memory_struct0 {
+    int i;
+    int j;
+  };
+
+  shared_mem<memory_struct0> st_mem("memory_struct0", shared_mem_all_access);
+  if (st_mem.opened()) {
+    st_mem.destroy();
+    st_mem.create();
+  }
+
+  if (st_mem.created()) {
+    st_mem->i = 10;
+    st_mem->j = 20;
+  }
+  ```
+
+- Pocess B
+
+  ```C++
+  #include <ext/shared_mem>
+
+  struct memory_struct0 {
+    int i;
+    int j;
+  };
+
+  shared_mem<memory_struct0> st_mem("memory_struct0");
+  if (st_mem.opened()) {
+    st_mem2->i; // 10
+    st_mem2->j; // 20
+  }
+  ```
 
 ### singleton
 
@@ -860,15 +1066,52 @@ for (auto &i : res) {
 - Clang 10.0+
 - Visual Studio 2008 SP1+
 
-### string
+#### Examples
 
-#### Requirements
+```C++
+```
+
+### string
 
 #### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+
+
+#### Examples
+
+- split
+
+  ```C++
+  std::vector<std::string> list = ext::split("a,b,c,d", ",");
+  EXPECT_EQ(list.size(), 4);
+  EXPECT_EQ(list[0], "a");
+  EXPECT_EQ(list[1], "b");
+  EXPECT_EQ(list[2], "c");
+  EXPECT_EQ(list[3], "d");
+  ```
+
+- u8string
+
+  ```C++
+  #define CXX_USE_STD_U8STRING
+  #include <ext/string>
+
+  #if defined(CXX_STD_U8STRING_NOT_SUPPORTED)
+  #if defined(__cpp_user_defined_literals) &&                                    \
+      (CXX_VER >= __cpp_user_defined_literals)
+    std::u8string str = ext::from_u8(u8"한글+english");
+    EXPECT_STREQ((const char *)str.c_str(), u8"한글+english");
+  #else
+    std::u8string str = ext::from_u8(ext::to_u8string(L"한글+english"));
+    EXPECT_STREQ((const char *)str.c_str(), "\xED\x95\x9C\xEA\xB8\x80+english");
+  #endif
+  #else
+    std::u8string str = u8"한글+english";
+    EXPECT_STREQ(str.c_str(), u8"한글+english");
+  #endif
+  ```
 
 ### stl_compat
 
@@ -881,6 +1124,11 @@ for (auto &i : res) {
 - Visual Studio 2017+
 - C++14 or later
 
+#### Examples
+
+```C++
+```
+
 ### type_traits
 
 #### Requirements
@@ -888,6 +1136,45 @@ for (auto &i : res) {
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+
+
+#### Examples
+
+- ext::remove_class
+
+  ```C++
+  #include <ext/type_traits>
+  #include <ext/typeinfo>
+
+  class test_callable {
+  public:
+    std::string operator()(int, char, std::vector<std::string>) { return "1"; }
+  };
+
+  class test_callable_2 {
+  public:
+    void operator()(){};
+    std::string operator()(int, char, std::vector<std::string>) { return "2"; }
+  };
+
+  std::string (test_callable_2::*ptr)(int, char, std::vector<std::string>) =
+      &test_callable_2::operator();
+  EXPECT_STREQ(
+      ext::get_type_name<ext::remove_class<decltype(ptr)>::type>().c_str(),
+      ext::get_type_name<std::string(int, char, std::vector<std::string>)>()
+          .c_str());
+  ```
+
+- ext::deduce_mem_fn
+
+  ```C++
+  #include <ext/type_traits>
+  #include <ext/typeinfo>
+
+  auto ld = []() {};
+  EXPECT_STREQ(
+      ext::get_type_name<void()>().c_str(),
+      ext::get_type_name<ext::deduce_mem_fn<decltype(ld)>::type>().c_str());
+  ```
 
 ### typeinfo
 
@@ -897,32 +1184,166 @@ for (auto &i : res) {
 - Clang 10.0+
 - Visual Studio 2008 SP1+
 
+#### Examples
+
+```C++
+#include <ext/typeinfo>
+
+ext::get_type_name<void()>();
+
+ext::get_type_name(typeid(std::string));
+```
+
 ### units
 
-#### Requirements
-
-- GCC 8.3.0+
-- Clang 10.0+
-- Visual Studio 2008 SP1+
-- Example
-
-    ```C++
-    #include <fstream>
-    std::ifstream ifs("~~~~");
-    ifs.seekg(0, std::ios::end);
-    ext::units::to_string(ifs.tellg(), ext::units::POLICY_IEC);
-    ext::units::to_string(ifs.tellg(), ext::units::POLICY_SI);
-    ```
-
-### url
+- SI
+- IEC
 
 #### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+
+
+#### Examples
+
+- to_string
+
+  ```C++
+  #include <ext/units>
+  
+  // IEC
+  size_t size = 2 * ext::units::IEC::TiB;
+  ext::units::to_string(size, ext::units::POLICY_IEC); // "2TiB"
+  ext::units::to_wstring(size, ext::units::POLICY_IEC); // L"2TiB"
+
+  // SI
+  size = 2 * ext::units::SI::tB;
+  ext::units::to_string(size, ext::units::POLICY_SI); // "2tB"
+  ext::units::to_wstring(size, ext::units::POLICY_SI); // L"2tB"
+  ```
+
+- to_size_t
+
+  ```C++
+  #include <ext/units>
+  
+  // IEC
+  ext::units::to_size_t("2TiB"); // 2 * ext::units::IEC::TiB
+  ext::units::to_size_t(L"2TiB"); // 2 * ext::units::IEC::TiB
+
+  // SI
+  ext::units::to_size_t("2tB"); // 2 * ext::units::SI::tB
+  ext::units::to_size_t(L"2tB"); // 2 * ext::units::SI::tB
+  ```
+
+- User-defined literals
+
+  ```C++
+  #include <ext/units>
+  
+  // IEC
+  using namespace ext::units::IEC::literals;
+
+  size_t value = 5_MiB;
+  EXPECT_EQ(value, 5 * ext::units::IEC::MiB);
+
+  std::string str = 5_MiB;
+  EXPECT_STREQ(str.c_str(), "5MiB");
+
+  std::wstring wstr = 5_MiB;
+  EXPECT_STREQ(wstr.c_str(), L"5MiB");
+
+  // SI
+  using namespace ext::units::SI::literals;
+  size_t value = 5_mB;
+  EXPECT_EQ(value, 5 * ext::units::SI::mB);
+
+  std::string str = 5_mB;
+  EXPECT_STREQ(str.c_str(), "5mB");
+
+  std::wstring wstr = 5_mB;
+  EXPECT_STREQ(wstr.c_str(), L"5mB");
+  ```
+
+### uri
+
+#### Requirements
+
+- GCC 8.3.0+
+- Clang 10.0+
+- Visual Studio 2008 SP1+
+
+#### Examples
+
+- uri
+
+  ```C++
+  ext::uri u("https://localhost:8443/test");
+  EXPECT_STREQ(u.scheme.c_str(), "https");
+  EXPECT_STREQ(u.host.c_str(), "localhost");
+  EXPECT_EQ(u.port, 8443);
+  EXPECT_STREQ(u.path.c_str(), "/test");
+  EXPECT_STREQ(u.scheme_host_port().c_str(), "https://localhost:8443");
+
+  u = ext::uri("foo://info.example.com?fred");
+  EXPECT_STREQ(u.scheme.c_str(), "foo");
+  EXPECT_STREQ(u.host.c_str(), "info.example.com");
+  EXPECT_TRUE(u.path.empty());
+  EXPECT_STREQ(u.query.c_str(), "?fred");
+  ```
+
+- wuri
+
+  ```C++
+  ext::wuri u(L"https://localhost:8443/test");
+  EXPECT_STREQ(u.scheme.c_str(), L"https");
+  EXPECT_STREQ(u.host.c_str(), L"localhost");
+  EXPECT_EQ(u.port, 8443);
+  EXPECT_STREQ(u.path.c_str(), L"/test");
+  EXPECT_STREQ(u.scheme_host_port().c_str(), L"https://localhost:8443");
+
+  u = ext::wuri(L"foo://info.example.com?fred");
+  EXPECT_STREQ(u.scheme.c_str(), L"foo");
+  EXPECT_STREQ(u.host.c_str(), L"info.example.com");
+  EXPECT_TRUE(u.path.empty());
+  EXPECT_STREQ(u.query.c_str(), L"?fred");
+  ```
+
+- User-defined literals
+
+  ```C++
+  #include <ext/uri>
+  
+  using namespace ext::literals;
+
+  ext::uri u = "http://test.com:1234/test?key=value&key1=value1"_uri;
+  ext::wuri u = L"http://test.com:1234/test?key=value&key1=value1"_uri;
+  ```
+
+- encode
+
+  ```C++
+  #define CXX_USE_STD_U8STRING
+  #include <ext/uri>
+
+  #if defined(CXX_STD_U8STRING_NOT_SUPPORTED)
+  #if defined(__cpp_user_defined_literals) &&                                    \
+    (CXX_VER >= __cpp_user_defined_literals)
+    const std::u8string uri_u8str = ext::from_u8(u8"https://www.google.com/search?q=한글+english");
+  #else
+    const std::u8string uri_u8str =ext::to_u8string(L"https://www.google.com/search?q=한글+english");
+  #endif
+  #else
+    const std::u8string uri_u8str = u8"https://www.google.com/search?q=한글+english";
+  #endif
+    ext::uri u(uri_u8str);
+    ext::wuri u(uri_u8str);
+  ```
 
 ### version
+
+[Semantic Versioning](https://semver.org/)
 
 #### Requirements
 
@@ -932,13 +1353,84 @@ for (auto &i : res) {
 - Visual Studio 2010+
 - **std::regex** required
 
+#### Examples
+
+- Basic
+
+  ```C++
+  ext::version v("a.b.c"); // std::invalid_argument
+
+  ext::version v("0.0.4");
+  v.major(); // 0
+  v.minor(); // 0
+  v.patch(); // 4
+  v.released(); // true
+  v.prerelease(); // ""
+  v.build_metadata(); // ""
+
+  ext::version v("1.1.2-prerelease+meta");
+  v.major(); // 1
+  v.minor(); // 1
+  v.patch(); // 2
+  v.released(); // false
+  v.prerelease(); // "prerelease"
+  v.build_metadata(); // "meta"
+  ```
+
+- std::hash
+
+  ```C++
+  std::unordered_map<ext::version, std::string> map = {
+    {ext::version("1.2.3"), "abc"},
+    {ext::version("5.0.0"), "def"},
+    {ext::version("1.2.3-prerelease"), "ghi"},
+  };
+
+  auto it = map.find(ext::version("1.2.3"));
+  EXPECT_EQ(it->second, "abc");
+
+  it = map.find(ext::version("5.0.0"));
+  EXPECT_NE(it, map.end());
+  EXPECT_EQ(it->second, "def");
+
+  it = map.find(ext::version("1.2.0"));
+  EXPECT_EQ(it, map.end());
+
+  it = map.find(ext::version("1.2.3-prerelease"));
+  EXPECT_NE(it, map.end());
+  EXPECT_EQ(it->second, "ghi");
+
+  it = map.find(ext::version("1.2.3-prerelease+meta"));
+  EXPECT_NE(it, map.end());
+  EXPECT_EQ(it->second, "ghi");
+
+  it = map.find(ext::version("1.2.3-test+meta"));
+  EXPECT_EQ(it, map.end());
+  ```
+
 ### wordexp
+
+Expands environment-variable strings and replaces them with the values defined for the current user.
 
 #### Requirements
 
 - GCC 8.3.0+
 - Clang 10.0+
 - Visual Studio 2008 SP1+
+
+#### Examples
+
+```C++
+#if defined(_WIN32)
+  std::string system_drive = ext::wordexp("%SYSTEMDRIVE%");
+  std::string windir = ext::wordexp("%WINDIR%");
+  std::string user_profile = ext::wordexp("%USERPROFILE%");
+  std::string user_name = ext::wordexp("%USERNAME%");
+#else
+  std::string home_path = ext::wordexp("$HOME");
+  std::string user = ext::wordexp("$USER");
+#endif
+```
 
 ---
 
@@ -1022,7 +1514,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.6")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.9")
 
 # link dependencies
 target_link_libraries(tests ext)
