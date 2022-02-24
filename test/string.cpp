@@ -16,7 +16,6 @@ TEST(string_test, stoul) {
   EXPECT_EQ(std::stoul(L"12345"), 12345);
   EXPECT_EQ(std::stoul(L"0xffffffff", nullptr, 16),
             std::numeric_limits<unsigned long>::max());
-
 #else
   EXPECT_EQ((uint32_t)std::stoul("-12345"), 4294954951);
   EXPECT_EQ(std::stoul("12345"), 12345);

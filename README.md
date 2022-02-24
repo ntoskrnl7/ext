@@ -50,64 +50,67 @@
     - [ini](#ini)
       - [Requirements](#requirements-10)
       - [Examples](#examples-9)
-    - [observable](#observable)
+    - [lang](#lang)
       - [Requirements](#requirements-11)
       - [Examples](#examples-10)
-    - [path](#path)
+    - [observable](#observable)
       - [Requirements](#requirements-12)
       - [Examples](#examples-11)
-    - [pipe](#pipe)
+    - [path](#path)
       - [Requirements](#requirements-13)
       - [Examples](#examples-12)
-    - [process](#process)
+    - [pipe](#pipe)
       - [Requirements](#requirements-14)
       - [Examples](#examples-13)
-    - [property](#property)
+    - [process](#process)
       - [Requirements](#requirements-15)
       - [Examples](#examples-14)
-    - [pstream](#pstream)
+    - [property](#property)
       - [Requirements](#requirements-16)
       - [Examples](#examples-15)
-    - [result](#result)
+    - [pstream](#pstream)
       - [Requirements](#requirements-17)
       - [Examples](#examples-16)
-    - [safe_object](#safe_object)
+    - [result](#result)
       - [Requirements](#requirements-18)
       - [Examples](#examples-17)
-    - [shared_recursive_mutex](#shared_recursive_mutex)
+    - [safe_object](#safe_object)
       - [Requirements](#requirements-19)
       - [Examples](#examples-18)
-    - [shared_mem](#shared_mem)
+    - [shared_recursive_mutex](#shared_recursive_mutex)
       - [Requirements](#requirements-20)
       - [Examples](#examples-19)
-    - [singleton](#singleton)
+    - [shared_mem](#shared_mem)
       - [Requirements](#requirements-21)
       - [Examples](#examples-20)
-    - [string](#string)
+    - [singleton](#singleton)
       - [Requirements](#requirements-22)
       - [Examples](#examples-21)
-    - [stl_compat](#stl_compat)
-    - [thread_pool](#thread_pool)
+    - [string](#string)
       - [Requirements](#requirements-23)
       - [Examples](#examples-22)
-    - [type_traits](#type_traits)
+    - [stl_compat](#stl_compat)
+    - [thread_pool](#thread_pool)
       - [Requirements](#requirements-24)
       - [Examples](#examples-23)
-    - [typeinfo](#typeinfo)
+    - [type_traits](#type_traits)
       - [Requirements](#requirements-25)
       - [Examples](#examples-24)
-    - [units](#units)
+    - [typeinfo](#typeinfo)
       - [Requirements](#requirements-26)
       - [Examples](#examples-25)
-    - [uri](#uri)
+    - [units](#units)
       - [Requirements](#requirements-27)
       - [Examples](#examples-26)
-    - [version](#version)
+    - [uri](#uri)
       - [Requirements](#requirements-28)
       - [Examples](#examples-27)
-    - [wordexp](#wordexp)
+    - [version](#version)
       - [Requirements](#requirements-29)
       - [Examples](#examples-28)
+    - [wordexp](#wordexp)
+      - [Requirements](#requirements-30)
+      - [Examples](#examples-29)
   - [Test](#test)
     - [Windows](#windows)
       - [Visual Studio](#visual-studio)
@@ -787,6 +790,75 @@ for (auto &i : res) {
     [TEST]
     Y=20
     ```
+
+### lang
+
+#### Requirements
+
+- GCC 8.3.0+
+- Clang 10.0+
+- Visual Studio 2008 SP1+
+
+#### Examples
+
+- ko_kr::syllable
+
+  ```C++
+  #include <ext/lang>
+
+  ext::lang::ko_kr::syllable::letter lt = L'a';
+  EXPECT_FALSE(lt.valid());
+
+  lt = L'ㄱ';
+  EXPECT_FALSE(lt.valid());
+  EXPECT_EQ(lt.onset, L'ㄱ');
+
+  lt = L'ㅏ';
+  EXPECT_FALSE(lt.valid());
+  EXPECT_EQ(lt.nucleus, L'ㅏ');
+
+  lt = L'가';
+  EXPECT_TRUE(lt.valid());
+  EXPECT_EQ(lt.onset, L'ㄱ');
+  EXPECT_EQ(lt.nucleus, L'ㅏ');
+
+  lt = L'간';
+  EXPECT_TRUE(lt.valid());
+  EXPECT_EQ(lt.onset, L'ㄱ');
+  EXPECT_EQ(lt.nucleus, L'ㅏ');
+  EXPECT_EQ(lt.coda, L'ㄴ');
+  ```
+
+- ko_kr::postposition
+
+  ```C++
+  #include <ext/lang>
+
+  using namespace ext::lang::ko_kr;
+  EXPECT_STREQ(postposition::topic(L"산").c_str(), L"은");
+  EXPECT_STREQ(postposition::topic(L"바다").c_str(), L"는");
+
+  EXPECT_STREQ(postposition::identifier(L"산").c_str(), L"이");
+  EXPECT_STREQ(postposition::identifier(L"바다").c_str(), L"가");
+
+  EXPECT_STREQ(postposition::objective(L"산").c_str(), L"을");
+  EXPECT_STREQ(postposition::objective(L"바다").c_str(), L"를");
+
+  EXPECT_STREQ(postposition::destination(L"산").c_str(), L"으로");
+  EXPECT_STREQ(postposition::destination(L"바다").c_str(), L"로");
+
+  EXPECT_STREQ(postposition::destination(L"산").c_str(), L"으로");
+  EXPECT_STREQ(postposition::destination(L"바다").c_str(), L"로");
+
+  EXPECT_STREQ(postposition::conjunction(L"산").c_str(), L"과");
+  EXPECT_STREQ(postposition::conjunction(L"바다").c_str(), L"와");
+
+  EXPECT_STREQ(postposition::vocative(L"산").c_str(), L"아");
+  EXPECT_STREQ(postposition::vocative(L"바다").c_str(), L"야");
+
+  EXPECT_STREQ(postposition::exclamation(L"산").c_str(), L"이여");
+  EXPECT_STREQ(postposition::exclamation(L"바다").c_str(), L"여");
+  ```
 
 ### observable
 
@@ -1514,7 +1586,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.9")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.10")
 
 # link dependencies
 target_link_libraries(tests ext)
