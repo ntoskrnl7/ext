@@ -156,12 +156,12 @@ public:
           throw ext::canceled_exception();
 #if defined(__APPLE__)
         throw ext::canceled_exception();
-#endif // defined(__APPLE__)
+#endif
       };
       pthread_cleanup_push(cancel_immediately_ ? cancel_immediately_routine
                                                : cancel_routine,
                            this);
-#endif
+#endif // EXT_CANCELABLE_THREAD_USE_PTHREAD
       try {
         ready_ = true;
         cv_.notify_all();
@@ -196,7 +196,7 @@ public:
     cancel_requsted_ = true;
 
     std::unique_lock<std::mutex> lk(mtx_);
-#ifdef __cpp_lambdas
+#if defined(__cpp_lambdas)
     cv_.wait(lk, [this]() { return ready_; });
 #else
     cv_.wait(lk, std::bind(&cancelable_thread::ready, this));
@@ -264,7 +264,7 @@ public:
   template <typename _Rep, typename _Period>
   bool wait_for(const std::chrono::duration<_Rep, _Period> &time) {
     std::unique_lock<std::mutex> lk(mtx_);
-#ifdef __cpp_lambdas
+#if defined(__cpp_lambdas)
     return cv_.wait_for(lk, time, [this]() { return completed_ || canceled_; });
 #else
     return cv_.wait_for(lk, time,
