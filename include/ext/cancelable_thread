@@ -169,17 +169,23 @@ public:
         ready_ = true;
         std::cout << "debug 3" << std::endl;
         cv_.notify_all();
+        std::cout << "debug 4 : " << cancel_requsted_ << std::endl;
         if (cancel_requsted_)
           throw canceled_exception();
+        std::cout << "debug 5" << std::endl;
         fn();
+        std::cout << "debug 6" << std::endl;
         completed_ = true;
+        std::cout << "debug 7" << std::endl;
       } catch (const canceled_exception &) {
         canceled_ = true;
       }
+      std::cout << "debug 8" << std::endl;
       cv_.notify_all();
 #if EXT_CANCELABLE_THREAD_USE_PTHREAD
       pthread_cleanup_pop(0);
 #endif
+      std::cout << "debug 9" << std::endl;
     });
 #else  // !defined(__cpp_lambdas)
     thread_ =
@@ -194,20 +200,22 @@ public:
   bool canceled() const { return canceled_; }
 
   bool cancel_request() {
+    std::cout << "cancel_request debug 0" << std::endl;
     if (!thread_.joinable())
       return false;
 
     cancel_requsted_ = true;
-
+    std::cout << "cancel_request debug 1" << std::endl;
     std::unique_lock<std::mutex> lk(mtx_);
 #if defined(__cpp_lambdas)
     cv_.wait(lk, [this]() { return ready_; });
 #else
     cv_.wait(lk, std::bind(&cancelable_thread::ready, this));
 #endif
+    std::cout << "cancel_request debug 2" << std::endl;
     ready_ = false;
     cv_.notify_all();
-
+    std::cout << "cancel_request debug 3" << std::endl;
 #if EXT_CANCELABLE_THREAD_USE_PTHREAD
     pthread_cancel(thread_.native_handle());
 #else // !EXT_CANCELABLE_THREAD_USE_PTHREAD
@@ -247,6 +255,7 @@ public:
         throw failure_exception("Failed to ResumeThread");
     }
 #endif // !EXT_CANCELABLE_THREAD_USE_PTHREAD
+    std::cout << "cancel_request debug 4" << std::endl;
     return true;
   }
 
