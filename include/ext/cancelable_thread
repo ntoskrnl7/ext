@@ -273,8 +273,10 @@ public:
     std::cout << "join debug 0 : " << cancel_requsted_ << std::endl;
     std::cout << "join debug 1 : " << canceled_ << std::endl;
     std::cout << "join debug 2 : " << completed_ << std::endl;
+    std::cout << "join debug 3 : " << thread_.joinable() << std::endl;
     if (thread_.joinable())
       thread_.join();
+    std::cout << "join debug 4 : " << std::endl;
   }
 
   template <typename _Rep, typename _Period>
