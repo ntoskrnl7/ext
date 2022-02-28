@@ -1123,7 +1123,7 @@ using ext::move;
 namespace std {
 #ifdef __cpp_variadic_templates
 template <typename T, typename... Args>
-inline std::unique_ptr<T> make_unique(Args &&...__args) {
+inline std::unique_ptr<T> make_unique(Args &&... __args) {
   return std::unique_ptr<T>(new T(std::forward<Args>(__args)...));
 }
 #else
@@ -1146,7 +1146,7 @@ inline std::unique_ptr<T> make_unique(const A0 &a0) {
 namespace std {
 #ifdef __cpp_variadic_templates
 template <typename T, typename... Args>
-inline std::shared_ptr<T> make_shared(Args &&...__args) {
+inline std::shared_ptr<T> make_shared(Args &&... __args) {
   return std::shared_ptr<T>(new T(std::forward<Args>(__args)...));
 }
 #else
@@ -1536,7 +1536,7 @@ template <typename... Ts> using void_t = typename make_void<Ts...>::type;
 // std::thread (no boost)
 //
 #if (!defined(_EXT_STD_THREAD_)) && defined(CXX_USE_STD_THREAD) &&             \
-    defined(_MSC_VER) && (_MSC_VER < 1600)
+    defined(_MSC_VER) && (_MSC_VER < 1700)
 
 #define _EXT_STD_THREAD_
 #include <functional>
@@ -1601,7 +1601,7 @@ private:
 };
 } // namespace std
 #endif // (!defined(_EXT_STD_THREAD_)) && defined(CXX_USE_STD_THREAD) &&
-       // defined(_MSC_VER) && (_MSC_VER < 1600)
+       // defined(_MSC_VER) && (_MSC_VER < 1700)
 
 #if defined(_STRING_) && defined(_MSC_VER) && (_MSC_VER == 1600)
 #ifndef _EXT_STD_TO_STRING_
