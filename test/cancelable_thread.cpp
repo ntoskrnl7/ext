@@ -111,7 +111,7 @@ TEST(cancelable_thread_test, cancel) {
   EXPECT_TRUE(t.joinable());
   std::cout << "cancel debug 2" << std::endl;
   t.cancel_request();
-  std::cout << "cancelable_thread_test::cancel thread cancel_requested\n";
+  std::cout << "cancelable_thread_test::cancel thread cancel_requested" << std::endl;
 
   t.join();
   EXPECT_FALSE(t.completed());

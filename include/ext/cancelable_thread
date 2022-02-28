@@ -270,6 +270,9 @@ public:
   bool joinable() const { return thread_.joinable(); }
 
   void join() {
+    std::cout << "join debug 0 : " << cancel_requsted_ << std::endl;
+    std::cout << "join debug 1 : " << canceled_ << std::endl;
+    std::cout << "join debug 2 : " << completed_ << std::endl;
     if (thread_.joinable())
       thread_.join();
   }
