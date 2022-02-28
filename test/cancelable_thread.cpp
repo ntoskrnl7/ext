@@ -9,6 +9,7 @@
 #include <boost/thread/mutex.hpp>
 #endif
 
+#include <iostream>
 #include <ext/cancelable_thread>
 #include <gtest/gtest.h>
 
@@ -104,9 +105,11 @@ TEST(cancelable_thread_test, cancel) {
     reached = false;
     std::cout << "cancelable_thread_test::cancel stopped\n";
   });
+  std::cout << "cancel debug 0" << std::endl;
   std::this_thread::sleep_for(std::chrono::seconds(1));
-
+  std::cout << "cancel debug 1" << std::endl;
   EXPECT_TRUE(t.joinable());
+  std::cout << "cancel debug 2" << std::endl;
   t.cancel_request();
   std::cout << "cancelable_thread_test::cancel thread cancel_requested\n";
 

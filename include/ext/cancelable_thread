@@ -130,6 +130,7 @@ public:
         cancel_requsted_(false), canceled_(false), completed_(false) {
 #if defined(__cpp_lambdas)
     thread_ = std::thread([this, fn]() {
+      std::cout << "debug 0" << std::endl;
 #if EXT_CANCELABLE_THREAD_USE_PTHREAD
       pthread_setcanceltype(cancel_immediately_ ? PTHREAD_CANCEL_ASYNCHRONOUS
                                                 : PTHREAD_CANCEL_DEFERRED,
@@ -161,9 +162,12 @@ public:
       pthread_cleanup_push(cancel_immediately_ ? cancel_immediately_routine
                                                : cancel_routine,
                            this);
+      std::cout << "debug 1" << std::endl;
 #endif // EXT_CANCELABLE_THREAD_USE_PTHREAD
       try {
+        std::cout << "debug 2" << std::endl;
         ready_ = true;
+        std::cout << "debug 3" << std::endl;
         cv_.notify_all();
         if (cancel_requsted_)
           throw canceled_exception();
