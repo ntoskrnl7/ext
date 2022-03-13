@@ -9,9 +9,9 @@
 #include <boost/thread/mutex.hpp>
 #endif
 
-#include <iostream>
 #include <ext/cancelable_thread>
 #include <gtest/gtest.h>
+#include <iostream>
 
 #if defined(_EXT_CANCELABLE_THREAD_)
 class test_class {
@@ -64,7 +64,8 @@ TEST(cancelable_thread_test, cancel_immediately) {
 
   EXPECT_TRUE(t.joinable());
   t.cancel_request();
-  std::cout << "cancelable_thread_test::cancel_immediately thread cancel_requested\n";
+  std::cout
+      << "cancelable_thread_test::cancel_immediately thread cancel_requested\n";
 
   t.join();
   EXPECT_FALSE(t.completed());
@@ -85,6 +86,10 @@ TEST(cancelable_thread_test, cancel_immediately) {
        // !(defined(_WIN32) && defined(_INC__MINGW_H) && defined(__clang__))
 
 TEST(cancelable_thread_test, cancel) {
+  char *msystem = getenv("MSYSTEM");
+  if (msystem && strcmp(msystem, "MSYS") == 0)
+    return;
+
   std::mutex mtx;
   bool reached = false;
   bool destructor_invoked[] = {false, false};
@@ -95,9 +100,6 @@ TEST(cancelable_thread_test, cancel) {
     std::unique_lock<std::mutex> lk(mtx);
 #if EXT_CANCELABLE_THREAD_USE_PTHREAD
     std::this_thread::sleep_for(std::chrono::seconds(50));
-    char *msystem = getenv("MSYSTEM");
-    if (msystem && strcmp(msystem, "MSYS") == 0)
-      throw ext::canceled_exception();
 #else
     if (SleepEx(50000, TRUE) == WAIT_IO_COMPLETION)
       throw ext::canceled_exception();
@@ -111,7 +113,8 @@ TEST(cancelable_thread_test, cancel) {
   EXPECT_TRUE(t.joinable());
   std::cout << "cancel debug 2" << std::endl;
   t.cancel_request();
-  std::cout << "cancelable_thread_test::cancel thread cancel_requested" << std::endl;
+  std::cout << "cancelable_thread_test::cancel thread cancel_requested"
+            << std::endl;
 
   t.join();
   EXPECT_FALSE(t.completed());
