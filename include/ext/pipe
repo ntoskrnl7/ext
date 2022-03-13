@@ -27,16 +27,23 @@
 #endif
 
 namespace ext {
-class pipe {
+template <typename T = char> class basic_pipe {
 public:
-  pipe() {
+  typedef T value_type;
+
+  typedef pstream<std::ios::in | std::ios::binary, std::basic_istream<T>>
+      ipstream;
+  typedef pstream<std::ios::out | std::ios::binary, std::basic_ostream<T>>
+      opstream;
+
+  basic_pipe() {
 #if defined(__GLIBCXX__) && defined(_WIN32)
     int child[2];
     if (::_pipe(child, 1024 * 1024, O_BINARY) == -1)
       throw std::runtime_error("Failed to pipe");
 
-    read_ = ext::ipstream(child[0]);
-    write_ = ext::opstream(child[1]);
+    in_ = ipstream(child[0]);
+    out_ = opstream(child[1]);
 #elif defined(_WIN32)
     SECURITY_ATTRIBUTES sa;
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -48,33 +55,36 @@ public:
     if (CreatePipe(&read, &write, &sa, 0) != TRUE)
       throw std::runtime_error("Failed to CreatePipe");
 #ifdef __cpp_rvalue_references
-    read_ = ext::ipstream(read);
-    write_ = ext::opstream(write);
+    in_ = ipstream(read);
+    out_ = opstream(write);
 #else
-    read_.swap(ext::ipstream(read));
-    write_.swap(ext::opstream(write));
+    in_.swap(ipstream(read));
+    out_.swap(opstream(write));
 #endif
 #else
     int child[2];
     if (::pipe(child) == -1)
       throw std::runtime_error("Failed to pipe");
 
-    read_ = ext::ipstream(child[0]);
-    write_ = ext::opstream(child[1]);
+    in_ = ipstream(child[0]);
+    out_ = opstream(child[1]);
 #endif
   }
 
-  ~pipe() {
-    read_.close();
-    write_.close();
+  ~basic_pipe() {
+    in_.close();
+    out_.close();
   }
 
-  ipstream &read() { return read_; }
-  opstream &write() { return write_; }
+  ipstream &in() { return in_; }
+  opstream &out() { return out_; }
 
 private:
-  ext::ipstream read_;
-  ext::opstream write_;
+  ipstream in_;
+  opstream out_;
 };
+
+typedef basic_pipe<char> pipe;
+typedef basic_pipe<wchar_t> wpipe;
 } // namespace ext
 #endif // _EXT_PIPE_

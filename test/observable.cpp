@@ -19,15 +19,9 @@
 
 #define CXX_USE_STD_MOVE
 #define CXX_USE_NULLPTR
+#define CXX_USE_STD_THREAD
 #include <ext/observable>
-#include <ext/shared_recursive_mutex>
 
-#if !defined(_EXT_STD_CHRONO_) && !defined(CXX_STD_CHRONO_NOT_SUPPORTED)
-#include <chrono>
-#endif
-#if !defined(_EXT_STD_THREAD_) && !defined(CXX_STD_THREAD_NOT_SUPPORTED)
-#include <thread>
-#endif
 #if !defined(_EXT_STD_CONDITION_VARIABLE_) &&                                  \
     !defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED)
 #include <condition_variable>
@@ -36,8 +30,6 @@
 #include <mutex>
 #endif
 #include <ext/stl_compat>
-
-#include <iostream>
 
 class object_with_name {
 public:

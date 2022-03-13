@@ -337,18 +337,18 @@ private:
     si.cb = sizeof(si);
     si.dwFlags |= STARTF_USESTDHANDLES;
 #ifdef __cpp_rvalue_references
-    in_ = std::move(in.write());
-    out_ = std::move(out.read());
-    err_ = std::move(err.read());
+    in_ = std::move(in.out());
+    out_ = std::move(out.in());
+    err_ = std::move(err.in());
 #else
-    in_.swap(in.write());
-    out_.swap(out.read());
-    err_.swap(err.read());
+    in_.swap(in.out());
+    out_.swap(out.in());
+    err_.swap(err.in());
 #endif // __cpp_rvalue_references
 #if defined(__GLIBCXX__)
-    si.hStdInput = (HANDLE)_get_osfhandle(in.read().native_handle());
-    si.hStdOutput = (HANDLE)_get_osfhandle(out.write().native_handle());
-    si.hStdError = (HANDLE)_get_osfhandle(err.write().native_handle());
+    si.hStdInput = (HANDLE)_get_osfhandle(in.in().native_handle());
+    si.hStdOutput = (HANDLE)_get_osfhandle(out.out().native_handle());
+    si.hStdError = (HANDLE)_get_osfhandle(err.out().native_handle());
     SetHandleInformation((HANDLE)_get_osfhandle(in_.native_handle()),
                          HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation((HANDLE)_get_osfhandle(out_.native_handle()),
@@ -356,9 +356,9 @@ private:
     SetHandleInformation((HANDLE)_get_osfhandle(err_.native_handle()),
                          HANDLE_FLAG_INHERIT, 0);
 #else
-    si.hStdInput = in.read().native_handle();
-    si.hStdOutput = out.write().native_handle();
-    si.hStdError = err.write().native_handle();
+    si.hStdInput = in.in().native_handle();
+    si.hStdOutput = out.out().native_handle();
+    si.hStdError = err.out().native_handle();
     SetHandleInformation(in_.native_handle(), HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(out_.native_handle(), HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(err_.native_handle(), HANDLE_FLAG_INHERIT, 0);
@@ -394,17 +394,17 @@ private:
     }
 
     if (id_) {
-      in_ = std::move(in.write());
-      out_ = std::move(out.read());
-      err_ = std::move(err.read());
+      in_ = std::move(in.out());
+      out_ = std::move(out.in());
+      err_ = std::move(err.in());
       return true;
     }
-    dup2(in.read().native_handle(), STDIN_FILENO);
-    dup2(out.write().native_handle(), STDOUT_FILENO);
-    dup2(err.write().native_handle(), STDERR_FILENO);
-    ::close(in.write().native_handle());
-    ::close(out.read().native_handle());
-    ::close(err.read().native_handle());
+    dup2(in.in().native_handle(), STDIN_FILENO);
+    dup2(out.out().native_handle(), STDOUT_FILENO);
+    dup2(err.out().native_handle(), STDERR_FILENO);
+    ::close(in.out().native_handle());
+    ::close(out.in().native_handle());
+    ::close(err.in().native_handle());
 
     if (working_directory.c_str())
       if (chdir(working_directory.c_str()) == -1) {

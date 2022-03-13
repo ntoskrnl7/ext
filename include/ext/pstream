@@ -8,11 +8,16 @@
  */
 #pragma once
 
+#ifndef _EXT_PSTREAM_
+#define _EXT_PSTREAM_
+
 #define CXX_USE_NULLPTR
 #include "stl_compat"
 
-#ifndef _EXT_PSTREAM_
-#define _EXT_PSTREAM_
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <vector>
 
 #if defined(__GLIBCXX__)
 #include <ext/stdio_filebuf.h>
@@ -25,11 +30,6 @@
 #include <unistd.h>
 #endif
 #endif
-
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <vector>
 
 namespace ext {
 #if defined(__GLIBCXX__)
@@ -164,17 +164,17 @@ public:
   basic_pipebuf(native_handle_t handle, std::ios_base::openmode mode)
       : handle_(handle) {
     if (mode & std::ios::in) {
-      buffer.resize(putback_begin + buffer_size);
+      buffer.resize(putback_begin + buffer_size + 1);
       streambuf_type::setg(&buffer[putback_begin], &buffer[putback_begin],
                            &buffer[putback_begin]);
     }
   }
 
   //
-  //  std::ostream
+  // Put area
   //
 protected:
-  virtual int_type overflow(int_type c) {
+  virtual int_type overflow(int_type c) override {
     if (c != _Traits::eof()) {
       char_type ch = static_cast<char_type>(c);
       if (xsputn(&ch, 1) != 1)
@@ -183,23 +183,24 @@ protected:
     return c;
   }
 
-  virtual std::streamsize xsputn(const char_type *s, std::streamsize num) {
+  virtual std::streamsize xsputn(const char_type *s,
+                                 std::streamsize num) override {
 #if defined(_WIN32)
     DWORD bytesWritten = 0;
-    return WriteFile(handle_, s, static_cast<DWORD>(num), &bytesWritten,
-                     NULL) == TRUE
-               ? static_cast<std::streamsize>(bytesWritten)
+    return WriteFile(handle_, s, static_cast<DWORD>(num) * sizeof(char_type),
+                     &bytesWritten, NULL) == TRUE
+               ? static_cast<std::streamsize>(bytesWritten / sizeof(char_type))
                : -1;
 #else
-    return ::write(handle_, s, num);
+    return ::write(handle_, s, num * sizeof(char_type)) / sizeof(char_type);
 #endif
   }
 
   //
-  // std::istream
+  // Get area
   //
 protected:
-  virtual int_type underflow() {
+  virtual int_type underflow() override {
     if (streambuf_type::gptr() < streambuf_type::egptr())
       return _Traits::to_int_type(*streambuf_type::gptr());
 
@@ -212,13 +213,14 @@ protected:
 
 #if defined(_WIN32)
     DWORD bytesRead = 0;
-    size_t len =
-        ::ReadFile(handle_, &buffer[putback_begin],
-                   static_cast<DWORD>(buffer_size), &bytesRead, NULL) == TRUE
-            ? static_cast<size_t>(bytesRead)
-            : 0;
+    size_t len = ::ReadFile(handle_, &buffer[putback_begin],
+                            static_cast<DWORD>(buffer_size * sizeof(char_type)),
+                            &bytesRead, NULL) == TRUE
+                     ? static_cast<size_t>(bytesRead)
+                     : 0;
 #else
-    size_t len = ::read(handle_, &buffer[putback_begin], buffer_size);
+    size_t len = ::read(handle_, &buffer[putback_begin],
+                        buffer_size * sizeof(char_type));
 #endif
     if (len <= 0)
       return _Traits::eof();
@@ -226,7 +228,7 @@ protected:
     streambuf_type::setg(&buffer[putback_begin - putback_len],
                          &buffer[putback_begin], &buffer[putback_begin + len]);
     return _Traits::to_int_type(*streambuf_type::gptr());
-  } // namespace ext
+  }
 
 private:
   std::vector<char_type> buffer;
@@ -252,19 +254,18 @@ public:
 };
 #endif
 
-typedef basic_pipebuf<char> pipebuf;
-
 #if defined(_MSC_VER) && _MSC_VER < 1600
 template <std::ios::openmode M, typename T> class pstream : public T {
 public:
-  typedef typename pipebuf::native_handle_t native_handle_t;
+  typedef typename basic_pipebuf<typename T::char_type>::native_handle_t
+      native_handle_t;
 
   pstream() : buf_(nullptr), T(nullptr) {}
 #ifdef __cpp_rvalue_references
   pstream(pstream &&other) : buf_(nullptr), T(nullptr) { swap(other); }
 #endif
   pstream(native_handle_t handle)
-      : buf_(new ext::pipebuf(handle, M)), T(buf_) {}
+      : buf_(new basic_pipebuf<typename T::char_type>(handle, M)), T(buf_) {}
   ~pstream() { close(); }
 
   void swap(pstream &p) CXX_NOEXCEPT {
@@ -282,7 +283,7 @@ public:
 
   native_handle_t detach() {
     native_handle_t handle = buf_.native_handle();
-    buf_.swap(pipebuf());
+    buf_.swap(basic_pipebuf<typename T::char_type>());
     return handle;
   }
 
@@ -295,18 +296,20 @@ public:
   }
 
 private:
-  mutable pipebuf *buf_;
+  mutable basic_pipebuf<typename T::char_type> *buf_;
 };
 #else
 template <std::ios::openmode M, typename T> class pstream : public T {
 public:
-  typedef typename pipebuf::native_handle_t native_handle_t;
+  typedef typename basic_pipebuf<typename T::char_type>::native_handle_t
+      native_handle_t;
 
   pstream() : T(nullptr) {}
 #ifdef __cpp_rvalue_references
   pstream(pstream &&other) : T(nullptr) { swap(other); }
 #endif
-  pstream(native_handle_t handle) : T(&buf_), buf_(pipebuf(handle, M)) {}
+  pstream(native_handle_t handle)
+      : T(&buf_), buf_(basic_pipebuf<typename T::char_type>(handle, M)) {}
   ~pstream() { close(); }
 
   void swap(pstream &p) CXX_NOEXCEPT {
@@ -325,7 +328,7 @@ public:
   void close() { buf_.close(); }
 
 private:
-  mutable pipebuf buf_;
+  mutable basic_pipebuf<typename T::char_type> buf_;
 };
 #endif
 

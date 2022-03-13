@@ -905,6 +905,20 @@ ext::path::exists("/test");
 #### Examples
 
 ```C++
+#include <ext/pipe>
+#include <thread>
+
+ext::pipe pipe;
+std::thread t([stream = std::move(pipe.out())]() mutable {
+  stream << "test" << std::endl;
+});
+
+std::string val;
+pipe.in() >> val;
+EXPECT_STREQ(val.c_str(), "test");
+
+if (t.joinable())
+  t.join();
 ```
 
 ### process
@@ -1586,7 +1600,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.10")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.11")
 
 # link dependencies
 target_link_libraries(tests ext)
