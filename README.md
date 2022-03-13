@@ -363,6 +363,7 @@ for (auto &i : res) {
 #### Examples
 
 - Cancel
+  - **MSYS is not supported.**
   - Like PTHREAD_CANCEL_DEFERRED
 
     ```C++
