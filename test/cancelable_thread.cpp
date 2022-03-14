@@ -86,10 +86,11 @@ TEST(cancelable_thread_test, cancel_immediately) {
        // !(defined(_WIN32) && defined(_INC__MINGW_H) && defined(__clang__))
 
 TEST(cancelable_thread_test, cancel) {
+#if EXT_CANCELABLE_THREAD_USE_PTHREAD
   char *msystem = getenv("MSYSTEM");
   if (msystem && strcmp(msystem, "MSYS") == 0)
     return;
-
+#endif
   std::mutex mtx;
   bool reached = false;
   bool destructor_invoked[] = {false, false};

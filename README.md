@@ -363,6 +363,7 @@ for (auto &i : res) {
 #### Examples
 
 - Cancel
+  - **MSYS is not supported.**
   - Like PTHREAD_CANCEL_DEFERRED
 
     ```C++
@@ -1046,24 +1047,62 @@ total.value(); // 60
 
 - ext::result<int, error_t>
 
-  ```C++
-  #include <ext/result>
+  - Basic
 
-  #include <errno.h>
+    ```C++
+    #include <ext/result>
 
-  ext::result<int, error_t> ok_fn() { return ext::ok(10); }
-  ext::result<int, error_t> err_fn() { return ext::err(EBUSY); }
+    #include <errno.h>
 
-  ext::result<int, error_t> result = ok_fn();
-  if (result) { // true
-    result.get(); // 10
-  }
+    ext::result<int, error_t> ok_fn() { return ext::ok(10); }
+    ext::result<int, error_t> err_fn() { return ext::err(EBUSY); }
 
-  result = err_fn();
-  if (!result) { // false
-    result.error(); // EBUSY
-  }
-  ```
+    ext::result<int, error_t> result = ok_fn();
+    if (result) { // true
+      result.get(); // 10
+    }
+
+    result = err_fn();
+    if (!result) { // false
+      result.error(); // EBUSY
+    }
+    ```
+
+  - Error with message
+
+    ```C++
+    #include <ext/result>
+
+    #include <errno.h>
+
+    ext::result<int, error_t> ok_fn() { return ext::ok(10); }
+    ext::result<int, error_t> err_fn() { return ext::err(EBUSY, "I'm busy"); }
+
+    ext::result<int, error_t> result = ok_fn();
+    if (result) { // true
+      result.get(); // 10
+    }
+    try {
+      result.error();
+    } catch (const ext::result_error &e) {
+      e.what(); // "No error occurred."
+    }
+
+    result = err_fn();
+    if (!result) { // false
+      result.error(); // EBUSY
+    }
+    try {
+      result.get();
+    } catch (const ext::result_error &e) {
+      e.what(); // "I'm busy"
+    }
+    try {
+      result.get();
+    } catch (const ext::error_occurred &e) {
+      e.what(); // "I'm busy"
+    }
+    ```
 
 ### safe_object
 
@@ -1600,7 +1639,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.11")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.12")
 
 # link dependencies
 target_link_libraries(tests ext)
