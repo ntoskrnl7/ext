@@ -14,6 +14,7 @@
 #ifndef _EXT_RESULT_
 #define _EXT_RESULT_
 
+#include <stdexcept>
 #include <string>
 
 namespace ext {
@@ -26,15 +27,33 @@ template <> struct ok<void> {
 template <typename T> struct ok {
   ok() {}
   ok(T value) : value(value) {}
-  T value;
   operator T() const { return value; }
+  T value;
 };
 
-template <typename T> struct err {
-  err() {}
-  err(T value) : value(value) {}
-  T value;
+class result_error : public std::runtime_error {
+public:
+  result_error(const std::string &message) : std::runtime_error(message) {}
+};
+
+class no_error_occurred : public result_error {
+public:
+  no_error_occurred() : result_error("No error occurred.") {}
+};
+
+class error_occurred : public result_error {
+public:
+  error_occurred() : result_error("Error occurred.") {}
+  error_occurred(const std::string &message) : result_error(message) {}
+};
+
+template <typename T> struct err : result_error {
+  err() : result_error(no_error_occurred()) {}
+  explicit err(T value) : value(value), result_error(error_occurred("error")) {}
+  explicit err(T value, const std::string &message)
+      : value(value), result_error(error_occurred(message)) {}
   operator T() const { return value; }
+  T value;
 };
 
 template <typename T, typename E> class result {
@@ -43,21 +62,23 @@ public:
 
   result(err<E> error) : succeed_(false), err_(error) {}
 
-  result(err<E> error, const std::string &message)
-      : succeed_(false), err_(error), message_(message) {}
-
   operator bool() const { return succeed_; }
 
-  const ext::ok<T> &get() const { return ok_; }
+  const ext::ok<T> &get() const {
+    if (succeed_)
+      return ok_;
+    throw error_occurred(err_.what());
+  }
 
-  const ext::err<E> &error() const { return err_; }
-
-  const std::string &what() const { return message_; }
+  const ext::err<E> &error() const {
+    if (succeed_)
+      throw no_error_occurred();
+    return err_;
+  }
 
 private:
   ext::ok<T> ok_;
   ext::err<E> err_;
-  std::string message_;
   bool succeed_;
 };
 
@@ -67,18 +88,12 @@ public:
 
   void_result(err<E> error) : succeed_(false), err_(error) {}
 
-  void_result(err<E> error, const std::string &message)
-      : succeed_(false), err_(error), message_(message) {}
-
   operator bool() const { return succeed_; }
 
   const ext::err<E> &error() const { return err_; }
 
-  const std::string &what() const { return message_; }
-
 private:
   ext::err<E> err_;
-  std::string message_;
   bool succeed_;
 };
 } // namespace ext
