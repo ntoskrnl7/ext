@@ -1,4 +1,4 @@
-﻿#pragma setlocale(".949")
+#pragma setlocale(".949")
 #include <ext/lang>
 #include <gtest/gtest.h>
 
