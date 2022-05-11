@@ -46,13 +46,13 @@ jobs:
 
     - name: Build (MultiByte)
       if: ${{ matrix.os == 'windows-latest' }}
-      run: chcp 65001 && cmake --build . --config ${{env.BUILD_TYPE}} -- /p:CharacterSet=MultiByte
+      run: chcp 949 && cmake --build . --config ${{env.BUILD_TYPE}} -- /p:CharacterSet=MultiByte
       working-directory: test/build
 
     - name: Test (MultiByte)
       if: ${{ matrix.os == 'windows-latest' }}
       working-directory: ${{github.workspace}}/test/build
-      run: ctest -C ${{env.BUILD_TYPE}} --verbose
+      run: chcp 949 && ctest -C ${{env.BUILD_TYPE}} --verbose
 
     - name: Build (Unicode)
       if: ${{ matrix.os == 'windows-latest' }}
