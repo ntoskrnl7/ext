@@ -1,4 +1,5 @@
-﻿#include <ext/lang>
+﻿#pragma setlocale(".949")
+#include <ext/lang>
 #include <gtest/gtest.h>
 
 TEST(lang_test, ko_kr_numeric_nominal) {
@@ -92,30 +93,30 @@ TEST(lang_test, ko_kr_numeric_ordinal) {
                "이십이경이천이백이십이조이천이백이십이억이천이백이십이만이천이"
                "백스물둘째");
 
-  EXPECT_STREQ(ordinal(1, "번째").c_str(), "첫 번째");
-  EXPECT_STREQ(ordinal(2, "번째").c_str(), "두 번째");
-  EXPECT_STREQ(ordinal(3, "번째").c_str(), "세 번째");
-  EXPECT_STREQ(ordinal(10, "번째").c_str(), "열 번째");
-  EXPECT_STREQ(ordinal(11, "번째").c_str(), "열한 번째");
-  EXPECT_STREQ(ordinal(20, "번째").c_str(), "스무 번째");
-  EXPECT_STREQ(ordinal(21, "번째").c_str(), "스물한 번째");
-  EXPECT_STREQ(ordinal(99, "번째").c_str(), "아흔아홉 번째");
-  EXPECT_STREQ(ordinal(100, "번째").c_str(), "백 번째");
-  EXPECT_STREQ(ordinal(101, "번째").c_str(), "백한 번째");
-  EXPECT_STREQ(ordinal(110, "번째").c_str(), "백열 번째");
-  EXPECT_STREQ(ordinal(1000, "번째").c_str(), "천 번째");
-  EXPECT_STREQ(ordinal(1100, "번째").c_str(), "천백 번째");
-  EXPECT_STREQ(ordinal(1111, "번째").c_str(), "천백열한 번째");
-  EXPECT_STREQ(ordinal(100000, "번째").c_str(), "십만 번째");
-  EXPECT_STREQ(ordinal(110000, "번째").c_str(), "십일만 번째");
-  EXPECT_STREQ(ordinal(111111, "번째").c_str(), "십일만천백열한 번째");
-  EXPECT_STREQ(ordinal(1111111111, "번째").c_str(),
+  EXPECT_STREQ(ordinal(1, " 번째").c_str(), "첫 번째");
+  EXPECT_STREQ(ordinal(2, " 번째").c_str(), "두 번째");
+  EXPECT_STREQ(ordinal(3, " 번째").c_str(), "세 번째");
+  EXPECT_STREQ(ordinal(10, " 번째").c_str(), "열 번째");
+  EXPECT_STREQ(ordinal(11, " 번째").c_str(), "열한 번째");
+  EXPECT_STREQ(ordinal(20, " 번째").c_str(), "스무 번째");
+  EXPECT_STREQ(ordinal(21, " 번째").c_str(), "스물한 번째");
+  EXPECT_STREQ(ordinal(99, " 번째").c_str(), "아흔아홉 번째");
+  EXPECT_STREQ(ordinal(100, " 번째").c_str(), "백 번째");
+  EXPECT_STREQ(ordinal(101, " 번째").c_str(), "백한 번째");
+  EXPECT_STREQ(ordinal(110, " 번째").c_str(), "백열 번째");
+  EXPECT_STREQ(ordinal(1000, " 번째").c_str(), "천 번째");
+  EXPECT_STREQ(ordinal(1100, " 번째").c_str(), "천백 번째");
+  EXPECT_STREQ(ordinal(1111, " 번째").c_str(), "천백열한 번째");
+  EXPECT_STREQ(ordinal(100000, " 번째").c_str(), "십만 번째");
+  EXPECT_STREQ(ordinal(110000, " 번째").c_str(), "십일만 번째");
+  EXPECT_STREQ(ordinal(111111, " 번째").c_str(), "십일만천백열한 번째");
+  EXPECT_STREQ(ordinal(1111111111, " 번째").c_str(),
                "십일억천백십일만천백열한 번째");
-  EXPECT_STREQ(ordinal(11111111111111, "번째").c_str(),
+  EXPECT_STREQ(ordinal(11111111111111, " 번째").c_str(),
                "십일조천백십일억천백십일만천백열한 번째");
-  EXPECT_STREQ(ordinal(111111111111111111, "번째").c_str(),
+  EXPECT_STREQ(ordinal(111111111111111111, " 번째").c_str(),
                "십일경천백십일조천백십일억천백십일만천백열한 번째");
-  EXPECT_STREQ(ordinal(222222222222222222, "번째").c_str(),
+  EXPECT_STREQ(ordinal(222222222222222222, " 번째").c_str(),
                "이십이경이천이백이십이조이천이백이십이억이천이백이십이만이천이"
                "백스물두 번째");
 }
@@ -149,30 +150,30 @@ TEST(lang_test, ko_kr_numeric_wordinal) {
                L"이십이경이천이백이십이조이천이백이십이억이천이백이십이만이천이"
                L"백스물둘째");
 
-  EXPECT_STREQ(wordinal(1, L"번째").c_str(), L"첫 번째");
-  EXPECT_STREQ(wordinal(2, L"번째").c_str(), L"두 번째");
-  EXPECT_STREQ(wordinal(3, L"번째").c_str(), L"세 번째");
-  EXPECT_STREQ(wordinal(10, L"번째").c_str(), L"열 번째");
-  EXPECT_STREQ(wordinal(11, L"번째").c_str(), L"열한 번째");
-  EXPECT_STREQ(wordinal(20, L"번째").c_str(), L"스무 번째");
-  EXPECT_STREQ(wordinal(21, L"번째").c_str(), L"스물한 번째");
-  EXPECT_STREQ(wordinal(99, L"번째").c_str(), L"아흔아홉 번째");
-  EXPECT_STREQ(wordinal(100, L"번째").c_str(), L"백 번째");
-  EXPECT_STREQ(wordinal(101, L"번째").c_str(), L"백한 번째");
-  EXPECT_STREQ(wordinal(110, L"번째").c_str(), L"백열 번째");
-  EXPECT_STREQ(wordinal(1000, L"번째").c_str(), L"천 번째");
-  EXPECT_STREQ(wordinal(1100, L"번째").c_str(), L"천백 번째");
-  EXPECT_STREQ(wordinal(1111, L"번째").c_str(), L"천백열한 번째");
-  EXPECT_STREQ(wordinal(100000, L"번째").c_str(), L"십만 번째");
-  EXPECT_STREQ(wordinal(110000, L"번째").c_str(), L"십일만 번째");
-  EXPECT_STREQ(wordinal(111111, L"번째").c_str(), L"십일만천백열한 번째");
-  EXPECT_STREQ(wordinal(1111111111, L"번째").c_str(),
+  EXPECT_STREQ(wordinal(1, L" 번째").c_str(), L"첫 번째");
+  EXPECT_STREQ(wordinal(2, L" 번째").c_str(), L"두 번째");
+  EXPECT_STREQ(wordinal(3, L" 번째").c_str(), L"세 번째");
+  EXPECT_STREQ(wordinal(10, L" 번째").c_str(), L"열 번째");
+  EXPECT_STREQ(wordinal(11, L" 번째").c_str(), L"열한 번째");
+  EXPECT_STREQ(wordinal(20, L" 번째").c_str(), L"스무 번째");
+  EXPECT_STREQ(wordinal(21, L" 번째").c_str(), L"스물한 번째");
+  EXPECT_STREQ(wordinal(99, L" 번째").c_str(), L"아흔아홉 번째");
+  EXPECT_STREQ(wordinal(100, L" 번째").c_str(), L"백 번째");
+  EXPECT_STREQ(wordinal(101, L" 번째").c_str(), L"백한 번째");
+  EXPECT_STREQ(wordinal(110, L" 번째").c_str(), L"백열 번째");
+  EXPECT_STREQ(wordinal(1000, L" 번째").c_str(), L"천 번째");
+  EXPECT_STREQ(wordinal(1100, L" 번째").c_str(), L"천백 번째");
+  EXPECT_STREQ(wordinal(1111, L" 번째").c_str(), L"천백열한 번째");
+  EXPECT_STREQ(wordinal(100000, L" 번째").c_str(), L"십만 번째");
+  EXPECT_STREQ(wordinal(110000, L" 번째").c_str(), L"십일만 번째");
+  EXPECT_STREQ(wordinal(111111, L" 번째").c_str(), L"십일만천백열한 번째");
+  EXPECT_STREQ(wordinal(1111111111, L" 번째").c_str(),
                L"십일억천백십일만천백열한 번째");
-  EXPECT_STREQ(wordinal(11111111111111, L"번째").c_str(),
+  EXPECT_STREQ(wordinal(11111111111111, L" 번째").c_str(),
                L"십일조천백십일억천백십일만천백열한 번째");
-  EXPECT_STREQ(wordinal(111111111111111111, L"번째").c_str(),
+  EXPECT_STREQ(wordinal(111111111111111111, L" 번째").c_str(),
                L"십일경천백십일조천백십일억천백십일만천백열한 번째");
-  EXPECT_STREQ(wordinal(222222222222222222, L"번째").c_str(),
+  EXPECT_STREQ(wordinal(222222222222222222, L" 번째").c_str(),
                L"이십이경이천이백이십이조이천이백이십이억이천이백이십이만이천이"
                L"백스물두 번째");
 }

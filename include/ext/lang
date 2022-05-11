@@ -26,16 +26,6 @@ template <typename T> const T *empty();
 template <> const char *empty<char>() { return ""; }
 template <> const wchar_t *empty<wchar_t>() { return L""; }
 
-template <typename T> const std::basic_string<T> &space();
-template <> const std::string &space<char>() {
-  static const std::string space = " ";
-  return space;
-}
-template <> const std::wstring &space<wchar_t>() {
-  static const std::wstring space = L" ";
-  return space;
-}
-
 template <typename T> struct nominal;
 template <> struct nominal<char> {
   static const char *zero() { return "영"; }
@@ -98,7 +88,7 @@ template <> struct ordinal<char> {
     }
     const std::string str[] = {"",     first,  "두",   "세",   "네",
                                "다섯", "여섯", "일곱", "여덟", "아홉"};
-    return str[number] + " " + unit;
+    return str[number] + unit;
   }
 };
 template <> struct ordinal<wchar_t> {
@@ -130,7 +120,7 @@ template <> struct ordinal<wchar_t> {
     }
     const std::wstring str[] = {L"",     first,   L"두",   L"세",   L"네",
                                 L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
-    return str[number] + L" " + unit;
+    return str[number] + unit;
   }
 };
 template <typename T> struct cardinal;
@@ -277,11 +267,8 @@ inline std::basic_string<T>
 ordinal_(uint64_t number, const T *unit = constants::ordinal<T>::default_unit(),
          const T *first = constants::ordinal<T>::default_first()) {
   typedef constants::ordinal<T> ordinal_consts;
-  if (number == 0) {
-    if (unit[0] == ordinal_consts::default_unit()[0])
-      return unit;
-    return constants::space<T>() + unit;
-  }
+  if (number == 0) 
+    return unit;
   if (number < 10)
     return ordinal_consts::less_than_ten(number, unit, first);
   if (number < 20)
