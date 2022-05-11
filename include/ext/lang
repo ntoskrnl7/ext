@@ -12,70 +12,118 @@
 #ifndef _EXT_LANG_
 #define _EXT_LANG_
 
+#define CXX_USE_STD_CSTDINT
 #include "string"
 
 namespace ext {
 namespace lang {
 namespace ko_kr {
 namespace numeric {
-inline std::wstring nominal(uint64_t number, const wchar_t *zero = L"영") {
-  if (number < 10) {
+namespace internal {
+namespace constants {
+
+template <typename T> const T *empty();
+template <> const char *empty<char>() { return ""; }
+template <> const wchar_t *empty<wchar_t>() { return L""; }
+
+template <typename T> const std::basic_string<T> &space();
+template <> const std::string &space<char>() {
+  static const std::string space = " ";
+  return space;
+}
+template <> const std::wstring &space<wchar_t>() {
+  static const std::wstring space = L" ";
+  return space;
+}
+
+template <typename T> struct nominal;
+template <> struct nominal<char> {
+  static const char *zero() { return "영"; }
+  static const char *less_than_ten(uint64_t number, const char *zero) {
+    const char *str[] = {zero, "일", "이", "삼", "사",
+                         "오", "육", "칠", "팔", "구"};
+    return str[number];
+  }
+  static const char *ten() { return "십"; }
+  static const char *hundred() { return "백"; }
+  static const char *thousand() { return "천"; }
+  static const char *ten_thousand() { return "만"; }
+  static const char *million() { return "억"; }
+  static const char *trillion() { return "조"; }
+  static const char *ten_quadrillion() { return "경"; }
+};
+template <> struct nominal<wchar_t> {
+  static const wchar_t *zero() { return L"영"; }
+  static const wchar_t *less_than_ten(uint64_t number, const wchar_t *zero) {
     const wchar_t *str[] = {zero,  L"일", L"이", L"삼", L"사",
                             L"오", L"육", L"칠", L"팔", L"구"};
     return str[number];
   }
-  if (number < 100) {
-    uint64_t quotient = number / 10;
-    uint64_t remainder = number % 10;
-    return ((quotient == 1) ? L"십" : nominal(quotient, L"") + L"십") +
-           nominal(remainder, L"");
-  }
-  if (number < 1000) {
-    uint64_t quotient = number / 100;
-    uint64_t remainder = number % 100;
-    return ((quotient == 1) ? L"백" : nominal(quotient, L"") + L"백") +
-           nominal(remainder, L"");
-  }
-  if (number < 10000) {
-    uint64_t quotient = number / 1000;
-    uint64_t remainder = number % 1000;
-    return ((quotient == 1) ? L"천" : nominal(quotient, L"") + L"천") +
-           nominal(remainder, L"");
-  }
-  if (number < 100000000) {
-    uint64_t quotient = number / 10000;
-    uint64_t remainder = number % 10000;
-    return ((quotient == 1) ? L"만" : nominal(quotient, L"") + L"만") +
-           nominal(remainder, L"");
-  }
-  if (number < 1000000000000) {
-    uint64_t quotient = number / 100000000;
-    uint64_t remainder = number % 100000000;
-    return ((quotient == 1) ? L"억" : nominal(quotient, L"") + L"억") +
-           nominal(remainder, L"");
-  }
-  if (number < 10000000000000000) {
-    uint64_t quotient = number / 1000000000000;
-    uint64_t remainder = number % 1000000000000;
-    return ((quotient == 1) ? L"조" : nominal(quotient, L"") + L"조") +
-           nominal(remainder, L"");
-  }
-  uint64_t quotient = number / 10000000000000000;
-  uint64_t remainder = number % 10000000000000000;
-  return ((quotient == 1) ? L"경" : nominal(quotient, L"") + L"경") +
-         nominal(remainder, L"");
-}
+  static const wchar_t *ten() { return L"십"; }
+  static const wchar_t *hundred() { return L"백"; }
+  static const wchar_t *thousand() { return L"천"; }
+  static const wchar_t *ten_thousand() { return L"만"; }
+  static const wchar_t *million() { return L"억"; }
+  static const wchar_t *trillion() { return L"조"; }
+  static const wchar_t *ten_quadrillion() { return L"경"; }
+};
 
-inline std::wstring ordinal(uint64_t number, const wchar_t *unit = L"째",
-                            const wchar_t *first = L"첫") {
-  if (number == 0) {
-    if (unit[0] == L'째') {
-      return unit;
+template <typename T> struct ordinal;
+template <> struct ordinal<char> {
+  static const char *default_unit() { return "째"; }
+  static const char *default_first() { return "첫"; }
+  static const char *first() { return "한"; }
+  static const char *ten() { return "열"; }
+  static const char *twenty() { return "스무"; }
+  static const char *twenty_later() { return "스물"; }
+  static const char *thirty() { return "서른"; }
+  static const char *forty() { return "마흔"; }
+  static const char *fifty() { return "쉰"; }
+  static const char *sixty() { return "예순"; }
+  static const char *seventy() { return "일흔"; }
+  static const char *eighty() { return "여든"; }
+  static const char *ninety() { return "아흔"; }
+  static const char *hundred() { return "백"; }
+  static const char *thousand() { return "천"; }
+  static const char *ten_thousand() { return "만"; }
+  static const char *million() { return "억"; }
+  static const char *trillion() { return "조"; }
+  static const char *ten_quadrillion() { return "경"; }
+  static const std::string less_than_ten(uint64_t number, const char *unit,
+                                         const char *first) {
+    if (unit[0] == default_unit()[0]) {
+      const std::string str[] = {"",     first,  "둘",   "셋",   "넷",
+                                 "다섯", "여섯", "일곱", "여덟", "아홉"};
+      return str[number] + unit;
     }
-    return std::wstring(L" ") + unit;
+    const std::string str[] = {"",     first,  "두",   "세",   "네",
+                               "다섯", "여섯", "일곱", "여덟", "아홉"};
+    return str[number] + " " + unit;
   }
-  if (number < 10) {
-    if (unit[0] == L'째') {
+};
+template <> struct ordinal<wchar_t> {
+  static const wchar_t *default_unit() { return L"째"; }
+  static const wchar_t *default_first() { return L"첫"; }
+  static const wchar_t *first() { return L"한"; }
+  static const wchar_t *ten() { return L"열"; }
+  static const wchar_t *twenty() { return L"스무"; }
+  static const wchar_t *twenty_later() { return L"스물"; }
+  static const wchar_t *thirty() { return L"서른"; }
+  static const wchar_t *forty() { return L"마흔"; }
+  static const wchar_t *fifty() { return L"쉰"; }
+  static const wchar_t *sixty() { return L"예순"; }
+  static const wchar_t *seventy() { return L"일흔"; }
+  static const wchar_t *eighty() { return L"여든"; }
+  static const wchar_t *ninety() { return L"아흔"; }
+  static const wchar_t *hundred() { return L"백"; }
+  static const wchar_t *thousand() { return L"천"; }
+  static const wchar_t *ten_thousand() { return L"만"; }
+  static const wchar_t *million() { return L"억"; }
+  static const wchar_t *trillion() { return L"조"; }
+  static const wchar_t *ten_quadrillion() { return L"경"; }
+  static const std::wstring less_than_ten(uint64_t number, const wchar_t *unit,
+                                          const wchar_t *first) {
+    if (unit[0] == default_unit()[0]) {
       const std::wstring str[] = {L"",     first,   L"둘",   L"셋",   L"넷",
                                   L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
       return str[number] + unit;
@@ -84,152 +132,365 @@ inline std::wstring ordinal(uint64_t number, const wchar_t *unit = L"째",
                                 L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
     return str[number] + L" " + unit;
   }
-  if (number < 20) {
-    return L"열" + ordinal(number - 10, unit, L"한");
+};
+template <typename T> struct cardinal;
+template <> struct cardinal<char> {
+  static const std::string default_first() { return "하나"; }
+  static const std::string first() { return "한"; }
+  static const char *ten() { return "열"; }
+  static const std::string twenty(const std::string &unit) {
+    if (unit.empty())
+      return "스물";
+    return "스무" + unit;
   }
-  if (number == 20) {
-    return std::wstring(L"스무") + unit;
-  }
-  if (number < 30) {
-    return L"스물" + ordinal(number - 20, unit, L"한");
-  }
-  if (number < 40) {
-    return L"서른" + ordinal(number - 30, unit, L"한");
-  }
-  if (number < 50) {
-    return L"마흔" + ordinal(number - 40, unit, L"한");
-  }
-  if (number < 60) {
-    return L"쉰" + ordinal(number - 50, unit, L"한");
-  }
-  if (number < 70) {
-    return L"예순" + ordinal(number - 60, unit, L"한");
-  }
-  if (number < 80) {
-    return L"일흔" + ordinal(number - 70, unit, L"한");
-  }
-  if (number < 90) {
-    return L"여든" + ordinal(number - 80, unit, L"한");
-  }
-  if (number < 100) {
-    return L"아흔" + ordinal(number - 90, unit, L"한");
-  }
-  if (number < 1000) {
-    uint64_t quotient = number / 100;
-    uint64_t remainder = number % 100;
-    return ((quotient == 1) ? L"백" : nominal(quotient, L"") + L"백") +
-           ordinal(remainder, unit, L"한");
-  }
-  if (number < 10000) {
-    uint64_t quotient = number / 1000;
-    uint64_t remainder = number % 1000;
-    return ((quotient == 1) ? L"천" : nominal(quotient, L"") + L"천") +
-           ordinal(remainder, unit, L"한");
-  }
-  if (number < 100000000) {
-    uint64_t quotient = number / 10000;
-    uint64_t remainder = number % 10000;
-    return ((quotient == 1) ? L"만" : nominal(quotient, L"") + L"만") +
-           ordinal(remainder, unit, L"한");
-  }
-  if (number < 1000000000000) {
-    uint64_t quotient = number / 100000000;
-    uint64_t remainder = number % 100000000;
-    return ((quotient == 1) ? L"억" : nominal(quotient, L"") + L"억") +
-           ordinal(remainder, unit, L"한");
-  }
-  if (number < 10000000000000000) {
-    uint64_t quotient = number / 1000000000000;
-    uint64_t remainder = number % 1000000000000;
-    return ((quotient == 1) ? L"조" : nominal(quotient, L"") + L"조") +
-           ordinal(remainder, unit, L"한");
-  }
-  uint64_t quotient = number / 10000000000000000;
-  uint64_t remainder = number % 10000000000000000;
-  return ((quotient == 1) ? L"경" : nominal(quotient, L"") + L"경") +
-         ordinal(remainder, unit, L"한");
-}
-
-inline std::wstring cardinal(uint64_t number, const wchar_t *unit = NULL,
-                             const wchar_t *first = L"하나") {
-  if (number < 10) {
-    if (unit || first[0] == L'한') {
-      const std::wstring str[] = {L"",     L"한",   L"두",   L"세",   L"네",
-                                  L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
-      return unit ? str[number] + unit : str[number];
+  static const char *twenty_later() { return "스물"; }
+  static const char *thirty() { return "서른"; }
+  static const char *forty() { return "마흔"; }
+  static const char *fifty() { return "쉰"; }
+  static const char *sixty() { return "예순"; }
+  static const char *seventy() { return "일흔"; }
+  static const char *eighty() { return "여든"; }
+  static const char *ninety() { return "아흔"; }
+  static const char *hundred() { return "온"; }
+  static const char *thousand() { return "즈믄"; }
+  static const char *ten_thousand() { return "골"; }
+  static const char *million() { return "잘"; }
+  static const char *trillion() { return "울"; }
+  static const char *ten_quadrillion() { return "경"; }
+  static const std::string less_than_ten(uint64_t number,
+                                         const std::string &unit,
+                                         const std::string &first) {
+    if ((!unit.empty()) || first == cardinal::first()) {
+      const std::string str[] = {"",     "한",   "두",   "세",   "네",
+                                 "다섯", "여섯", "일곱", "여덟", "아홉"};
+      return unit.empty() ? str[number] : str[number] + unit;
     }
-    const wchar_t *str[] = {L"",     first,   L"둘",   L"셋",   L"넷",
-                            L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
+    const char *str[] = {"",     first.c_str(), "둘",   "셋",   "넷",
+                         "다섯", "여섯",        "일곱", "여덟", "아홉"};
     return str[number];
   }
-  if (number < 20) {
-    return L"열" + cardinal(number - 10, unit, first);
+};
+template <typename T> struct cardinal;
+template <> struct cardinal<wchar_t> {
+  static const std::wstring default_first() { return L"하나"; }
+  static const std::wstring first() { return L"한"; }
+  static const wchar_t *ten() { return L"열"; }
+  static const std::wstring twenty(const std::wstring &unit) {
+    if (unit.empty())
+      return L"스물";
+    return L"스무" + unit;
   }
-  if (number == 20) {
-    if (unit) {
-      return std::wstring(L"스무") + unit;
+  static const wchar_t *twenty_later() { return L"스물"; }
+  static const wchar_t *thirty() { return L"서른"; }
+  static const wchar_t *forty() { return L"마흔"; }
+  static const wchar_t *fifty() { return L"쉰"; }
+  static const wchar_t *sixty() { return L"예순"; }
+  static const wchar_t *seventy() { return L"일흔"; }
+  static const wchar_t *eighty() { return L"여든"; }
+  static const wchar_t *ninety() { return L"아흔"; }
+  static const wchar_t *hundred() { return L"온"; }
+  static const wchar_t *thousand() { return L"즈믄"; }
+  static const wchar_t *ten_thousand() { return L"골"; }
+  static const wchar_t *million() { return L"잘"; }
+  static const wchar_t *trillion() { return L"울"; }
+  static const wchar_t *ten_quadrillion() { return L"경"; }
+  static const std::wstring less_than_ten(uint64_t number,
+                                          const std::wstring &unit,
+                                          const std::wstring &first) {
+    if ((!unit.empty()) || first == cardinal::first()) {
+      const std::wstring str[] = {L"",     L"한",   L"두",   L"세",   L"네",
+                                  L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
+      return unit.empty() ? str[number] : str[number] + unit;
     }
-    return L"스물";
+    const wchar_t *str[] = {L"",     first.c_str(), L"둘",   L"셋",   L"넷",
+                            L"다섯", L"여섯",       L"일곱", L"여덟", L"아홉"};
+    return str[number];
   }
-  if (number < 30) {
-    return L"스물" + cardinal(number - 20, unit, first);
-  }
-  if (number < 40) {
-    return L"서른" + cardinal(number - 30, unit, first);
-  }
-  if (number < 50) {
-    return L"마흔" + cardinal(number - 40, unit, first);
-  }
-  if (number < 60) {
-    return L"쉰" + cardinal(number - 50, unit, first);
-  }
-  if (number < 70) {
-    return L"예순" + cardinal(number - 60, unit, first);
-  }
-  if (number < 80) {
-    return L"일흔" + cardinal(number - 70, unit, first);
-  }
-  if (number < 90) {
-    return L"여든" + cardinal(number - 80, unit, first);
+};
+} // namespace constants
+
+template <typename T>
+inline std::basic_string<T>
+nominal_(uint64_t number, const T *zero = constants::nominal<T>::zero()) {
+  typedef constants::nominal<T> nominal_consts;
+  if (number < 10) {
+    return nominal_consts::less_than_ten(number, zero);
   }
   if (number < 100) {
-    return L"아흔" + cardinal(number - 90, unit, first);
+    uint64_t quotient = number / 10;
+    uint64_t remainder = number % 10;
+    return ((quotient == 1) ? nominal_consts::ten()
+                            : nominal_(quotient, constants::empty<T>()) +
+                                  nominal_consts::ten()) +
+           nominal_(remainder, constants::empty<T>());
   }
   if (number < 1000) {
     uint64_t quotient = number / 100;
     uint64_t remainder = number % 100;
-    return ((quotient == 1) ? L"온" : cardinal(quotient, NULL, L"한") + L"온") +
-           cardinal(remainder, unit, first);
+    return ((quotient == 1) ? nominal_consts::hundred()
+                            : nominal_(quotient, constants::empty<T>()) +
+                                  nominal_consts::hundred()) +
+           nominal_(remainder, constants::empty<T>());
   }
   if (number < 10000) {
     uint64_t quotient = number / 1000;
     uint64_t remainder = number % 1000;
-    return ((quotient == 1) ? L"즈믄"
-                            : cardinal(quotient, NULL, L"한") + L"즈믄") +
-           cardinal(remainder, unit, first);
+    return ((quotient == 1) ? nominal_consts::thousand()
+                            : nominal_(quotient, constants::empty<T>()) +
+                                  nominal_consts::thousand()) +
+           nominal_(remainder, constants::empty<T>());
   }
   if (number < 100000000) {
     uint64_t quotient = number / 10000;
     uint64_t remainder = number % 10000;
-    return ((quotient == 1) ? L"골" : cardinal(quotient, NULL, L"한") + L"골") +
-           cardinal(remainder, unit, first);
+    return ((quotient == 1) ? nominal_consts::ten_thousand()
+                            : nominal_(quotient, constants::empty<T>()) +
+                                  nominal_consts::ten_thousand()) +
+           nominal_(remainder, constants::empty<T>());
   }
   if (number < 1000000000000) {
     uint64_t quotient = number / 100000000;
     uint64_t remainder = number % 100000000;
-    return ((quotient == 1) ? L"잘" : cardinal(quotient, NULL, L"한") + L"잘") +
-           cardinal(remainder, unit, first);
+    return ((quotient == 1) ? nominal_consts::million()
+                            : nominal_(quotient, constants::empty<T>()) +
+                                  nominal_consts::million()) +
+           nominal_(remainder, constants::empty<T>());
   }
   if (number < 10000000000000000) {
     uint64_t quotient = number / 1000000000000;
     uint64_t remainder = number % 1000000000000;
-    return ((quotient == 1) ? L"울" : cardinal(quotient, NULL, L"한") + L"울") +
-           cardinal(remainder, unit, first);
+    return ((quotient == 1) ? nominal_consts::trillion()
+                            : nominal_(quotient, constants::empty<T>()) +
+                                  nominal_consts::trillion()) +
+           nominal_(remainder, constants::empty<T>());
   }
   uint64_t quotient = number / 10000000000000000;
   uint64_t remainder = number % 10000000000000000;
-  return ((quotient == 1) ? L"경" : cardinal(quotient, NULL, L"한") + L"경") +
-         cardinal(remainder, unit, first);
+  return ((quotient == 1) ? nominal_consts::ten_quadrillion()
+                          : nominal_(quotient, constants::empty<T>()) +
+                                nominal_consts::ten_quadrillion()) +
+         nominal_(remainder, constants::empty<T>());
+}
+
+template <typename T>
+inline std::basic_string<T>
+ordinal_(uint64_t number, const T *unit = constants::ordinal<T>::default_unit(),
+         const T *first = constants::ordinal<T>::default_first()) {
+  typedef constants::ordinal<T> ordinal_consts;
+  if (number == 0) {
+    if (unit[0] == ordinal_consts::default_unit()[0])
+      return unit;
+    return constants::space<T>() + unit;
+  }
+  if (number < 10)
+    return ordinal_consts::less_than_ten(number, unit, first);
+  if (number < 20)
+    return ordinal_consts::ten() +
+           ordinal_<T>(number - 10, unit, ordinal_consts::first());
+  if (number < 30) {
+    uint64_t remaining = number - 20;
+    if (remaining)
+      return ordinal_consts::twenty_later() +
+             ordinal_<T>(remaining, unit, ordinal_consts::first());
+    return ordinal_consts::twenty() +
+           ordinal_(0, unit, ordinal_consts::first());
+  }
+  if (number < 40)
+    return ordinal_consts::thirty() +
+           ordinal_<T>(number - 30, unit, ordinal_consts::first());
+  if (number < 50)
+    return ordinal_consts::forty() +
+           ordinal_<T>(number - 40, unit, ordinal_consts::first());
+  if (number < 60)
+    return ordinal_consts::fifty() +
+           ordinal_<T>(number - 50, unit, ordinal_consts::first());
+  if (number < 70)
+    return ordinal_consts::sixty() +
+           ordinal_<T>(number - 60, unit, ordinal_consts::first());
+  if (number < 80)
+    return ordinal_consts::seventy() +
+           ordinal_<T>(number - 70, unit, ordinal_consts::first());
+  if (number < 90)
+    return ordinal_consts::eighty() +
+           ordinal_<T>(number - 80, unit, ordinal_consts::first());
+  if (number < 100)
+    return ordinal_consts::ninety() +
+           ordinal_<T>(number - 90, unit, ordinal_consts::first());
+  if (number < 1000) {
+    uint64_t quotient = number / 100;
+    uint64_t remainder = number % 100;
+    return ((quotient == 1)
+                ? ordinal_consts::hundred()
+                : internal::nominal_(quotient, constants::empty<T>()) +
+                      ordinal_consts::hundred()) +
+           ordinal_(remainder, unit, ordinal_consts::first());
+  }
+  if (number < 10000) {
+    uint64_t quotient = number / 1000;
+    uint64_t remainder = number % 1000;
+    return ((quotient == 1)
+                ? ordinal_consts::thousand()
+                : internal::nominal_(quotient, constants::empty<T>()) +
+                      ordinal_consts::thousand()) +
+           ordinal_(remainder, unit, ordinal_consts::first());
+  }
+  if (number < 100000000) {
+    uint64_t quotient = number / 10000;
+    uint64_t remainder = number % 10000;
+    return ((quotient == 1)
+                ? ordinal_consts::ten_thousand()
+                : internal::nominal_(quotient, constants::empty<T>()) +
+                      ordinal_consts::ten_thousand()) +
+           ordinal_(remainder, unit, ordinal_consts::first());
+  }
+  if (number < 1000000000000) {
+    uint64_t quotient = number / 100000000;
+    uint64_t remainder = number % 100000000;
+    return ((quotient == 1)
+                ? ordinal_consts::million()
+                : internal::nominal_(quotient, constants::empty<T>()) +
+                      ordinal_consts::million()) +
+           ordinal_(remainder, unit, ordinal_consts::first());
+  }
+  if (number < 10000000000000000) {
+    uint64_t quotient = number / 1000000000000;
+    uint64_t remainder = number % 1000000000000;
+    return ((quotient == 1)
+                ? ordinal_consts::trillion()
+                : internal::nominal_(quotient, constants::empty<T>()) +
+                      ordinal_consts::trillion()) +
+           ordinal_(remainder, unit, ordinal_consts::first());
+  }
+  uint64_t quotient = number / 10000000000000000;
+  uint64_t remainder = number % 10000000000000000;
+  return ((quotient == 1)
+              ? ordinal_consts::ten_quadrillion()
+              : internal::nominal_(quotient, constants::empty<T>()) +
+                    ordinal_consts::ten_quadrillion()) +
+         ordinal_(remainder, unit, ordinal_consts::first());
+}
+
+template <typename T>
+inline std::basic_string<T>
+cardinal_(uint64_t number,
+          const std::basic_string<T> &unit = std::basic_string<T>(),
+          const std::basic_string<T> &first =
+              constants::cardinal<T>::default_first()) {
+  if (number < 10)
+    return constants::cardinal<T>::less_than_ten(number, unit, first);
+  if (number < 20)
+    return constants::cardinal<T>::ten() +
+           cardinal_<T>(number - 10, unit, first);
+  if (number == 20)
+    return constants::cardinal<T>::twenty(unit);
+  if (number < 30)
+    return constants::cardinal<T>::twenty_later() +
+           cardinal_<T>(number - 20, unit, first);
+  if (number < 40)
+    return constants::cardinal<T>::thirty() +
+           cardinal_<T>(number - 30, unit, first);
+  if (number < 50)
+    return constants::cardinal<T>::forty() +
+           cardinal_<T>(number - 40, unit, first);
+  if (number < 60)
+    return constants::cardinal<T>::fifty() +
+           cardinal_<T>(number - 50, unit, first);
+  if (number < 70)
+    return constants::cardinal<T>::sixty() +
+           cardinal_<T>(number - 60, unit, first);
+  if (number < 80)
+    return constants::cardinal<T>::seventy() +
+           cardinal_<T>(number - 70, unit, first);
+  if (number < 90)
+    return constants::cardinal<T>::eighty() +
+           cardinal_<T>(number - 80, unit, first);
+  if (number < 100)
+    return constants::cardinal<T>::ninety() +
+           cardinal_<T>(number - 90, unit, first);
+  if (number < 1000) {
+    uint64_t quotient = number / 100;
+    uint64_t remainder = number % 100;
+    return ((quotient == 1) ? constants::cardinal<T>::hundred()
+                            : cardinal_<T>(quotient, constants::empty<T>(),
+                                           constants::cardinal<T>::first()) +
+                                  constants::cardinal<T>::hundred()) +
+           cardinal_<T>(remainder, unit, first);
+  }
+  if (number < 10000) {
+    uint64_t quotient = number / 1000;
+    uint64_t remainder = number % 1000;
+    return ((quotient == 1) ? constants::cardinal<T>::thousand()
+                            : cardinal_<T>(quotient, constants::empty<T>(),
+                                           constants::cardinal<T>::first()) +
+                                  constants::cardinal<T>::thousand()) +
+           cardinal_<T>(remainder, unit, first);
+  }
+  if (number < 100000000) {
+    uint64_t quotient = number / 10000;
+    uint64_t remainder = number % 10000;
+    return ((quotient == 1) ? constants::cardinal<T>::ten_thousand()
+                            : cardinal_<T>(quotient, constants::empty<T>(),
+                                           constants::cardinal<T>::first()) +
+                                  constants::cardinal<T>::ten_thousand()) +
+           cardinal_<T>(remainder, unit, first);
+  }
+  if (number < 1000000000000) {
+    uint64_t quotient = number / 100000000;
+    uint64_t remainder = number % 100000000;
+    return ((quotient == 1) ? constants::cardinal<T>::million()
+                            : cardinal_<T>(quotient, constants::empty<T>(),
+                                           constants::cardinal<T>::first()) +
+                                  constants::cardinal<T>::million()) +
+           cardinal_<T>(remainder, unit, first);
+  }
+  if (number < 10000000000000000) {
+    uint64_t quotient = number / 1000000000000;
+    uint64_t remainder = number % 1000000000000;
+    return ((quotient == 1) ? constants::cardinal<T>::trillion()
+                            : cardinal_<T>(quotient, constants::empty<T>(),
+                                           constants::cardinal<T>::first()) +
+                                  constants::cardinal<T>::trillion()) +
+           cardinal_<T>(remainder, unit, first);
+  }
+  uint64_t quotient = number / 10000000000000000;
+  uint64_t remainder = number % 10000000000000000;
+  return ((quotient == 1) ? constants::cardinal<T>::ten_quadrillion()
+                          : cardinal_<T>(quotient, constants::empty<T>(),
+                                         constants::cardinal<T>::first()) +
+                                constants::cardinal<T>::ten_quadrillion()) +
+         cardinal_<T>(remainder, unit, first);
+}
+} // namespace internal
+
+inline std::wstring wnominal(uint64_t number) {
+  return internal::nominal_<wchar_t>(number);
+}
+
+inline std::string nominal(uint64_t number) {
+  return internal::nominal_<char>(number);
+}
+
+inline std::string
+ordinal(uint64_t number,
+        const char *unit = internal::constants::ordinal<char>::default_unit()) {
+  return internal::ordinal_<char>(number, unit);
+}
+
+inline std::wstring
+wordinal(uint64_t number,
+         const wchar_t *unit =
+             internal::constants::ordinal<wchar_t>::default_unit()) {
+  return internal::ordinal_<wchar_t>(number, unit);
+}
+
+inline std::string cardinal(uint64_t number,
+                            const std::string &unit = std::string()) {
+  return internal::cardinal_<char>(number, unit);
+}
+
+inline std::wstring wcardinal(uint64_t number,
+                              const std::wstring &unit = std::wstring()) {
+  return internal::cardinal_<wchar_t>(number, unit);
 }
 } // namespace numeric
 

@@ -836,6 +836,7 @@ for (auto &i : res) {
   #include <ext/lang>
 
   using namespace ext::lang::ko_kr;
+
   EXPECT_STREQ(postposition::topic(L"산").c_str(), L"은");
   EXPECT_STREQ(postposition::topic(L"바다").c_str(), L"는");
 
@@ -861,28 +862,53 @@ for (auto &i : res) {
   EXPECT_STREQ(postposition::exclamation(L"바다").c_str(), L"여");
   ```
 
-- ko_kr::postposition
+- ko_kr::numeric
 
   ```C++
-  EXPECT_STREQ(numeric::nominal(1).c_str(), L"일");
-  EXPECT_STREQ(numeric::nominal(2).c_str(), L"이");
-  EXPECT_STREQ(numeric::nominal(3).c_str(), L"삼");
+  #include <ext/lang>
 
-  EXPECT_STREQ(numeric::ordinal(1).c_str(), L"첫째");
-  EXPECT_STREQ(numeric::ordinal(2).c_str(), L"둘째");
-  EXPECT_STREQ(numeric::ordinal(3).c_str(), L"셋째");
+  using namespace ext::lang::ko_kr;
 
-  EXPECT_STREQ(numeric::ordinal(1, L"번째").c_str(), L"첫 번째");
-  EXPECT_STREQ(numeric::ordinal(2, L"번째").c_str(), L"두 번째");
-  EXPECT_STREQ(numeric::ordinal(3, L"번째").c_str(), L"세 번째");
+  EXPECT_STREQ(numeric::nominal(1).c_str(), "일");
+  EXPECT_STREQ(numeric::nominal(2).c_str(), "이");
+  EXPECT_STREQ(numeric::nominal(3).c_str(), "삼");
 
-  EXPECT_STREQ(numeric::cardinal(1).c_str(), L"하나");
-  EXPECT_STREQ(numeric::cardinal(2).c_str(), L"둘");
-  EXPECT_STREQ(numeric::cardinal(3).c_str(), L"셋");
+  EXPECT_STREQ(numeric::ordinal(1).c_str(), "첫째");
+  EXPECT_STREQ(numeric::ordinal(2).c_str(), "둘째");
+  EXPECT_STREQ(numeric::ordinal(3).c_str(), "셋째");
 
-  EXPECT_STREQ(numeric::cardinal(1, L" 번").c_str(), L"한 번");
-  EXPECT_STREQ(numeric::cardinal(2, L" 번").c_str(), L"두 번");
-  EXPECT_STREQ(numeric::cardinal(3, L" 번").c_str(), L"세 번");
+  EXPECT_STREQ(numeric::ordinal(1, "번째").c_str(), "첫 번째");
+  EXPECT_STREQ(numeric::ordinal(2, "번째").c_str(), "두 번째");
+  EXPECT_STREQ(numeric::ordinal(3, "번째").c_str(), "세 번째");
+
+  EXPECT_STREQ(numeric::cardinal(1).c_str(), "하나");
+  EXPECT_STREQ(numeric::cardinal(2).c_str(), "둘");
+  EXPECT_STREQ(numeric::cardinal(3).c_str(), "셋");
+
+  EXPECT_STREQ(numeric::cardinal(1, " 번").c_str(), "한 번");
+  EXPECT_STREQ(numeric::cardinal(2, " 번").c_str(), "두 번");
+  EXPECT_STREQ(numeric::cardinal(3, " 번").c_str(), "세 번");
+
+
+  EXPECT_STREQ(numeric::wnominal(1).c_str(), L"일");
+  EXPECT_STREQ(numeric::wnominal(2).c_str(), L"이");
+  EXPECT_STREQ(numeric::wnominal(3).c_str(), L"삼");
+
+  EXPECT_STREQ(numeric::wordinal(1).c_str(), L"첫째");
+  EXPECT_STREQ(numeric::wordinal(2).c_str(), L"둘째");
+  EXPECT_STREQ(numeric::wordinal(3).c_str(), L"셋째");
+
+  EXPECT_STREQ(numeric::wordinal(1, L"번째").c_str(), L"첫 번째");
+  EXPECT_STREQ(numeric::wordinal(2, L"번째").c_str(), L"두 번째");
+  EXPECT_STREQ(numeric::wordinal(3, L"번째").c_str(), L"세 번째");
+
+  EXPECT_STREQ(numeric::wcardinal(1).c_str(), L"하나");
+  EXPECT_STREQ(numeric::wcardinal(2).c_str(), L"둘");
+  EXPECT_STREQ(numeric::wcardinal(3).c_str(), L"셋");
+
+  EXPECT_STREQ(numeric::wcardinal(1, L" 번").c_str(), L"한 번");
+  EXPECT_STREQ(numeric::wcardinal(2, L" 번").c_str(), L"두 번");
+  EXPECT_STREQ(numeric::wcardinal(3, L" 번").c_str(), L"세 번");
   ```
 
 ### observable
