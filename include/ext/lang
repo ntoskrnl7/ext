@@ -18,10 +18,10 @@ namespace ext {
 namespace lang {
 namespace ko_kr {
 namespace numeric {
-inline std::wstring nominal(uint64_t number, wchar_t *zero = L"영") {
+inline std::wstring nominal(uint64_t number, const wchar_t *zero = L"영") {
   if (number < 10) {
-    wchar_t *str[] = {zero,  L"일", L"이", L"삼", L"사",
-                      L"오", L"육", L"칠", L"팔", L"구"};
+    const wchar_t *str[] = {zero,  L"일", L"이", L"삼", L"사",
+                            L"오", L"육", L"칠", L"팔", L"구"};
     return str[number];
   }
   if (number < 100) {
@@ -66,8 +66,8 @@ inline std::wstring nominal(uint64_t number, wchar_t *zero = L"영") {
          nominal(remainder, L"");
 }
 
-inline std::wstring ordinal(uint64_t number, wchar_t *unit = L"째",
-                            wchar_t *first = L"첫") {
+inline std::wstring ordinal(uint64_t number, const wchar_t *unit = L"째",
+                            const wchar_t *first = L"첫") {
   if (number == 0) {
     if (unit[0] == L'째') {
       return unit;
@@ -150,16 +150,16 @@ inline std::wstring ordinal(uint64_t number, wchar_t *unit = L"째",
          ordinal(remainder, unit, L"한");
 }
 
-inline std::wstring cardinal(uint64_t number, wchar_t *unit = NULL,
-                             wchar_t *first = L"하나") {
+inline std::wstring cardinal(uint64_t number, const wchar_t *unit = NULL,
+                             const wchar_t *first = L"하나") {
   if (number < 10) {
     if (unit || first[0] == L'한') {
       const std::wstring str[] = {L"",     L"한",   L"두",   L"세",   L"네",
                                   L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
       return unit ? str[number] + unit : str[number];
     }
-    wchar_t *str[] = {L"",     first,   L"둘",   L"셋",   L"넷",
-                      L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
+    const wchar_t *str[] = {L"",     first,   L"둘",   L"셋",   L"넷",
+                            L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
     return str[number];
   }
   if (number < 20) {
