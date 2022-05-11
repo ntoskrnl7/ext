@@ -1,4 +1,5 @@
-﻿#include <ext/lang>
+﻿#pragma setlocale(".949")
+#include <ext/lang>
 #include <gtest/gtest.h>
 
 TEST(lang_test, ko_kr_numeric_nominal) {
