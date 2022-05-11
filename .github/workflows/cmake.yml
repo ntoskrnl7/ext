@@ -46,7 +46,7 @@ jobs:
 
     - name: Build (MultiByte)
       if: ${{ matrix.os == 'windows-latest' }}
-      run: cmake --build . --config ${{env.BUILD_TYPE}} -- /p:CharacterSet=MultiByte
+      run: chcp 949 && cmake --build . --config ${{env.BUILD_TYPE}} -- /p:CharacterSet=MultiByte
       working-directory: test/build
 
     - name: Test (MultiByte)
