@@ -1,4 +1,4 @@
-﻿#include <ext/lang>
+#include <ext/lang>
 #include <gtest/gtest.h>
 
 TEST(lang_test, ko_kr_numeric_nominal) {
