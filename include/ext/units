@@ -111,25 +111,25 @@ public:
 };
 
 template <typename T>
-inline std::pair<size_t, std::basic_string<T>> parse_size(size_t size) {
-  UNIT unit;
+inline std::pair<size_t, std::basic_string<T>>
+parse_size(size_t size, UNIT unit = UNSPECIFIED) {
   std::basic_string<T> unit_str;
-  if (size > EiB) {
+  if ((size > EiB && unit == UNSPECIFIED) || (unit == EiB)) {
     unit = EiB;
     unit_str = unit_name<T, EiB>::c_str();
-  } else if (size > PiB) {
+  } else if ((size > PiB && unit == UNSPECIFIED) || (unit == PiB)) {
     unit = PiB;
     unit_str = unit_name<T, PiB>::c_str();
-  } else if (size > TiB) {
+  } else if ((size > TiB && unit == UNSPECIFIED) || (unit == TiB)) {
     unit = TiB;
     unit_str = unit_name<T, TiB>::c_str();
-  } else if (size > GiB) {
+  } else if ((size > GiB && unit == UNSPECIFIED) || (unit == GiB)) {
     unit = GiB;
     unit_str = unit_name<T, GiB>::c_str();
-  } else if (size > MiB) {
+  } else if ((size > MiB && unit == UNSPECIFIED) || (unit == MiB)) {
     unit = MiB;
     unit_str = unit_name<T, MiB>::c_str();
-  } else if (size > KiB) {
+  } else if ((size > KiB && unit == UNSPECIFIED) || (unit == KiB)) {
     unit = KiB;
     unit_str = unit_name<T, KiB>::c_str();
   } else {
@@ -140,12 +140,12 @@ inline std::pair<size_t, std::basic_string<T>> parse_size(size_t size) {
 }
 
 inline std::string to_string(size_t size, UNIT unit = UNSPECIFIED) {
-  std::pair<size_t, std::string> result = parse_size<char>(size);
+  std::pair<size_t, std::string> result = parse_size<char>(size, unit);
   return std::to_string(result.first) + result.second;
 }
 
 inline std::wstring to_wstring(size_t size, UNIT unit = UNSPECIFIED) {
-  std::pair<size_t, std::wstring> result = parse_size<wchar_t>(size);
+  std::pair<size_t, std::wstring> result = parse_size<wchar_t>(size, unit);
   return std::to_wstring(result.first) + result.second;
 }
 
@@ -259,25 +259,26 @@ public:
 };
 
 template <typename T>
-inline std::pair<size_t, std::basic_string<T>> parse_size(size_t size) {
-  UNIT unit;
+inline std::pair<size_t, std::basic_string<T>>
+parse_size(size_t size, UNIT unit = UNSPECIFIED) {
   std::basic_string<T> unit_str;
-  if (size > eB) {
+
+  if ((size > eB && unit == UNSPECIFIED) || (unit == eB)) {
     unit = eB;
     unit_str = unit_name<T, eB>::c_str();
-  } else if (size > pB) {
+  } else if ((size > pB && unit == UNSPECIFIED) || (unit == pB)) {
     unit = pB;
     unit_str = unit_name<T, pB>::c_str();
-  } else if (size > tB) {
+  } else if ((size > tB && unit == UNSPECIFIED) || (unit == tB)) {
     unit = tB;
     unit_str = unit_name<T, tB>::c_str();
-  } else if (size > gB) {
+  } else if ((size > gB && unit == UNSPECIFIED) || (unit == gB)) {
     unit = gB;
     unit_str = unit_name<T, gB>::c_str();
-  } else if (size > mB) {
+  } else if ((size > mB && unit == UNSPECIFIED) || (unit == mB)) {
     unit = mB;
     unit_str = unit_name<T, mB>::c_str();
-  } else if (size > kB) {
+  } else if ((size > kB && unit == UNSPECIFIED) || (unit == kB)) {
     unit = kB;
     unit_str = unit_name<T, kB>::c_str();
   } else {
@@ -288,12 +289,12 @@ inline std::pair<size_t, std::basic_string<T>> parse_size(size_t size) {
 }
 
 inline std::string to_string(size_t size, UNIT unit = UNSPECIFIED) {
-  std::pair<size_t, std::string> result = parse_size<char>(size);
+  std::pair<size_t, std::string> result = parse_size<char>(size, unit);
   return std::to_string(result.first) + result.second;
 }
 
 inline std::wstring to_wstring(size_t size, UNIT unit = UNSPECIFIED) {
-  std::pair<size_t, std::wstring> result = parse_size<wchar_t>(size);
+  std::pair<size_t, std::wstring> result = parse_size<wchar_t>(size, unit);
   return std::to_wstring(result.first) + result.second;
 }
 

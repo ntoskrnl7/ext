@@ -46,6 +46,15 @@ TEST(units_test, SI) {
       ext::units::to_wstring(2 * ext::units::SI::tB, ext::units::POLICY_SI)
           .c_str(),
       L"2tB");
+
+  EXPECT_STREQ(
+      ext::units::SI::to_string(2 * ext::units::SI::tB, ext::units::SI::kB)
+          .c_str(),
+      "2000000000kB");
+  EXPECT_STREQ(
+      ext::units::SI::to_wstring(2 * ext::units::SI::tB, ext::units::SI::kB)
+          .c_str(),
+      L"2000000000kB");
 }
 
 TEST(units_test, IEC) {
@@ -67,8 +76,9 @@ TEST(units_test, IEC) {
 
   EXPECT_STREQ(ext::units::IEC::to_string(10000 * ext::units::IEC::KiB).c_str(),
                "9MiB");
-  EXPECT_STREQ(ext::units::IEC::to_wstring(10000 * ext::units::IEC::KiB).c_str(),
-               L"9MiB");
+  EXPECT_STREQ(
+      ext::units::IEC::to_wstring(10000 * ext::units::IEC::KiB).c_str(),
+      L"9MiB");
 
   EXPECT_EQ(ext::units::to_size_t("5GiB"), 5 * ext::units::IEC::GiB);
   EXPECT_EQ(ext::units::to_size_t(L"5GiB"), 5 * ext::units::IEC::GiB);
@@ -91,4 +101,13 @@ TEST(units_test, IEC) {
       ext::units::to_wstring(2 * ext::units::IEC::TiB, ext::units::POLICY_IEC)
           .c_str(),
       L"2TiB");
+
+  EXPECT_STREQ(
+      ext::units::IEC::to_string(2 * ext::units::IEC::TiB, ext::units::IEC::KiB)
+          .c_str(),
+      "2147483648KiB");
+  EXPECT_STREQ(ext::units::IEC::to_wstring(2 * ext::units::IEC::TiB,
+                                           ext::units::IEC::KiB)
+                   .c_str(),
+               L"2147483648KiB");
 }

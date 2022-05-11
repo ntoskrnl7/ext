@@ -1365,11 +1365,15 @@ ext::get_type_name(typeid(std::string));
   size_t size = 2 * ext::units::IEC::TiB;
   ext::units::to_string(size, ext::units::POLICY_IEC); // "2TiB"
   ext::units::to_wstring(size, ext::units::POLICY_IEC); // L"2TiB"
+  ext::units::IEC::to_string(size, ext::units::IEC::KiB); // "2147483648KiB"
+  ext::units::IEC::to_wstring(size, ext::units::IEC::KiB); // L"2147483648KiB"
 
   // SI
   size = 2 * ext::units::SI::tB;
   ext::units::to_string(size, ext::units::POLICY_SI); // "2tB"
   ext::units::to_wstring(size, ext::units::POLICY_SI); // L"2tB"
+  ext::units::IEC::to_string(2 * ext::units::IEC::TiB, ext::units::IEC::KiB); // "2147483648KiB"
+  ext::units::IEC::to_wstring(2 * ext::units::IEC::TiB, ext::units::IEC::KiB); // L"2147483648KiB"
   ```
 
 - to_size_t
