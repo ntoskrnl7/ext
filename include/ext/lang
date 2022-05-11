@@ -17,6 +17,222 @@
 namespace ext {
 namespace lang {
 namespace ko_kr {
+namespace numeric {
+inline std::wstring nominal(uint64_t number, wchar_t *zero = L"영") {
+  if (number < 10) {
+    wchar_t *str[] = {zero,  L"일", L"이", L"삼", L"사",
+                      L"오", L"육", L"칠", L"팔", L"구"};
+    return str[number];
+  }
+  if (number < 100) {
+    uint64_t quotient = number / 10;
+    uint64_t remainder = number % 10;
+    return ((quotient == 1) ? L"십" : nominal(quotient, L"") + L"십") +
+           nominal(remainder, L"");
+  }
+  if (number < 1000) {
+    uint64_t quotient = number / 100;
+    uint64_t remainder = number % 100;
+    return ((quotient == 1) ? L"백" : nominal(quotient, L"") + L"백") +
+           nominal(remainder, L"");
+  }
+  if (number < 10000) {
+    uint64_t quotient = number / 1000;
+    uint64_t remainder = number % 1000;
+    return ((quotient == 1) ? L"천" : nominal(quotient, L"") + L"천") +
+           nominal(remainder, L"");
+  }
+  if (number < 100000000) {
+    uint64_t quotient = number / 10000;
+    uint64_t remainder = number % 10000;
+    return ((quotient == 1) ? L"만" : nominal(quotient, L"") + L"만") +
+           nominal(remainder, L"");
+  }
+  if (number < 1000000000000) {
+    uint64_t quotient = number / 100000000;
+    uint64_t remainder = number % 100000000;
+    return ((quotient == 1) ? L"억" : nominal(quotient, L"") + L"억") +
+           nominal(remainder, L"");
+  }
+  if (number < 10000000000000000) {
+    uint64_t quotient = number / 1000000000000;
+    uint64_t remainder = number % 1000000000000;
+    return ((quotient == 1) ? L"조" : nominal(quotient, L"") + L"조") +
+           nominal(remainder, L"");
+  }
+  uint64_t quotient = number / 10000000000000000;
+  uint64_t remainder = number % 10000000000000000;
+  return ((quotient == 1) ? L"경" : nominal(quotient, L"") + L"경") +
+         nominal(remainder, L"");
+}
+
+inline std::wstring ordinal(uint64_t number, wchar_t *unit = L"째",
+                            wchar_t *first = L"첫") {
+  if (number == 0) {
+    if (unit[0] == L'째') {
+      return unit;
+    }
+    return std::wstring(L" ") + unit;
+  }
+  if (number < 10) {
+    if (unit[0] == L'째') {
+      const std::wstring str[] = {L"",     first,   L"둘",   L"셋",   L"넷",
+                                  L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
+      return str[number] + unit;
+    }
+    const std::wstring str[] = {L"",     first,   L"두",   L"세",   L"네",
+                                L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
+    return str[number] + L" " + unit;
+  }
+  if (number < 20) {
+    return L"열" + ordinal(number - 10, unit, L"한");
+  }
+  if (number == 20) {
+    return std::wstring(L"스무") + unit;
+  }
+  if (number < 30) {
+    return L"스물" + ordinal(number - 20, unit, L"한");
+  }
+  if (number < 40) {
+    return L"서른" + ordinal(number - 30, unit, L"한");
+  }
+  if (number < 50) {
+    return L"마흔" + ordinal(number - 40, unit, L"한");
+  }
+  if (number < 60) {
+    return L"쉰" + ordinal(number - 50, unit, L"한");
+  }
+  if (number < 70) {
+    return L"예순" + ordinal(number - 60, unit, L"한");
+  }
+  if (number < 80) {
+    return L"일흔" + ordinal(number - 70, unit, L"한");
+  }
+  if (number < 90) {
+    return L"여든" + ordinal(number - 80, unit, L"한");
+  }
+  if (number < 100) {
+    return L"아흔" + ordinal(number - 90, unit, L"한");
+  }
+  if (number < 1000) {
+    uint64_t quotient = number / 100;
+    uint64_t remainder = number % 100;
+    return ((quotient == 1) ? L"백" : nominal(quotient, L"") + L"백") +
+           ordinal(remainder, unit, L"한");
+  }
+  if (number < 10000) {
+    uint64_t quotient = number / 1000;
+    uint64_t remainder = number % 1000;
+    return ((quotient == 1) ? L"천" : nominal(quotient, L"") + L"천") +
+           ordinal(remainder, unit, L"한");
+  }
+  if (number < 100000000) {
+    uint64_t quotient = number / 10000;
+    uint64_t remainder = number % 10000;
+    return ((quotient == 1) ? L"만" : nominal(quotient, L"") + L"만") +
+           ordinal(remainder, unit, L"한");
+  }
+  if (number < 1000000000000) {
+    uint64_t quotient = number / 100000000;
+    uint64_t remainder = number % 100000000;
+    return ((quotient == 1) ? L"억" : nominal(quotient, L"") + L"억") +
+           ordinal(remainder, unit, L"한");
+  }
+  if (number < 10000000000000000) {
+    uint64_t quotient = number / 1000000000000;
+    uint64_t remainder = number % 1000000000000;
+    return ((quotient == 1) ? L"조" : nominal(quotient, L"") + L"조") +
+           ordinal(remainder, unit, L"한");
+  }
+  uint64_t quotient = number / 10000000000000000;
+  uint64_t remainder = number % 10000000000000000;
+  return ((quotient == 1) ? L"경" : nominal(quotient, L"") + L"경") +
+         ordinal(remainder, unit, L"한");
+}
+
+inline std::wstring cardinal(uint64_t number, wchar_t *unit = NULL,
+                             wchar_t *first = L"하나") {
+  if (number < 10) {
+    if (unit || first[0] == L'한') {
+      const std::wstring str[] = {L"",     L"한",   L"두",   L"세",   L"네",
+                                  L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
+      return unit ? str[number] + unit : str[number];
+    }
+    wchar_t *str[] = {L"",     first,   L"둘",   L"셋",   L"넷",
+                      L"다섯", L"여섯", L"일곱", L"여덟", L"아홉"};
+    return str[number];
+  }
+  if (number < 20) {
+    return L"열" + cardinal(number - 10, unit, first);
+  }
+  if (number == 20) {
+    if (unit) {
+      return std::wstring(L"스무") + unit;
+    }
+    return L"스물";
+  }
+  if (number < 30) {
+    return L"스물" + cardinal(number - 20, unit, first);
+  }
+  if (number < 40) {
+    return L"서른" + cardinal(number - 30, unit, first);
+  }
+  if (number < 50) {
+    return L"마흔" + cardinal(number - 40, unit, first);
+  }
+  if (number < 60) {
+    return L"쉰" + cardinal(number - 50, unit, first);
+  }
+  if (number < 70) {
+    return L"예순" + cardinal(number - 60, unit, first);
+  }
+  if (number < 80) {
+    return L"일흔" + cardinal(number - 70, unit, first);
+  }
+  if (number < 90) {
+    return L"여든" + cardinal(number - 80, unit, first);
+  }
+  if (number < 100) {
+    return L"아흔" + cardinal(number - 90, unit, first);
+  }
+  if (number < 1000) {
+    uint64_t quotient = number / 100;
+    uint64_t remainder = number % 100;
+    return ((quotient == 1) ? L"온" : cardinal(quotient, NULL, L"한") + L"온") +
+           cardinal(remainder, unit, first);
+  }
+  if (number < 10000) {
+    uint64_t quotient = number / 1000;
+    uint64_t remainder = number % 1000;
+    return ((quotient == 1) ? L"즈믄"
+                            : cardinal(quotient, NULL, L"한") + L"즈믄") +
+           cardinal(remainder, unit, first);
+  }
+  if (number < 100000000) {
+    uint64_t quotient = number / 10000;
+    uint64_t remainder = number % 10000;
+    return ((quotient == 1) ? L"골" : cardinal(quotient, NULL, L"한") + L"골") +
+           cardinal(remainder, unit, first);
+  }
+  if (number < 1000000000000) {
+    uint64_t quotient = number / 100000000;
+    uint64_t remainder = number % 100000000;
+    return ((quotient == 1) ? L"잘" : cardinal(quotient, NULL, L"한") + L"잘") +
+           cardinal(remainder, unit, first);
+  }
+  if (number < 10000000000000000) {
+    uint64_t quotient = number / 1000000000000;
+    uint64_t remainder = number % 1000000000000;
+    return ((quotient == 1) ? L"울" : cardinal(quotient, NULL, L"한") + L"울") +
+           cardinal(remainder, unit, first);
+  }
+  uint64_t quotient = number / 10000000000000000;
+  uint64_t remainder = number % 10000000000000000;
+  return ((quotient == 1) ? L"경" : cardinal(quotient, NULL, L"한") + L"경") +
+         cardinal(remainder, unit, first);
+}
+} // namespace numeric
+
 namespace syllable {
 inline wchar_t onset(wchar_t c) {
   if (L'ㄱ' <= c && c <= L'ㅎ')
@@ -24,7 +240,7 @@ inline wchar_t onset(wchar_t c) {
   static const wchar_t data[] = {
       L'ㄱ', L'ㄲ', L'ㄴ', L'ㄷ', L'ㄸ', L'ㄹ', L'ㅁ', L'ㅂ', L'ㅃ', L'ㅅ',
       L'ㅆ', L'ㅇ', L'ㅈ', L'ㅉ', L'ㅊ', L'ㅋ', L'ㅌ', L'ㅍ', L'ㅎ'};
-  const size_t index = (c - 0xAC00) / (21 * 28);
+  const size_t index = (c - L'가') / (21 * 28);
   if ((sizeof(data) / sizeof(wchar_t)) > index)
     return data[index];
   return L'\0';
@@ -37,7 +253,7 @@ inline wchar_t nucleus(wchar_t c) {
                                  L'ㅡ', L'ㅢ', L'ㅣ'};
   if (L'ㅏ' <= c && c <= L'ㅣ')
     return c;
-  const size_t index = (c - 0xAC00) % (21 * 28) / 28;
+  const size_t index = (c - L'가') % (21 * 28) / 28;
   if ((sizeof(data) / sizeof(wchar_t)) > index)
     return data[index];
   return L'\0';
@@ -48,7 +264,7 @@ inline wchar_t coda(wchar_t c) {
       L'\0', L'ㄱ', L'ㄲ', L'ㄳ', L'ㄴ', L'ㄵ', L'ㄶ', L'ㄷ', L'ㄹ', L'ㄺ',
       L'ㄻ', L'ㄼ', L'ㄽ', L'ㄾ', L'ㄿ', L'ㅀ', L'ㅁ', L'ㅂ', L'ㅄ', L'ㅅ',
       L'ㅆ', L'ㅇ', L'ㅈ', L'ㅊ', L'ㅋ', L'ㅌ', L'ㅍ', L'ㅎ'};
-  return data[(c - 0xAC00) % 28];
+  return data[(c - L'가') % 28];
 }
 
 struct letter {

@@ -861,6 +861,30 @@ for (auto &i : res) {
   EXPECT_STREQ(postposition::exclamation(L"바다").c_str(), L"여");
   ```
 
+- ko_kr::postposition
+
+  ```C++
+  EXPECT_STREQ(numeric::nominal(1).c_str(), L"일");
+  EXPECT_STREQ(numeric::nominal(2).c_str(), L"이");
+  EXPECT_STREQ(numeric::nominal(3).c_str(), L"삼");
+
+  EXPECT_STREQ(numeric::ordinal(1).c_str(), L"첫째");
+  EXPECT_STREQ(numeric::ordinal(2).c_str(), L"둘째");
+  EXPECT_STREQ(numeric::ordinal(3).c_str(), L"셋째");
+
+  EXPECT_STREQ(numeric::ordinal(1, L"번째").c_str(), L"첫 번째");
+  EXPECT_STREQ(numeric::ordinal(2, L"번째").c_str(), L"두 번째");
+  EXPECT_STREQ(numeric::ordinal(3, L"번째").c_str(), L"세 번째");
+
+  EXPECT_STREQ(numeric::cardinal(1).c_str(), L"하나");
+  EXPECT_STREQ(numeric::cardinal(2).c_str(), L"둘");
+  EXPECT_STREQ(numeric::cardinal(3).c_str(), L"셋");
+
+  EXPECT_STREQ(numeric::cardinal(1, L" 번").c_str(), L"한 번");
+  EXPECT_STREQ(numeric::cardinal(2, L" 번").c_str(), L"두 번");
+  EXPECT_STREQ(numeric::cardinal(3, L" 번").c_str(), L"세 번");
+  ```
+
 ### observable
 
 #### Requirements
@@ -1639,7 +1663,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.12")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.13")
 
 # link dependencies
 target_link_libraries(tests ext)
