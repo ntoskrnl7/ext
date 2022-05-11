@@ -443,81 +443,61 @@ template <typename T> T back(const std::basic_string<T> str) {
 #endif
 }
 
-template <typename SRC_T, typename DST_T>
-bool convert(const std::basic_string<SRC_T> &SourceString,
-             std::basic_string<DST_T> &dstinationString,
-             const std::locale Locale = std::locale("")) {
-#if CXX_VER >= 201103
-  if (std::is_same<SRC_T, DST_T>::value)
-#else
-  if (typeid(SRC_T) == typeid(DST_T))
-#endif
-  {
-    dstinationString = (std::basic_string<DST_T> &)SourceString;
-    return true;
-  }
-
+inline bool convert(const std::wstring &src, std::string &dst,
+                    const std::locale locale = std::locale("")) {
   typedef std::codecvt<wchar_t, char, std::mbstate_t> codecvt_wchar;
 
-  const codecvt_wchar &convert = std::use_facet<codecvt_wchar>(Locale);
-
+  const codecvt_wchar &convert = std::use_facet<codecvt_wchar>(locale);
   std::mbstate_t state = std::mbstate_t();
-  size_t sourceLength = SourceString.length();
-
-  if (sourceLength == 0) {
-    dstinationString.resize(0);
+  const size_t src_length = src.length();
+  if (src_length == 0) {
+    dst.resize(0);
     return true;
   }
-
-  const SRC_T *source = SourceString.c_str();
-  const SRC_T *sourceNext = source;
-
-  size_t dstinationLength =
-      sourceLength * convert.max_length() + convert.max_length();
-  std::vector<DST_T> dstination(dstinationLength);
-  DST_T *dstinationNext = &dstination[0];
-
-  codecvt_wchar::result result = codecvt_wchar::noconv;
-#if CXX_VER >= 201103
-  CXX_IF_CONSTEXPR(std::is_same<DST_T, char>::value)
-#else
-  if (typeid(DST_T) == typeid(char))
-#endif
-  {
-    result = convert.out(
-        state, (const wchar_t *)source, (const wchar_t *)&source[sourceLength],
-        (const wchar_t *&)sourceNext, (char *)&dstination[0],
-        (char *)&dstination[dstinationLength - 1], (char *&)dstinationNext);
-  }
-#if CXX_VER >= 201103
-  CXX_IF_CONSTEXPR(std::is_same<DST_T, wchar_t>::value)
-#else
-  else if (typeid(DST_T) == typeid(wchar_t))
-#endif
-  {
-    result = convert.in(state, (const char *)source,
-                        (const char *)&source[sourceLength],
-                        (const char *&)sourceNext, (wchar_t *)&dstination[0],
-                        (wchar_t *)&dstination[dstinationLength - 1],
-                        (wchar_t *&)dstinationNext);
-  }
-
-  if (result == codecvt_wchar::ok) {
-    dstinationString = std::basic_string<DST_T>((const DST_T *)&dstination[0],
-                                                (const DST_T *)dstinationNext);
+  const wchar_t *src_next = src.c_str();
+  const size_t dst_length =
+      src_length * convert.max_length() + convert.max_length();
+  std::vector<char> dst_vec(dst_length);
+  char *dst_next = &dst_vec[0];
+  if (convert.out(state, src.c_str(), &src[src_length], src_next, &dst_vec[0],
+                  &dst_vec[dst_length - 1], dst_next) == codecvt_wchar::ok) {
+    dst = std::move(std::basic_string<char>(&dst_vec[0], dst_next));
     return true;
   }
+  return false;
+}
 
+inline bool convert(const std::string &src, std::wstring &dst,
+                    const std::locale locale = std::locale("")) {
+  typedef std::codecvt<wchar_t, char, std::mbstate_t> codecvt_wchar;
+
+  const codecvt_wchar &convert = std::use_facet<codecvt_wchar>(locale);
+  std::mbstate_t state = std::mbstate_t();
+  const size_t src_length = src.length();
+  if (src_length == 0) {
+    dst.resize(0);
+    return true;
+  }
+  const char *src_next = src.c_str();
+  const size_t dst_length =
+      src_length * convert.max_length() + convert.max_length();
+  std::vector<wchar_t> dst_vec(dst_length);
+  wchar_t *dst_next = &dst_vec[0];
+  if (convert.in(state, src.c_str(), &src[src_length], src_next, &dst_vec[0],
+                 &dst_vec[dst_length - 1], dst_next) == codecvt_wchar::ok) {
+    dst = std::move(std::basic_string<wchar_t>(&dst_vec[0], dst_next));
+    return true;
+  }
   return false;
 }
 
 template <typename DST_T, typename SRC_T>
-std::basic_string<DST_T> convert(const std::basic_string<SRC_T> &SourceString,
+std::basic_string<DST_T> convert(const std::basic_string<SRC_T> &src,
                                  const std::locale Locale = std::locale("")) {
-  std::basic_string<DST_T> dstinationString;
+  std::basic_string<DST_T> dst;
 
-  if (convert(SourceString, dstinationString, Locale)) {
-    return dstinationString;
+  if (convert(src, dst, Locale)) {
+    return dst;
   }
 #ifdef __cpp_exceptions
   throw std::runtime_error("Failed to convert :-(");

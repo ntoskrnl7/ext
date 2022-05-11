@@ -269,8 +269,8 @@ inline wchar_t coda(wchar_t c) {
 
 struct letter {
   letter(wchar_t c)
-      : value(c), onset(syllable::onset(c)), nucleus(syllable::nucleus(c)),
-        coda(syllable::coda(c)) {}
+      : onset(syllable::onset(c)), nucleus(syllable::nucleus(c)),
+        coda(syllable::coda(c)), value(c) {}
   wchar_t onset;
   wchar_t nucleus;
   wchar_t coda;
