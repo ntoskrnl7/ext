@@ -1573,7 +1573,7 @@ inline typename Container::size_type erase_if(Container &c,
 }
 #endif // !defined(CXX_AUTO_TYPE_NOT_SUPPORTED)
 } // namespace std
-#endif _EXT_STD_ERASE_IF_
+#endif // _EXT_STD_ERASE_IF_
 #endif // CXX_USE_STD_ERASE_IF
 
 ///
