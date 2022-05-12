@@ -430,12 +430,12 @@ public:
       throw std::runtime_error("Invalid proceses");
     return in_;
   }
-  const ipstream &out() const {
+  ipstream &out() const {
     if (last_error_ != no_error)
       throw std::runtime_error("Invalid proceses");
     return out_;
   }
-  const ipstream &err() const {
+  ipstream &err() const {
     if (last_error_ != no_error)
       throw std::runtime_error("Invalid proceses");
     return err_;
