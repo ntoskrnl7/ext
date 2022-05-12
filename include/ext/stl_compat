@@ -1545,7 +1545,8 @@ template <typename... Ts> using void_t = typename make_void<Ts...>::type;
 namespace std {
 #if defined(CXX_AUTO_TYPE_NOT_SUPPORTED)
 template <class Container, class UnaryPredicate>
-typename Container::size_type erase_if(Container &c, UnaryPredicate pred) {
+inline typename Container::size_type erase_if(Container &c,
+                                              UnaryPredicate pred) {
   Container::size_type old_size = c.size();
   for (Container::const_iterator i = c.begin(), last = c.end(); i != last;) {
     if (pred(*i)) {
@@ -1558,7 +1559,8 @@ typename Container::size_type erase_if(Container &c, UnaryPredicate pred) {
 }
 #else  // !defined(CXX_AUTO_TYPE_NOT_SUPPORTED)
 template <class Container, class UnaryPredicate>
-typename Container::size_type erase_if(Container &c, UnaryPredicate pred) {
+inline typename Container::size_type erase_if(Container &c,
+                                              UnaryPredicate pred) {
   auto old_size = c.size();
   for (auto i = c.begin(), last = c.end(); i != last;) {
     if (pred(*i)) {
