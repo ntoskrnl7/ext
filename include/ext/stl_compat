@@ -21,6 +21,7 @@
  * std::move
  * std::remove
  * std::remove_if
+ * std::erase_if
  * std::remove_cv
  * std::remove_cv_t
  * std::remove_const
@@ -79,6 +80,7 @@
  * CXX_USE_STD_VOID_T
  * CXX_USE_STD_UNORDERED_MAP
  * CXX_USE_STD_HASH
+ * CXX_USE_STD_ERASE_IF
  *
  * Boost
  * CXX_USE_STD_ATOMIC
@@ -202,6 +204,7 @@
 #define CXX_STD_REMOVE_CVREF_NOT_SUPPORTED
 #define CXX_STD_REMOVE_CVREF_T_NOT_SUPPORTED
 #define CXX_STD_U8STRING_NOT_SUPPORTED
+#define CXX_STD_ERASE_IF_NOT_SUPPORTED
 
 #if _MSC_VER >= 1600 // >= Visual Studio 2010 version 10.0
 #undef CXX_STDINT_NOT_SUPPORTED
@@ -276,10 +279,15 @@
 #undef CXX_STD_REMOVE_CVREF_NOT_SUPPORTED
 #undef CXX_STD_REMOVE_CVREF_T_NOT_SUPPORTED
 #undef CXX_STD_U8STRING_NOT_SUPPORTED
+#undef CXX_STD_ERASE_IF_NOT_SUPPORTED
 #endif // CXX_VER < 201703L
 
 #if defined(__cpp_lib_byte) && (CXX_VER >= __cpp_lib_byte)
 #undef CXX_STD_BYTE_NOT_SUPPORTED
+#endif
+
+#if defined(__cpp_lib_erase_if) && (CXX_VER >= __cpp_lib_erase_if)
+#undef CXX_STD_ERASE_IF_NOT_SUPPORTED
 #endif
 
 #if ((defined(__cpp_lib_remove_cvref) &&                                       \
@@ -330,6 +338,7 @@
 #define CXX_USE_STD_ENABLE_IF
 #define CXX_USE_STD_VOID_T
 #define CXX_USE_STD_REGEX
+#define CXX_STD_ERASE_IF_NOT_SUPPORTED
 #endif
 
 ///
@@ -392,6 +401,9 @@
 ///
 #if !defined(CXX_STD_REGEX_NOT_SUPPORTED)
 #undef CXX_USE_STD_REGEX
+#endif
+#if !defined(CXX_STD_ERASE_IF_NOT_SUPPORTED)
+#undef CXX_USE_STD_ERASE_IF
 #endif
 #if !defined(CXX_STD_VOID_T_NOT_SUPPORTED) || defined(__cpp_lib_void_t) ||     \
     !defined(__cpp_variadic_templates)
@@ -880,7 +892,8 @@ using std::tr1::tuple;
 #undef _EXT_STD_TUPLE_
 } // namespace std
 #endif // _EXT_STD_TUPLE_
-#endif
+#endif // _TUPLE_
+
 #ifdef _MEMORY_ // VS2008 memory
 #ifndef _EXT_STD_SHARED_PTR_
 #define _EXT_STD_SHARED_PTR_
@@ -897,10 +910,20 @@ using std::tr1::shared_ptr;
 namespace std {
 using std::tr1::hash;
 using std::tr1::unordered_map;
-#undef CXX_USE_STD_SHARED_PTR
+#undef CXX_USE_STD_UNORDERED_MAP
 } // namespace std
 #endif // _EXT_STD_UNORDERED_MAP_
 #endif // _UNORDERED_MAP_
+
+#ifdef _UNORDERED_SET_ // VS2008 unordered_set
+#ifndef _EXT_STD_UNORDERED_SET_
+#define _EXT_STD_UNORDERED_SET_
+namespace std {
+using std::tr1::unordered_set;
+#undef CXX_USE_STD_UNORDERED_SET
+} // namespace std
+#endif // _EXT_STD_UNORDERED_SET_
+#endif // _UNORDERED_SET_
 
 #ifdef _FUNCTIONAL_ // VS2008 functional
 #ifndef _EXT_STD_FUNCTIONAL_
@@ -1500,6 +1523,57 @@ template <class T> using remove_cvref_t = typename remove_cvref<T>::type;
 #endif // !_EXT_STD_REMOVE_CVREF_T_
 #endif // CXX_USE_STD_REMOVE_CVREF_T
 
+//
+//  std::void_t
+//
+#if defined(CXX_USE_STD_VOID_T)
+#ifndef _EXT_STD_VOID_T_
+#define _EXT_STD_VOID_T_
+namespace std {
+template <typename... Ts> struct make_void { typedef void type; };
+template <typename... Ts> using void_t = typename make_void<Ts...>::type;
+} // namespace std
+#endif // _EXT_STD_VOID_T_
+#endif // CXX_USE_STD_VOID_T
+
+//
+//  std::erase_if
+//
+#if defined(CXX_USE_STD_ERASE_IF)
+#ifndef _EXT_STD_ERASE_IF_
+#define _EXT_STD_ERASE_IF_
+namespace std {
+#if defined(CXX_AUTO_TYPE_NOT_SUPPORTED)
+template <class Container, class UnaryPredicate>
+typename Container::size_type erase_if(Container &c, UnaryPredicate pred) {
+  Container::size_type old_size = c.size();
+  for (Container::const_iterator i = c.begin(), last = c.end(); i != last;) {
+    if (pred(*i)) {
+      i = c.erase(i);
+    } else {
+      ++i;
+    }
+  }
+  return old_size - c.size();
+}
+#else  // !defined(CXX_AUTO_TYPE_NOT_SUPPORTED)
+template <class Container, class UnaryPredicate>
+typename Container::size_type erase_if(Container &c, UnaryPredicate pred) {
+  auto old_size = c.size();
+  for (auto i = c.begin(), last = c.end(); i != last;) {
+    if (pred(*i)) {
+      i = c.erase(i);
+    } else {
+      ++i;
+    }
+  }
+  return old_size - c.size();
+}
+#endif // !defined(CXX_AUTO_TYPE_NOT_SUPPORTED)
+} // namespace std
+#endif _EXT_STD_ERASE_IF_
+#endif // CXX_USE_STD_ERASE_IF
+
 ///
 /// When use Boost
 ///
@@ -1521,16 +1595,6 @@ inline bool operator!=(std::atomic<std::thread::id> const &lhs,
 #endif // !defined(CXX_STD_THREAD_NOT_SUPPORTED) || defined(_EXT_STD_THREAD_)
 #endif // defined(_EXT_STD_ATOMIC_) && defined(CXX_STD_ATOMIC_NOT_SUPPORTED) &&
        // defined(BOOST_ATOMIC_HPP)
-
-#if defined(CXX_USE_STD_VOID_T)
-#ifndef _EXT_STD_VOID_T_
-#define _EXT_STD_VOID_T_
-namespace std {
-template <typename... Ts> struct make_void { typedef void type; };
-template <typename... Ts> using void_t = typename make_void<Ts...>::type;
-} // namespace std
-#endif // _EXT_STD_VOID_T_
-#endif // CXX_USE_STD_VOID_T
 
 //
 // std::thread (no boost)

@@ -877,9 +877,9 @@ for (auto &i : res) {
   EXPECT_STREQ(numeric::ordinal(2).c_str(), "둘째");
   EXPECT_STREQ(numeric::ordinal(3).c_str(), "셋째");
 
-  EXPECT_STREQ(numeric::ordinal(1, "번째").c_str(), "첫 번째");
-  EXPECT_STREQ(numeric::ordinal(2, "번째").c_str(), "두 번째");
-  EXPECT_STREQ(numeric::ordinal(3, "번째").c_str(), "세 번째");
+  EXPECT_STREQ(numeric::ordinal(1, " 번째").c_str(), "첫 번째");
+  EXPECT_STREQ(numeric::ordinal(2, " 번째").c_str(), "두 번째");
+  EXPECT_STREQ(numeric::ordinal(3, " 번째").c_str(), "세 번째");
 
   EXPECT_STREQ(numeric::cardinal(1).c_str(), "하나");
   EXPECT_STREQ(numeric::cardinal(2).c_str(), "둘");
@@ -898,9 +898,9 @@ for (auto &i : res) {
   EXPECT_STREQ(numeric::wordinal(2).c_str(), L"둘째");
   EXPECT_STREQ(numeric::wordinal(3).c_str(), L"셋째");
 
-  EXPECT_STREQ(numeric::wordinal(1, L"번째").c_str(), L"첫 번째");
-  EXPECT_STREQ(numeric::wordinal(2, L"번째").c_str(), L"두 번째");
-  EXPECT_STREQ(numeric::wordinal(3, L"번째").c_str(), L"세 번째");
+  EXPECT_STREQ(numeric::wordinal(1, L" 번째").c_str(), L"첫 번째");
+  EXPECT_STREQ(numeric::wordinal(2, L" 번째").c_str(), L"두 번째");
+  EXPECT_STREQ(numeric::wordinal(3, L" 번째").c_str(), L"세 번째");
 
   EXPECT_STREQ(numeric::wcardinal(1).c_str(), L"하나");
   EXPECT_STREQ(numeric::wcardinal(2).c_str(), L"둘");
