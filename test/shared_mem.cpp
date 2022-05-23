@@ -1,7 +1,11 @@
 ﻿#include <ext/shared_mem>
 #include <gtest/gtest.h>
 
+bool memory_struct0_dctor = false;
+
 struct memory_struct0 {
+  memory_struct0() : i(1), j(2) { memory_struct0_dctor = false; }
+  ~memory_struct0() { memory_struct0_dctor = true; }
   int i;
   int j;
 };
@@ -14,6 +18,9 @@ TEST(shared_mem_test, create_open_compare) {
     st_mem.create();
   }
   EXPECT_TRUE(st_mem.created());
+  EXPECT_EQ(st_mem->i, 1);
+  EXPECT_EQ(st_mem->j, 2);
+
   st_mem->i = 10;
   st_mem->j = 20;
 
@@ -42,11 +49,14 @@ TEST(shared_mem_test, create_open_compare) {
 
 #if defined(_WIN32)
   // 관리자 권한이 있는 Windows 환경이라면 영구 전역 객체를 삭제합니다.
-  if (IsUserAdmin())
+  if (IsUserAdmin()) {
     EXPECT_TRUE(st_mem.destroy());
+    EXPECT_TRUE(memory_struct0_dctor);
+  }
 #else
   // Linux나 macOS환경에서는 항상 영구 전역 객체로 생성되므로 삭제합니다.
   st_mem.destroy();
+  EXPECT_TRUE(memory_struct0_dctor);
 #endif
 }
 

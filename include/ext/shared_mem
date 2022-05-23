@@ -495,11 +495,18 @@ public:
 
   bool create(shared_mem_access_mask access_mask = shared_mem_unspecified,
               perm permission = perm_unspecified) {
-    return shared_mem_base::create(alignedSize_, access_mask, permission);
+    created_ = false;
+    opened_ = shared_mem_base::open(access_mask);
+    if (opened_)
+      return false;
+    created_ = shared_mem_base::create(alignedSize_, access_mask, permission);
+    return created_;
   }
 
   bool open(shared_mem_access_mask access_mask = shared_mem_unspecified) {
-    return shared_mem_base::open(access_mask);
+    created_ = false;
+    opened_ = shared_mem_base::open(access_mask);
+    return opened_;
   }
 
   bool created() const { return created_; }
@@ -511,9 +518,9 @@ public:
   bool exists() { return shared_mem_base::exists(); }
 
   bool destroy() {
-    return shared_mem_base::destroy();
     if (created_ && data_)
       data_->~T();
+    return shared_mem_base::destroy();
   }
 
   T &operator*() { return *operator()(); }
