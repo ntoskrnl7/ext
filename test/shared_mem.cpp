@@ -7,7 +7,8 @@ struct memory_struct0 {
 };
 
 TEST(shared_mem_test, create_open_compare) {
-  shared_mem<memory_struct0> st_mem("memory_struct0", shared_mem_all_access);
+  ext::shared_mem<memory_struct0> st_mem("memory_struct0",
+                                         shared_mem_all_access);
   if (st_mem.opened()) {
     st_mem.destroy();
     st_mem.create();
@@ -16,7 +17,7 @@ TEST(shared_mem_test, create_open_compare) {
   st_mem->i = 10;
   st_mem->j = 20;
 
-  shared_mem<memory_struct0> st_mem2("memory_struct0");
+  ext::shared_mem<memory_struct0> st_mem2("memory_struct0");
   EXPECT_EQ(st_mem->i, st_mem2->i);
   EXPECT_EQ(st_mem->j, st_mem2->j);
 
@@ -25,7 +26,7 @@ TEST(shared_mem_test, create_open_compare) {
   EXPECT_EQ(st_mem->i, st_mem2->i);
   EXPECT_EQ(st_mem->j, st_mem2->j);
 
-  shared_mem_base mem("memory_struct0");
+  ext::shared_mem_base mem("memory_struct0");
   EXPECT_TRUE(mem.open());
   memory_struct0 *buffer = (memory_struct0 *)mem.map(0, sizeof(memory_struct0));
   EXPECT_NE(buffer, (memory_struct0 *)nullptr);
@@ -50,6 +51,6 @@ TEST(shared_mem_test, create_open_compare) {
 }
 
 TEST(shared_mem_test, after_destory) {
-  shared_mem_base mem("memory_struct0");
+  ext::shared_mem_base mem("memory_struct0");
   EXPECT_FALSE(mem.exists());
 }

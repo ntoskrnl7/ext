@@ -1204,7 +1204,7 @@ total.value(); // 60
     int j;
   };
 
-  shared_mem<memory_struct0> st_mem("memory_struct0", shared_mem_all_access);
+  ext::shared_mem<memory_struct0> st_mem("memory_struct0", shared_mem_all_access);
   if (st_mem.opened()) {
     st_mem.destroy();
     st_mem.create();
@@ -1226,7 +1226,7 @@ total.value(); // 60
     int j;
   };
 
-  shared_mem<memory_struct0> st_mem("memory_struct0");
+  ext::shared_mem<memory_struct0> st_mem("memory_struct0");
   if (st_mem.opened()) {
     st_mem2->i; // 10
     st_mem2->j; // 20
@@ -1693,7 +1693,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.13")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.14")
 
 # link dependencies
 target_link_libraries(tests ext)
