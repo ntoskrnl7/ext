@@ -77,16 +77,18 @@ public:
 
     const unsigned char *input = (const unsigned char *)data;
     size_t input_size = data_size;
-    size_t i;
+    size_t i = 0;
     std::basic_string<D> ret(4 * ((input_size + 2) / 3), D());
     D *p = const_cast<D *>(ret.c_str());
-    for (i = 0; i < input_size - 2; i += 3) {
-      *p++ = encoding_table[(input[i] >> 2) & 0x3F];
-      *p++ = encoding_table[((input[i] & 0x3) << 4) |
-                            ((int)(input[i + 1] & 0xF0) >> 4)];
-      *p++ = encoding_table[((input[i + 1] & 0xF) << 2) |
-                            ((int)(input[i + 2] & 0xC0) >> 6)];
-      *p++ = encoding_table[input[i + 2] & 0x3F];
+    if (input_size > 2) {
+      for (; i < input_size - 2; i += 3) {
+        *p++ = encoding_table[(input[i] >> 2) & 0x3F];
+        *p++ = encoding_table[((input[i] & 0x3) << 4) |
+                              ((int)(input[i + 1] & 0xF0) >> 4)];
+        *p++ = encoding_table[((input[i + 1] & 0xF) << 2) |
+                              ((int)(input[i + 2] & 0xC0) >> 6)];
+        *p++ = encoding_table[input[i + 2] & 0x3F];
+      }
     }
     if (i < input_size) {
       *p++ = encoding_table[(input[i] >> 2) & 0x3F];
@@ -100,7 +102,6 @@ public:
       }
       *p++ = '=';
     }
-
     return std::move(ret);
   }
 

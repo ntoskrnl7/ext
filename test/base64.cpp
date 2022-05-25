@@ -2,6 +2,16 @@
 #include <gtest/gtest.h>
 
 TEST(base64_test, mbcs_test) {
+  EXPECT_STREQ(ext::base64::encode("1").c_str(), "MQ==");
+  EXPECT_STREQ(ext::base64::encode("11").c_str(), "MTE=");
+  EXPECT_STREQ(ext::base64::encode("111").c_str(), "MTEx");
+  EXPECT_STREQ(ext::base64::encode("1111").c_str(), "MTExMQ==");
+
+  EXPECT_STREQ(ext::base64::encode<wchar_t>("1").c_str(), L"MQ==");
+  EXPECT_STREQ(ext::base64::encode<wchar_t>("11").c_str(), L"MTE=");
+  EXPECT_STREQ(ext::base64::encode<wchar_t>("111").c_str(), L"MTEx");
+  EXPECT_STREQ(ext::base64::encode<wchar_t>("1111").c_str(), L"MTExMQ==");
+
 #if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
     defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
   std::string encoded_mbcs_text_mbcs = ext::base64::encode<char>("1234");
@@ -56,6 +66,16 @@ TEST(base64_test, mbcs_test) {
 }
 
 TEST(base64_test, wcs_test) {
+  EXPECT_STREQ(ext::base64::encode(L"1").c_str(), "MQA=");
+  EXPECT_STREQ(ext::base64::encode(L"11").c_str(), "MQAxAA==");
+  EXPECT_STREQ(ext::base64::encode(L"111").c_str(), "MQAxADEA");
+  EXPECT_STREQ(ext::base64::encode(L"1111").c_str(), "MQAxADEAMQA=");
+
+  EXPECT_STREQ(ext::base64::encode<wchar_t>(L"1").c_str(), L"MQA=");
+  EXPECT_STREQ(ext::base64::encode<wchar_t>(L"11").c_str(), L"MQAxAA==");
+  EXPECT_STREQ(ext::base64::encode<wchar_t>(L"111").c_str(), L"MQAxADEA");
+  EXPECT_STREQ(ext::base64::encode<wchar_t>(L"1111").c_str(), L"MQAxADEAMQA=");
+
 #if defined(CXX_AUTO_TYPE_NOT_SUPPORTED) ||                                    \
     defined(CXX_DEFAULT_TEMPLATE_ARGUMENTS_NOT_SUPPORTED)
   std::string encoded_wcs_text_mbcs = ext::base64::encode<char>(L"1234");
