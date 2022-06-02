@@ -23,7 +23,8 @@
 #endif
 
 #if !defined(_EXT_STD_SHARED_MUTEX_) &&                                        \
-    !defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED)
+    !(defined(CXX_STD_SHARED_MUTEX_NOT_SUPPORTED) &&                           \
+      defined(CXX_STD_SHARED_TIMED_MUTEX_NOT_SUPPORTED))
 #include <shared_mutex>
 #endif
 

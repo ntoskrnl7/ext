@@ -93,7 +93,7 @@ public:
 #if defined(__cpp_variadic_templates)
         *this = std::apply(
             std::function<result(std::remove_cvref_t<__CHAIN_ARGS_TYPE___>...)>(
-                [&chain](__CHAIN_ARGS_TYPE___ &&...args) {
+                [&chain](__CHAIN_ARGS_TYPE___ &&... args) {
                   return (*chain->begin_)(args...);
                 }),
             chain->begin_->args_);

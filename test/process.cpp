@@ -271,9 +271,9 @@ TEST(process_test, process_stdout_test) {
     if (wc.joinable())
       wc.join();
   });
-  std::atomic_bool killed = false;
+  std::atomic_bool killed(false);
   std::thread delayed_kill_thread([&killed, &mtx, &cv, &process] {
-    std::unique_lock lk(mtx);
+    std::unique_lock<decltype(mtx)> lk(mtx);
     cv.wait_for(lk, std::chrono::seconds(1));
     if (process.joinable()) {
       killed = true;
@@ -323,7 +323,7 @@ TEST(process_test, process_stdin_test) {
   });
 
   std::thread delayed_kill_thread([&mtx, &cv, &ps, &grep] {
-    std::unique_lock lk(mtx);
+    std::unique_lock<decltype(mtx)> lk(mtx);
     cv.wait_for(lk, std::chrono::seconds(10));
     if (grep.joinable())
       grep.kill();
