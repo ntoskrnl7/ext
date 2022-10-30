@@ -975,7 +975,7 @@ using namespace std::tr1::placeholders;
 #elif CXX_VER >= 201402L
 #define CXX_INVOKE_RESULT(F, Args) std::result_of_t<F(Args)>
 #else
-#define CXX_INVOKE_RESULT(F, Args) std::result_of<F(Args)>::type
+#define CXX_INVOKE_RESULT(F, Args) typename std::result_of<F(Args)>::type
 #endif
 
 ///
@@ -1000,7 +1000,7 @@ using namespace std::tr1::placeholders;
 /// CXX_FOR, CXX_FOR_O, CXX_FOR_O_END
 ///  - Define a "range based for loop" macro
 ///
-#if defined(__cpp_range_based_for) && (CXX_VER >= __cpp_range_based_for)
+#if defined(__cpp_range_based_for)
 #define CXX_FOR(range_declaration, range_expression)                           \
   for (range_declaration : (range_expression))
 #else // !(defined(__cpp_range_based_for) && (CXX_VER >= __cpp_range_based_for))
@@ -1232,28 +1232,23 @@ inline CXX_CONSTEXPR byte operator~(const byte _Arg) CXX_NOEXCEPT {
 }
 
 template <class _IntType>
-inline CXX_CONSTEXPR byte &operator<<=(byte &_Arg,
-                                       const _IntType _Shift) CXX_NOEXCEPT {
+inline byte &operator<<=(byte &_Arg, const _IntType _Shift) CXX_NOEXCEPT {
   return _Arg = _Arg << _Shift;
 }
 
 template <class _IntType>
-inline CXX_CONSTEXPR byte &operator>>=(byte &_Arg,
-                                       const _IntType _Shift) CXX_NOEXCEPT {
+inline byte &operator>>=(byte &_Arg, const _IntType _Shift) CXX_NOEXCEPT {
   return _Arg = _Arg >> _Shift;
 }
 
-CXX_CONSTEXPR
 inline byte &operator|=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
   return _Left = _Left | _Right;
 }
 
-CXX_CONSTEXPR
 inline byte &operator&=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
   return _Left = _Left & _Right;
 }
 
-CXX_CONSTEXPR
 inline byte &operator^=(byte &_Left, const byte _Right) CXX_NOEXCEPT {
   return _Left = _Left ^ _Right;
 }
@@ -1316,25 +1311,34 @@ inline ForwardIt remove_if(ForwardIt first, ForwardIt last, UnaryPredicate p) {
 #include <tuple>
 
 namespace std {
+namespace detail {
 template <int N> struct apply_wrap {
-  template <typename R, typename... Args, typename... UnpackedArgs>
-  static R apply(std::function<R(Args...)> &f, const std::tuple<Args...> &t,
-                 UnpackedArgs... args) {
-    return apply_wrap<N - 1>::apply(f, t, std::get<N - 1>(t), args...);
+  template <class F, typename... Args, typename... UnpackedArgs>
+  static CXX_INVOKE_RESULT(F, Args...)
+      apply(F &&f, std::tuple<Args...> &&t, UnpackedArgs &&... args) {
+    return apply_wrap<N - 1>::apply(f, std::forward<std::tuple<Args...>>(t),
+                                    std::get<N - 1>(t),
+                                    std::forward<UnpackedArgs>(args)...);
   }
 };
 
 template <> struct apply_wrap<0> {
-  template <typename R, typename... Args, typename... UnpackedArgs>
-  static R apply(std::function<R(Args...)> &f, const std::tuple<Args...> &,
-                 UnpackedArgs... args) {
-    return f(args...);
+  template <class F, typename... Args, typename... UnpackedArgs>
+  static CXX_INVOKE_RESULT(F, Args...)
+      apply(F &&f, std::tuple<Args...> &&, UnpackedArgs &&... args) {
+    return f(std::forward<UnpackedArgs>(args)...);
   }
 };
-
-template <typename R, typename... Args>
-inline R apply(std::function<R(Args...)> &&f, const std::tuple<Args...> &t) {
-  return apply_wrap<sizeof...(Args)>::apply(f, t);
+} // namespace detail
+template <class F, typename... Args>
+inline CXX_INVOKE_RESULT(F, Args...) apply(F &&f, std::tuple<Args...> &&t) {
+  return detail::apply_wrap<sizeof...(Args)>::apply(
+      std::forward<F>(f), std::forward<std::tuple<Args...>>(t));
+}
+template <class F, typename... Args>
+inline CXX_INVOKE_RESULT(F, Args...) apply(F &&f, std::tuple<Args...> &t) {
+  return detail::apply_wrap<sizeof...(Args)>::apply(
+      std::forward<F>(f), std::forward<std::tuple<Args...>>(t));
 }
 } // namespace std
 #endif // !_EXT_STD_APPLY_
