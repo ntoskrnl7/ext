@@ -32,7 +32,7 @@ C++ **Ex**tended **T**emplate Library
 
 ## Contents
 
-- [C++ Extended Template Library](#c-extended-template-library)
+- [ext](#ext)
   - [Requirements](#requirements)
   - [Contents](#contents)
   - [Test Environments](#test-environments)
@@ -1710,7 +1710,7 @@ add_executable(tests tests.cpp)
 
 # add dependencies
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:ntoskrnl7/ext@0.5.16")
+CPMAddPackage("gh:ntoskrnl7/ext@0.5.17")
 
 # link dependencies
 target_link_libraries(tests ext)

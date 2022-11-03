@@ -212,6 +212,14 @@ TEST(string_test, equal_test) {
   EXPECT_FALSE(ext::equal("hello, world :-)", "hello, World :-)", true));
 }
 
+TEST(string_test, starts_with_test) {
+  EXPECT_TRUE(ext::starts_with("hello, world :-)", "hello"));
+  EXPECT_TRUE(ext::starts_with("hello, world :-)", "Hello"));
+
+  EXPECT_TRUE(ext::starts_with("hello, world :-)", "hello", true));
+  EXPECT_FALSE(ext::starts_with("hello, world :-)", "Hello", true));
+}
+
 TEST(string_test, replace_all_test) {
   std::string str = "hello, world :-)";
   EXPECT_STREQ(ext::replace_all(str, ":-", ";-").c_str(), "hello, world ;-)");
