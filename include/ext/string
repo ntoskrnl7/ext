@@ -286,6 +286,45 @@ inline bool search(const std::basic_string<T> &str, const T *s_str,
 }
 
 //
+// starts_with
+//
+template <typename T>
+inline bool starts_with(const std::basic_string<T> &str,
+                        const std::basic_string<T> &prefix,
+                        bool case_sensitive = false) {
+
+  if (str.size() < prefix.size()) {
+    return false;
+  }
+  if (case_sensitive)
+    return ((prefix.size() <= str.size()) &&
+            std::equal(prefix.begin(), prefix.end(), str.begin()));
+  else
+    return ((prefix.size() <= str.size()) &&
+            std::equal(prefix.begin(), prefix.end(), str.begin(),
+                       ext::string::compare_char_i<T>));
+}
+
+template <typename T>
+inline bool starts_with(const T *str, const T *prefix,
+                        bool case_sensitive = false) {
+  return starts_with(std::basic_string<T>(str), std::basic_string<T>(prefix),
+                     case_sensitive);
+}
+
+template <typename T>
+inline bool starts_with(const T *str, const std::basic_string<T> &prefix,
+                        bool case_sensitive = false) {
+  return starts_with(std::basic_string<T>(str), prefix, case_sensitive);
+}
+
+template <typename T>
+inline bool starts_with(const std::basic_string<T> &str, const T *prefix,
+                        bool case_sensitive = false) {
+  return starts_with(str, std::basic_string<T>(prefix), case_sensitive);
+}
+
+//
 //  equal functions.
 //
 
