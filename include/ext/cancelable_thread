@@ -159,9 +159,6 @@ public:
         ctx->cv_.notify_all();
         if (getenv("WINDIR"))
           throw ext::canceled_exception();
-#if defined(__APPLE__)
-        throw ext::canceled_exception();
-#endif
       };
       pthread_cleanup_push(cancel_immediately_ ? cancel_immediately_routine
                                                : cancel_routine,
