@@ -12,10 +12,11 @@
 #ifndef _EXT_LANG_
 #define _EXT_LANG_
 
-#include "string"
-
 #define CXX_USE_STD_CSTDINT
 #include "stl_compat"
+#include <cstdint>
+
+#include "string"
 
 namespace ext {
 namespace lang {
