@@ -1,6 +1,11 @@
 # ext
 
-C++ **Ex**tended **T**emplate Library
+C++ **EX**tended **T**emplate Library
+
+**ext** is a modern, cross-platform C++ template utility library  
+designed to bridge the gap between the Standard Library and real-world production needs.  
+It provides practical, reusable components that make C++ development easier, safer, and more productive—  
+without the complexity or overhead of larger frameworks.
 
 [![CMake](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml/badge.svg)](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml)
 [![MSYS2](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml/badge.svg)](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml)
