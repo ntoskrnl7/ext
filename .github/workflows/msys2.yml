@@ -25,7 +25,6 @@ jobs:
             - { sys: MINGW32, env: i686, gen: 'MinGW Makefiles'}
             - { sys: MINGW64, env: x86_64, gen: 'MinGW Makefiles'}
             - { sys: UCRT64,  env: ucrt-x86_64, gen: 'MinGW Makefiles'}  # Experimental!
-            - { sys: CLANG32, env: clang-i686, gen: 'MinGW Makefiles'}   # Experimental!
             - { sys: CLANG64, env: clang-x86_64, gen: 'MinGW Makefiles'} # Experimental!
     defaults:
       run:
