@@ -38,14 +38,6 @@ jobs:
         install: >-
           base-devel
           git
-    - name: Add staging repo
-      if: ${{ matrix.sys == 'CLANG32' }}
-      run: |
-        sed -i '1s|^|[staging]\nServer = https://repo.msys2.org/staging/\nSigLevel = Never\n[clang32]\nInclude = /etc/pacman.d/mirrorlist.clang32\n|' /etc/pacman.conf
-    - name: Update using staging
-      if: ${{ matrix.sys == 'CLANG32' }}
-      run: |
-        pacman --noconfirm -Sy
     - name: Install toolchain and CMake
       if: ${{ matrix.env != '' }}
       run: |
@@ -70,12 +62,12 @@ jobs:
       working-directory: test/build
 
     - name: Configure CMake
-      if: ${{ (matrix.gen != '') && ((matrix.sys == 'CLANG32') || (matrix.sys == 'CLANG64')) }}
+      if: ${{ (matrix.gen != '') && (matrix.sys == 'CLANG64') }}
       run: cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "${{matrix.gen}}" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
       working-directory: test/build
 
     - name: Configure CMake
-      if: ${{ (matrix.gen != '') && (!((matrix.sys == 'CLANG32') || (matrix.sys == 'CLANG64'))) }}
+      if: ${{ (matrix.gen != '') && (matrix.sys != 'CLANG64') }}
       run: cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "${{matrix.gen}}"
       working-directory: test/build
 
