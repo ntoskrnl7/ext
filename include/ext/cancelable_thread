@@ -82,7 +82,10 @@ public:
   failure_exception(const char *message) : std::runtime_error(message) {}
 };
 
-class canceled_exception {};
+class canceled_exception : public std::runtime_error {
+public:
+  canceled_exception() : std::runtime_error("canceled") {}
+};
 
 #if !EXT_CANCELABLE_THREAD_USE_PTHREAD
 namespace details {
