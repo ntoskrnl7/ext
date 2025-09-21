@@ -21,6 +21,7 @@
 #define CXX_USE_NULLPTR
 #define CXX_USE_STD_CSTDINT
 #include "stl_compat"
+#include <cstdint>
 
 #if ((!defined(CXX_STD_REGEX_NOT_SUPPORTED)) || defined(_EXT_STD_REGEX_))
 #include "string"
