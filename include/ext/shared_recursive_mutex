@@ -60,6 +60,8 @@
 
 #include "stl_compat"
 
+#include <system_error>
+
 namespace ext {
 /**
  * @brief The shared_recursive_mutex class
