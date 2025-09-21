@@ -13,6 +13,8 @@
 #define _EXT_LANG_
 
 #define CXX_USE_STD_CSTDINT
+#include "stl_compat"
+
 #include "string"
 
 namespace ext {
