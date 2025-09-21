@@ -14,7 +14,9 @@
 #include <functional>
 #include <string>
 
+#define CXX_USE_STD_CSTDINT
 #include "stl_compat"
+#include <cstdint>
 
 namespace ext {
 namespace units {
