@@ -386,6 +386,8 @@ for (auto &i : res) {
 
 - Cancel
   - **MSYS is not supported.**
+  - **macOS does not guarantee C++ stack unwinding for pthread cancellation, so
+    scoped destructors and lock release are not supported for this mode.**
   - Like PTHREAD_CANCEL_DEFERRED
 
     ```C++

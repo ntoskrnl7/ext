@@ -87,7 +87,9 @@ TEST(cancelable_thread_test, cancel_immediately) {
 
 TEST(cancelable_thread_test, cancel) {
 #if defined(__APPLE__)
-  return;
+  GTEST_SKIP() << "pthread_cancel on macOS does not reliably unwind C++ stack "
+                  "frames, so scoped destructors and lock release cannot be "
+                  "validated for deferred cancellation";
 #endif
 #if EXT_CANCELABLE_THREAD_USE_PTHREAD
   char *msystem = getenv("MSYSTEM");
