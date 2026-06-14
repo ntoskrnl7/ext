@@ -22,6 +22,8 @@
 #define CXX_USE_STD_THREAD
 #include <ext/observable>
 
+#include <atomic>
+
 #if !defined(_EXT_STD_CONDITION_VARIABLE_) &&                                  \
     !defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED)
 #include <condition_variable>
@@ -135,14 +137,14 @@ TEST(observable_test, observer_with_one_arg) {
   std::mutex mtx;
   std::condition_variable cv;
 
-  bool volatile running = true;
-  bool volatile ready = false;
+  std::atomic_bool running(true);
+  std::atomic_bool ready(false);
 
   std::thread t([&]() {
     ready = true;
     cv.notify_all();
 
-    while (running) {
+    for (int i = 0; running && i < 100; ++i) {
       object_with_observable_one_arg obj_t("obj_one_arg_thread");
       obsvr += obj_t;
       obsvr_1 += obj_t;
@@ -157,7 +159,7 @@ TEST(observable_test, observer_with_one_arg) {
   });
   {
     std::unique_lock<std::mutex> lk(mtx);
-    cv.wait(lk, [&]() { return ready; });
+    cv.wait(lk, [&]() { return ready.load(); });
   }
 #endif
   obsvr += obj;
