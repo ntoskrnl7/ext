@@ -7,9 +7,9 @@ designed to bridge the gap between the Standard Library and real-world productio
 It provides practical, reusable components that make C++ development easier, safer, and more productive—  
 without the complexity or overhead of larger frameworks.
 
-[![CMake](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml/badge.svg)](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml)
-[![MSYS2](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml/badge.svg)](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml)
-![GitHub](https://img.shields.io/github/license/ntoskrnl7/ext)
+[![CMake](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml/badge.svg?branch=master&event=push)](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml?query=branch%3Amaster)
+[![MSYS2](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml/badge.svg?branch=master&event=push)](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml?query=branch%3Amaster)
+[![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/ntoskrnl7/ext)
 ![Windows 7+](https://img.shields.io/badge/Windows-7+-blue?logo=windows&logoColor=white)
 ![Linux gcc 8.3.0+](https://img.shields.io/badge/Linux-gcc%208.3.0+-blue?logo=linux&logoColor=white)
