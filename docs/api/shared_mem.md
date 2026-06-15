@@ -54,7 +54,7 @@ Wraps Windows file mappings and POSIX shared memory objects behind a common acce
   }
   ```
 
-- Pocess B
+- Process B
 
   ```C++
   #include <ext/shared_mem>
@@ -66,7 +66,7 @@ Wraps Windows file mappings and POSIX shared memory objects behind a common acce
 
   ext::shared_mem<memory_struct0> st_mem("memory_struct0");
   if (st_mem.opened()) {
-    st_mem2->i; // 10
-    st_mem2->j; // 20
+    int i = st_mem->i; // 10
+    int j = st_mem->j; // 20
   }
   ```

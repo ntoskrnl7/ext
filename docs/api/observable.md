@@ -34,4 +34,33 @@ Provides an `observable<Self, Args...>` base and nested `observer` type. Derived
 ## Examples
 
 ```C++
+#include <ext/observable>
+
+class document : public ext::observable<document, int> {
+public:
+  void set_revision(int revision) {
+    revision_ = revision;
+    notify(revision_);
+  }
+
+private:
+  int revision_ = 0;
+};
+
+class revision_observer : public document::observer {
+public:
+  int last_revision = 0;
+
+private:
+  void update(document &, int revision) override {
+    last_revision = revision;
+  }
+};
+
+document doc;
+revision_observer observer;
+
+observer += doc;
+doc.set_revision(3);
+// observer.last_revision == 3
 ```

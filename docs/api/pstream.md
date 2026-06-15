@@ -32,4 +32,14 @@ Wraps platform pipe/file handles in C++ stream buffers and stream types. It prov
 ## Examples
 
 ```C++
+#include <ext/pipe>
+#include <string>
+
+ext::pipe pipe;
+pipe.out() << "hello" << std::endl;
+pipe.out().close();
+
+std::string value;
+pipe.in() >> value;
+// value == "hello"
 ```

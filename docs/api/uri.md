@@ -36,34 +36,34 @@ Parses URI strings into scheme, host, port, path, query, and fragment fields and
 
   ```C++
   ext::uri u("https://localhost:8443/test");
-  EXPECT_STREQ(u.scheme.c_str(), "https");
-  EXPECT_STREQ(u.host.c_str(), "localhost");
-  EXPECT_EQ(u.port, 8443);
-  EXPECT_STREQ(u.path.c_str(), "/test");
-  EXPECT_STREQ(u.scheme_host_port().c_str(), "https://localhost:8443");
+  // u.scheme == "https"
+  // u.host == "localhost"
+  // u.port == 8443
+  // u.path == "/test"
+  // u.scheme_host_port() == "https://localhost:8443"
 
   u = ext::uri("foo://info.example.com?fred");
-  EXPECT_STREQ(u.scheme.c_str(), "foo");
-  EXPECT_STREQ(u.host.c_str(), "info.example.com");
-  EXPECT_TRUE(u.path.empty());
-  EXPECT_STREQ(u.query.c_str(), "?fred");
+  // u.scheme == "foo"
+  // u.host == "info.example.com"
+  // u.path.empty() == true
+  // u.query == "?fred"
   ```
 
 - wuri
 
   ```C++
   ext::wuri u(L"https://localhost:8443/test");
-  EXPECT_STREQ(u.scheme.c_str(), L"https");
-  EXPECT_STREQ(u.host.c_str(), L"localhost");
-  EXPECT_EQ(u.port, 8443);
-  EXPECT_STREQ(u.path.c_str(), L"/test");
-  EXPECT_STREQ(u.scheme_host_port().c_str(), L"https://localhost:8443");
+  // u.scheme == L"https"
+  // u.host == L"localhost"
+  // u.port == 8443
+  // u.path == L"/test"
+  // u.scheme_host_port() == L"https://localhost:8443"
 
   u = ext::wuri(L"foo://info.example.com?fred");
-  EXPECT_STREQ(u.scheme.c_str(), L"foo");
-  EXPECT_STREQ(u.host.c_str(), L"info.example.com");
-  EXPECT_TRUE(u.path.empty());
-  EXPECT_STREQ(u.query.c_str(), L"?fred");
+  // u.scheme == L"foo"
+  // u.host == L"info.example.com"
+  // u.path.empty() == true
+  // u.query == L"?fred"
   ```
 
 - User-defined literals

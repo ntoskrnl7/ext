@@ -33,7 +33,9 @@ Adds compile-time utilities that the rest of the library uses for callable and c
 
   ```C++
   #include <ext/type_traits>
-  #include <ext/typeinfo>
+  #include <string>
+  #include <type_traits>
+  #include <vector>
 
   class test_callable {
   public:
@@ -46,22 +48,25 @@ Adds compile-time utilities that the rest of the library uses for callable and c
     std::string operator()(int, char, std::vector<std::string>) { return "2"; }
   };
 
-  std::string (test_callable_2::*ptr)(int, char, std::vector<std::string>) =
-      &test_callable_2::operator();
-  EXPECT_STREQ(
-      ext::get_type_name<ext::remove_class<decltype(ptr)>::type>().c_str(),
-      ext::get_type_name<std::string(int, char, std::vector<std::string>)>()
-          .c_str());
+  typedef std::string (test_callable_2::*member_ptr)(
+      int, char, std::vector<std::string>);
+  typedef ext::remove_class<member_ptr>::type function_type;
+
+  static_assert(
+      std::is_same<function_type,
+                   std::string(int, char, std::vector<std::string>)>::value,
+      "remove_class strips the owner class from a member function pointer");
   ```
 
 - ext::deduce_mem_fn
 
   ```C++
   #include <ext/type_traits>
-  #include <ext/typeinfo>
+  #include <type_traits>
 
   auto ld = []() {};
-  EXPECT_STREQ(
-      ext::get_type_name<void()>().c_str(),
-      ext::get_type_name<ext::deduce_mem_fn<decltype(ld)>::type>().c_str());
+  typedef ext::deduce_mem_fn<decltype(ld)>::type signature;
+
+  static_assert(std::is_same<signature, void()>::value,
+                "deduce_mem_fn extracts the lambda call signature");
   ```

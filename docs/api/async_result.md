@@ -37,14 +37,16 @@ Runs a callback that writes values through an `async_result<T>::context`, then l
 
 typedef ext::async_result<int> int_result;
 int_result res([](int_result::context &ctx) {
+    ctx.begin(3);
     ctx.push(1);
     ctx.push(2);
-    ...
+    ctx.emplace(3);
+    ctx.end();
 });
 
-....
-
+int sum = 0;
 for (auto &i : res) {
-    ...
+    sum += i;
 }
+// sum == 6
 ```

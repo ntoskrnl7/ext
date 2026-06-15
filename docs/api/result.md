@@ -16,12 +16,14 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
 - `ext::err<E>` wraps error values and an optional error message.
 - `ext::result<T, E>` stores either success data or error data.
 - `ext::void_result<E>` stores success/failure when there is no success value.
+- `get()` returns the successful value wrapper and `error()` returns the error wrapper.
 
 ## Behavior Notes
 
 - `operator bool()` is true on success and false on error.
-- `ok()` throws `error_occurred` when called on an error result.
-- `err()` throws `no_error_occurred` when called on a successful result.
+- `get()` throws `error_occurred` when called on an error result.
+- `error()` throws `no_error_occurred` when called on a successful `result<T, E>`.
+- `void_result<E>::error()` returns the stored error wrapper and does not throw on success.
 
 ## Requirements
 
@@ -39,7 +41,7 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
   #include <errno.h>
 
   ext::void_result<error_t> ok_fn() { return ext::ok<void>(); }
-  ext::void_result<error_t> err_fn() { return ext::err(EBUSY); }
+  ext::void_result<error_t> err_fn() { return ext::err<error_t>(EBUSY); }
 
   ext::void_result<error_t> result = ok_fn();
   if (result) { // true
@@ -60,8 +62,8 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
 
     #include <errno.h>
 
-    ext::result<int, error_t> ok_fn() { return ext::ok(10); }
-    ext::result<int, error_t> err_fn() { return ext::err(EBUSY); }
+    ext::result<int, error_t> ok_fn() { return ext::ok<int>(10); }
+    ext::result<int, error_t> err_fn() { return ext::err<error_t>(EBUSY); }
 
     ext::result<int, error_t> result = ok_fn();
     if (result) { // true
@@ -81,8 +83,10 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
 
     #include <errno.h>
 
-    ext::result<int, error_t> ok_fn() { return ext::ok(10); }
-    ext::result<int, error_t> err_fn() { return ext::err(EBUSY, "I'm busy"); }
+    ext::result<int, error_t> ok_fn() { return ext::ok<int>(10); }
+    ext::result<int, error_t> err_fn() {
+      return ext::err<error_t>(EBUSY, "I'm busy");
+    }
 
     ext::result<int, error_t> result = ok_fn();
     if (result) { // true

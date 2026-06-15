@@ -34,4 +34,20 @@ Builds a temporary object that locks a supplied mutex and returns a reference to
 ## Examples
 
 ```C++
+#include <ext/safe_object>
+#include <ext/shared_recursive_mutex>
+
+struct state {
+  int value = 0;
+};
+
+state shared_state;
+ext::shared_recursive_mutex shared_state_mutex;
+
+#define state_rw get_object_safety(shared_state, shared_state_mutex, false)
+#define state_ro get_object_safety(shared_state, shared_state_mutex, true)
+
+state_rw.value = 10;
+int current = state_ro.value;
+// current == 10
 ```

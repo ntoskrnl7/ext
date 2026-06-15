@@ -36,11 +36,7 @@ Collects helpers under `ext::string` for common string transformations and compa
 
   ```C++
   std::vector<std::string> list = ext::split("a,b,c,d", ",");
-  EXPECT_EQ(list.size(), 4);
-  EXPECT_EQ(list[0], "a");
-  EXPECT_EQ(list[1], "b");
-  EXPECT_EQ(list[2], "c");
-  EXPECT_EQ(list[3], "d");
+  // list == {"a", "b", "c", "d"}
   ```
 
 - u8string
@@ -53,13 +49,13 @@ Collects helpers under `ext::string` for common string transformations and compa
   #if defined(__cpp_user_defined_literals) &&                                    \
       (CXX_VER >= __cpp_user_defined_literals)
     std::u8string str = ext::from_u8(u8"한글+english");
-    EXPECT_STREQ((const char *)str.c_str(), u8"한글+english");
+    // str contains UTF-8 bytes for "한글+english".
   #else
     std::u8string str = ext::from_u8(ext::to_u8string(L"한글+english"));
-    EXPECT_STREQ((const char *)str.c_str(), "\xED\x95\x9C\xEA\xB8\x80+english");
+    // str contains UTF-8 bytes for "한글+english".
   #endif
   #else
     std::u8string str = u8"한글+english";
-    EXPECT_STREQ(str.c_str(), u8"한글+english");
+    // str contains UTF-8 bytes for "한글+english".
   #endif
   ```

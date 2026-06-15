@@ -32,12 +32,12 @@ Adds small utilities for debugger-aware tests and diagnostics. The implementatio
 - Wait for debugger **(C/C++)**
 
     ```C
-    #include <ext/debug_utils>
+    #include <ext/debug_utils.h>
 
     wait_for_debugger(100);
 
     if (is_debugger_present()) {
-        ...
+        // Enable extra diagnostics here.
     }
 
     msleep(500);

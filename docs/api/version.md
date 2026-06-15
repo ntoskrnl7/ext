@@ -38,23 +38,27 @@ Represents SemVer-style version numbers with major, minor, patch, prerelease, an
 - Basic
 
   ```C++
-  ext::version v("a.b.c"); // std::invalid_argument
+  try {
+    ext::version invalid("a.b.c");
+  } catch (const std::invalid_argument &) {
+    // Invalid version strings throw.
+  }
 
-  ext::version v("0.0.4");
-  v.major(); // 0
-  v.minor(); // 0
-  v.patch(); // 4
-  v.released(); // true
-  v.prerelease(); // ""
-  v.build_metadata(); // ""
+  ext::version stable("0.0.4");
+  stable.major(); // 0
+  stable.minor(); // 0
+  stable.patch(); // 4
+  stable.released(); // true
+  stable.prerelease(); // ""
+  stable.build_metadata(); // ""
 
-  ext::version v("1.1.2-prerelease+meta");
-  v.major(); // 1
-  v.minor(); // 1
-  v.patch(); // 2
-  v.released(); // false
-  v.prerelease(); // "prerelease"
-  v.build_metadata(); // "meta"
+  ext::version prerelease("1.1.2-prerelease+meta");
+  prerelease.major(); // 1
+  prerelease.minor(); // 1
+  prerelease.patch(); // 2
+  prerelease.released(); // false
+  prerelease.prerelease(); // "prerelease"
+  prerelease.build_metadata(); // "meta"
   ```
 
 - std::hash
@@ -67,23 +71,23 @@ Represents SemVer-style version numbers with major, minor, patch, prerelease, an
   };
 
   auto it = map.find(ext::version("1.2.3"));
-  EXPECT_EQ(it->second, "abc");
+  // it->second == "abc"
 
   it = map.find(ext::version("5.0.0"));
-  EXPECT_NE(it, map.end());
-  EXPECT_EQ(it->second, "def");
+  // it != map.end()
+  // it->second == "def"
 
   it = map.find(ext::version("1.2.0"));
-  EXPECT_EQ(it, map.end());
+  // it == map.end()
 
   it = map.find(ext::version("1.2.3-prerelease"));
-  EXPECT_NE(it, map.end());
-  EXPECT_EQ(it->second, "ghi");
+  // it != map.end()
+  // it->second == "ghi"
 
   it = map.find(ext::version("1.2.3-prerelease+meta"));
-  EXPECT_NE(it, map.end());
-  EXPECT_EQ(it->second, "ghi");
+  // it != map.end()
+  // it->second == "ghi"
 
   it = map.find(ext::version("1.2.3-test+meta"));
-  EXPECT_EQ(it, map.end());
+  // it == map.end()
   ```

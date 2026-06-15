@@ -30,4 +30,18 @@ Provides a small `singleton<T>` base class for types that want a process-local s
 ## Examples
 
 ```C++
+#include <ext/singleton>
+
+class config : public ext::singleton<config> {
+private:
+  friend ext::singleton<config>;
+  config() {}
+
+public:
+  int value = 0;
+};
+
+config::instance().value = 42;
+int value = config::instance().value;
+// value == 42
 ```

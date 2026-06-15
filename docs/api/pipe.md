@@ -32,16 +32,17 @@ Creates a connected read/write pipe pair and exposes stream objects for moving d
 
 ```C++
 #include <ext/pipe>
+#include <string>
 #include <thread>
 
 ext::pipe pipe;
-std::thread t([stream = std::move(pipe.out())]() mutable {
-  stream << "test" << std::endl;
+std::thread t([&pipe]() {
+  pipe.out() << "test" << std::endl;
 });
 
 std::string val;
 pipe.in() >> val;
-EXPECT_STREQ(val.c_str(), "test");
+// val == "test"
 
 if (t.joinable())
   t.join();

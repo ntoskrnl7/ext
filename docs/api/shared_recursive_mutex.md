@@ -32,4 +32,17 @@ Provides a mutex with exclusive and shared locking operations while tracking own
 ## Examples
 
 ```C++
+#include <ext/shared_recursive_mutex>
+
+ext::shared_recursive_mutex mtx;
+
+mtx.lock();
+mtx.lock();
+mtx.unlock();
+mtx.unlock();
+
+mtx.lock_shared();
+mtx.lock_shared();
+mtx.unlock_shared();
+mtx.unlock_shared();
 ```

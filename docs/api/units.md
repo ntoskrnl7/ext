@@ -75,23 +75,23 @@ Defines unit wrapper types for decimal SI and binary IEC quantities. Tests cover
   // IEC
   using namespace ext::units::IEC::literals;
 
-  size_t value = 5_MiB;
-  EXPECT_EQ(value, 5 * ext::units::IEC::MiB);
+  size_t iec_value = 5_MiB;
+  // iec_value == 5 * ext::units::IEC::MiB
 
-  std::string str = 5_MiB;
-  EXPECT_STREQ(str.c_str(), "5MiB");
+  std::string iec_str = 5_MiB;
+  // iec_str == "5MiB"
 
-  std::wstring wstr = 5_MiB;
-  EXPECT_STREQ(wstr.c_str(), L"5MiB");
+  std::wstring iec_wstr = 5_MiB;
+  // iec_wstr == L"5MiB"
 
   // SI
   using namespace ext::units::SI::literals;
-  size_t value = 5_mB;
-  EXPECT_EQ(value, 5 * ext::units::SI::mB);
+  size_t metric_value = 5_mB;
+  // metric_value == 5 * ext::units::SI::mB
 
-  std::string str = 5_mB;
-  EXPECT_STREQ(str.c_str(), "5mB");
+  std::string metric_str = 5_mB;
+  // metric_str == "5mB"
 
-  std::wstring wstr = 5_mB;
-  EXPECT_STREQ(wstr.c_str(), L"5mB");
+  std::wstring metric_wstr = 5_mB;
+  // metric_wstr == L"5mB"
   ```

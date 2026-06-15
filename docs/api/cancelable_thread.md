@@ -44,10 +44,8 @@ Wraps `std::thread` and exposes cancellation-oriented state such as ready, compl
     std::mutex mtx;
     ext::cancelable_thread t([&mtx]() {
         std::unique_lock<std::mutex> lk(mtx);
-        ...
+        std::this_thread::sleep_for(std::chrono::seconds(50));
     });
-
-    ...
 
     t.cancel_request();
     t.wait_for(std::chrono::milliseconds(500));
@@ -55,7 +53,7 @@ Wraps `std::thread` and exposes cancellation-oriented state such as ready, compl
 
     // or t.cancel();
 
-    if (t.canceled()) ...
+    bool canceled = t.canceled();
     ```
 
 - Cancel immediately.
@@ -69,10 +67,9 @@ Wraps `std::thread` and exposes cancellation-oriented state such as ready, compl
     std::mutex mtx;
     ext::cancelable_thread t([&mtx]() {
         std::unique_lock<std::mutex> lk(mtx);
-        ...
+        while (true) {
+        }
     }, [&mtx]() { mtx.unlock(); });
-
-    ...
 
     t.cancel_request();
     t.wait_for(std::chrono::milliseconds(500));
@@ -80,5 +77,5 @@ Wraps `std::thread` and exposes cancellation-oriented state such as ready, compl
 
     // or t.cancel();
 
-    if (t.canceled()) ...
+    bool canceled = t.canceled();
     ```
