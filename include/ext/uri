@@ -36,6 +36,7 @@ template <> struct strings<char> {
   }
   static char slash() { return '/'; }
   static char question() { return '?'; }
+  static char hash() { return '#'; }
   static char colon() { return ':'; }
   static char assign() { return '='; }
   static char ampersand() { return '&'; }
@@ -69,6 +70,7 @@ template <> struct strings<wchar_t> {
   }
   static wchar_t slash() { return L'/'; }
   static wchar_t question() { return L'?'; }
+  static wchar_t hash() { return L'#'; }
   static wchar_t colon() { return L':'; }
   static wchar_t assign() { return L'='; }
   static wchar_t ampersand() { return L'&'; }
@@ -193,26 +195,32 @@ template <typename T> struct basic_uri {
     advance(scheme_end_it, scheme_end.length());
 
     typename string_type::const_iterator host_end_it =
-        find(scheme_end_it, uri_str.end(), strings<T>::slash());
-    if (host_end_it == uri_str.end())
-      host_end_it = find(scheme_end_it, uri_str.end(), strings<T>::question());
+        find_authority_end_(scheme_end_it, uri_str.end());
 
     host.reserve(distance(scheme_end_it, host_end_it));
     std::transform(scheme_end_it, host_end_it, back_inserter(host), tolower);
-    if (host_end_it == uri_str.end())
-      return;
     typename string_type::size_type pos = host.find(strings<T>::colon());
     if (pos != string_type::npos) {
       port = static_cast<unsigned short>(std::stoul(host.substr(pos + 1)));
       host.resize(pos);
     }
 
-    typename string_type::const_iterator query_it =
-        find(host_end_it, uri_str.end(), strings<T>::question());
-    path.assign(host_end_it, query_it);
+    if (host_end_it == uri_str.end())
+      return;
 
-    if (query_it != uri_str.end())
-      query.assign(query_it, uri_str.end());
+    typename string_type::const_iterator fragment_it =
+        find(host_end_it, uri_str.end(), strings<T>::hash());
+    typename string_type::const_iterator query_it =
+        find(host_end_it, fragment_it, strings<T>::question());
+
+    if (*host_end_it == strings<T>::slash())
+      path.assign(host_end_it, query_it);
+
+    if (query_it != fragment_it)
+      query.assign(query_it, fragment_it);
+
+    if (fragment_it != uri_str.end())
+      fragment.assign(fragment_it, uri_str.end());
   }
 
   basic_uri(const string_type &uri_str, const query_map &query)
@@ -222,22 +230,23 @@ template <typename T> struct basic_uri {
 #else
       : basic_uri(uri_str) {
 #endif
-    CXX_FOR(typename query_map::value_type q, query) {
-      this->query +=
-          strings<T>::ampersand() + q.first + strings<T>::assign() + q.second;
-    }
-    if (this->query.size() > 2) {
-      this->query = strings<T>::question() + this->query.substr(1);
-      value += this->query;
-    }
+    append_query_(query);
   }
 
   string_type scheme_host_port() {
-    typename string_type::size_type pos = value.find(
-        strings<T>::slash(), scheme.size() + strings<T>::scheme_end().size());
-    if (pos == string_type::npos)
+    const typename string_type::size_type authority_begin =
+        scheme.size() + strings<T>::scheme_end().size();
+    if (value.size() < authority_begin)
       return value;
-    return value.substr(0, pos);
+
+    const string_type &value_ref = value;
+    typename string_type::const_iterator begin =
+        value_ref.begin() + authority_begin;
+    typename string_type::const_iterator end =
+        find_authority_end_(begin, value_ref.end());
+    if (end == value_ref.end())
+      return value;
+    return value.substr(0, distance(value_ref.begin(), end));
   }
 
   void swap(basic_uri &other) {
@@ -270,6 +279,55 @@ template <typename T> struct basic_uri {
     return encode_uri_component<T, std::u8string>(u8_str);
   }
 #endif // defined(_EXT_U8STRING_)
+
+private:
+  static typename string_type::const_iterator
+  min_iterator_(typename string_type::const_iterator lhs,
+                typename string_type::const_iterator rhs,
+                typename string_type::const_iterator end) {
+    if (lhs == end)
+      return rhs;
+    if (rhs == end)
+      return lhs;
+    return lhs < rhs ? lhs : rhs;
+  }
+
+  static typename string_type::const_iterator
+  find_authority_end_(typename string_type::const_iterator begin,
+                      typename string_type::const_iterator end) {
+    typename string_type::const_iterator slash_it =
+        find(begin, end, strings<T>::slash());
+    typename string_type::const_iterator query_it =
+        find(begin, end, strings<T>::question());
+    typename string_type::const_iterator fragment_it =
+        find(begin, end, strings<T>::hash());
+
+    return min_iterator_(min_iterator_(slash_it, query_it, end), fragment_it,
+                         end);
+  }
+
+  void append_query_(const query_map &query_params) {
+    if (query_params.empty())
+      return;
+
+    string_type query_text = query;
+    CXX_FOR(typename query_map::value_type q, query_params) {
+      if (query_text.empty())
+        query_text += strings<T>::question();
+      else
+        query_text += strings<T>::ampersand();
+      query_text += q.first + strings<T>::assign() + q.second;
+    }
+
+    string_type base = value;
+    if (!fragment.empty())
+      base.resize(base.size() - fragment.size());
+    if (!query.empty())
+      base.resize(base.size() - query.size());
+
+    query = query_text;
+    value = base + query + fragment;
+  }
 };
 
 typedef basic_uri<char> uri;

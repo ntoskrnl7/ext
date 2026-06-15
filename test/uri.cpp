@@ -71,6 +71,28 @@ TEST(uri_test, uri_test) {
   EXPECT_STREQ(u.host.c_str(), "info.example.com");
   EXPECT_TRUE(u.path.empty());
   EXPECT_STREQ(u.query.c_str(), "?fred");
+
+  u = ext::uri("https://localhost:8443#top");
+  EXPECT_STREQ(u.scheme.c_str(), "https");
+  EXPECT_STREQ(u.host.c_str(), "localhost");
+  EXPECT_EQ(u.port, 8443);
+  EXPECT_TRUE(u.path.empty());
+  EXPECT_TRUE(u.query.empty());
+  EXPECT_STREQ(u.fragment.c_str(), "#top");
+  EXPECT_STREQ(u.scheme_host_port().c_str(), "https://localhost:8443");
+
+  u = ext::uri("https://example.com/path?key=value#section-1");
+  EXPECT_STREQ(u.scheme.c_str(), "https");
+  EXPECT_STREQ(u.host.c_str(), "example.com");
+  EXPECT_STREQ(u.path.c_str(), "/path");
+  EXPECT_STREQ(u.query.c_str(), "?key=value");
+  EXPECT_STREQ(u.fragment.c_str(), "#section-1");
+  EXPECT_STREQ(u.scheme_host_port().c_str(), "https://example.com");
+
+  u = ext::uri("https://example.com/path#section?not=query");
+  EXPECT_STREQ(u.path.c_str(), "/path");
+  EXPECT_TRUE(u.query.empty());
+  EXPECT_STREQ(u.fragment.c_str(), "#section?not=query");
 }
 
 TEST(uri_test, wuri_test) {
@@ -96,6 +118,28 @@ TEST(uri_test, wuri_test) {
   EXPECT_STREQ(u.host.c_str(), L"info.example.com");
   EXPECT_TRUE(u.path.empty());
   EXPECT_STREQ(u.query.c_str(), L"?fred");
+
+  u = ext::wuri(L"https://localhost:8443#top");
+  EXPECT_STREQ(u.scheme.c_str(), L"https");
+  EXPECT_STREQ(u.host.c_str(), L"localhost");
+  EXPECT_EQ(u.port, 8443);
+  EXPECT_TRUE(u.path.empty());
+  EXPECT_TRUE(u.query.empty());
+  EXPECT_STREQ(u.fragment.c_str(), L"#top");
+  EXPECT_STREQ(u.scheme_host_port().c_str(), L"https://localhost:8443");
+
+  u = ext::wuri(L"https://example.com/path?key=value#section-1");
+  EXPECT_STREQ(u.scheme.c_str(), L"https");
+  EXPECT_STREQ(u.host.c_str(), L"example.com");
+  EXPECT_STREQ(u.path.c_str(), L"/path");
+  EXPECT_STREQ(u.query.c_str(), L"?key=value");
+  EXPECT_STREQ(u.fragment.c_str(), L"#section-1");
+  EXPECT_STREQ(u.scheme_host_port().c_str(), L"https://example.com");
+
+  u = ext::wuri(L"https://example.com/path#section?not=query");
+  EXPECT_STREQ(u.path.c_str(), L"/path");
+  EXPECT_TRUE(u.query.empty());
+  EXPECT_STREQ(u.fragment.c_str(), L"#section?not=query");
 }
 
 TEST(uri_test, uri_query_map) {
@@ -115,6 +159,14 @@ TEST(uri_test, uri_query_map) {
   EXPECT_STREQ(u.query.c_str(), "?key=value&key1=value1");
   EXPECT_STREQ(u.value.c_str(),
                "http://test.com:1234/test?key=value&key1=value1");
+
+  ext::uri::query_map query2;
+  query2.insert(ext::uri::query_map::value_type("key2", "value2"));
+  u = ext::uri("http://test.com:1234/test?key=value#frag", query2);
+  EXPECT_STREQ(u.query.c_str(), "?key=value&key2=value2");
+  EXPECT_STREQ(u.fragment.c_str(), "#frag");
+  EXPECT_STREQ(u.value.c_str(),
+               "http://test.com:1234/test?key=value&key2=value2#frag");
 }
 
 TEST(uri_test, wuri_query_map) {
@@ -134,6 +186,14 @@ TEST(uri_test, wuri_query_map) {
   EXPECT_STREQ(u.query.c_str(), L"?key=value&key1=value1");
   EXPECT_STREQ(u.value.c_str(),
                L"http://test.com:1234/test?key=value&key1=value1");
+
+  ext::wuri::query_map query2;
+  query2.insert(ext::wuri::query_map::value_type(L"key2", L"value2"));
+  u = ext::wuri(L"http://test.com:1234/test?key=value#frag", query2);
+  EXPECT_STREQ(u.query.c_str(), L"?key=value&key2=value2");
+  EXPECT_STREQ(u.fragment.c_str(), L"#frag");
+  EXPECT_STREQ(u.value.c_str(),
+               L"http://test.com:1234/test?key=value&key2=value2#frag");
 }
 
 TEST(uri_test, uri_encode) {
