@@ -7,7 +7,7 @@ threading behavior, see [Portability and API contracts](../portability-and-contr
 
 ## Feature Groups
 
-- Compatibility: [stl_compat](stl_compat.md), [type_traits](type_traits.md), [typeinfo](typeinfo.md)
+- Compatibility: [c_object](c_object.md), [stl_compat](stl_compat.md), [type_traits](type_traits.md), [typeinfo](typeinfo.md)
 - Text, parsing, and data: [base64](base64.md), [ini](ini.md), [lang](lang.md), [path](path.md), [string](string.md), [uri](uri.md), [version](version.md), [wordexp](wordexp.md)
 - Function and object patterns: [any_function](any_function.md), [callback](callback.md), [chain](chain.md), [collection](collection.md), [observable](observable.md), [property](property.md), [result](result.md), [singleton](singleton.md)
 - Concurrency and IPC: [async_result](async_result.md), [cancelable_thread](cancelable_thread.md), [named_mutex](named_mutex.md), [pipe](pipe.md), [process](process.md), [pstream](pstream.md), [safe_object](safe_object.md), [shared_mem](shared_mem.md), [shared_recursive_mutex](shared_recursive_mutex.md), [thread_pool](thread_pool.md)
@@ -20,6 +20,7 @@ threading behavior, see [Portability and API contracts](../portability-and-contr
 | [async_result](async_result.md) | `<ext/async_result>` | Asynchronous producer/result container with iterator-style consumption and cooperative cancellation flag support. |
 | [base64](base64.md) | `<ext/base64>` | Base64 encoder/decoder for strings, wide strings, byte vectors, and trivially copyable objects. |
 | [callback](callback.md) | `<ext/callback>` | Multicast callback list with add/remove operators and argument forwarding. |
+| [c_object](c_object.md) | `<ext/c_object.h>` | C-compatible scoped object lifetime helpers with initializer/finalizer macros and custom allocation hooks. |
 | [cancelable_thread](cancelable_thread.md) | `<ext/cancelable_thread>` | Thread wrapper with deferred and immediate cancellation paths over pthread or Windows primitives. |
 | [cdbg](cdbg.md) | `<ext/cdbg>` | Debug stream objects that write through platform debug sinks or console fallback streams. |
 | [chain](chain.md) | `<ext/chain>` | Composable chain-of-responsibility helper with typed results, continuation links, and exception-aware result state. |

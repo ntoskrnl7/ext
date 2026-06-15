@@ -72,6 +72,7 @@ ext is best used as a collection of opt-in headers:
 | [async_result](docs/api/async_result.md) | `<ext/async_result>` | Asynchronous producer/result container with iterator-style consumption and cooperative cancellation flag support. |
 | [base64](docs/api/base64.md) | `<ext/base64>` | Base64 encoder/decoder for strings, wide strings, byte vectors, and trivially copyable objects. |
 | [callback](docs/api/callback.md) | `<ext/callback>` | Multicast callback list with add/remove operators and argument forwarding. |
+| [c_object](docs/api/c_object.md) | `<ext/c_object.h>` | C-compatible scoped object lifetime helpers with initializer/finalizer macros and custom allocation hooks. |
 | [cancelable_thread](docs/api/cancelable_thread.md) | `<ext/cancelable_thread>` | Thread wrapper with deferred and immediate cancellation paths over pthread or Windows primitives. |
 | [cdbg](docs/api/cdbg.md) | `<ext/cdbg>` | Debug stream objects that write through platform debug sinks or console fallback streams. |
 | [chain](docs/api/chain.md) | `<ext/chain>` | Composable chain-of-responsibility helper with typed results, continuation links, and exception-aware result state. |
