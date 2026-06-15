@@ -8,9 +8,9 @@
 
 ## Overview
 
-Parses simple absolute URI strings into scheme, host, port, path, and query
-fields and provides URI/component percent-encoding helpers. Tests cover invalid
-URIs, literals, query maps, and UTF-8 encoding.
+Parses simple absolute URI strings into scheme, host, port, path, query, and
+fragment fields and provides URI/component percent-encoding helpers. Tests cover
+invalid URIs, literals, query maps, fragments, and UTF-8 encoding.
 
 ## Key APIs
 
@@ -39,9 +39,8 @@ URIs, literals, query maps, and UTF-8 encoding.
   kept as provided.
 - The parser recognizes a port only when the authority contains `:port`.
 - Query strings are stored with the leading `?` when present. Query maps append
-  `?key=value&...` to the stored value.
-- The `fragment` field exists but the parser does not currently split `#...`
-  into it.
+  `?key=value&...` to the stored value before any fragment.
+- Fragment strings are stored with the leading `#` when present.
 - The parser is intentionally lightweight. It does not validate every RFC 3986
   grammar rule, does not decode percent-encoded input, and does not parse user
   info or IPv6 authority forms as separate fields.
@@ -76,6 +75,11 @@ URIs, literals, query maps, and UTF-8 encoding.
   // u.host == "info.example.com"
   // u.path.empty() == true
   // u.query == "?fred"
+
+  u = ext::uri("https://example.com/path?key=value#section-1");
+  // u.path == "/path"
+  // u.query == "?key=value"
+  // u.fragment == "#section-1"
   ```
 
 - query map
@@ -88,8 +92,8 @@ URIs, literals, query maps, and UTF-8 encoding.
     {"page", "1"},
   };
 
-  ext::uri u("https://example.com/search", query);
-  // u.value == "https://example.com/search?page=1&q=hello%20world"
+  ext::uri u("https://example.com/search#results", query);
+  // u.value == "https://example.com/search?page=1&q=hello%20world#results"
   ```
 
 - wuri
