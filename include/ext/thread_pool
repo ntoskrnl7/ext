@@ -20,6 +20,7 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <vector>
 
 namespace ext {
 /**
@@ -99,10 +100,13 @@ public:
    * @return false
    */
   bool start(size_t pool_size) {
-    if (status_ != stopped)
-      return false;
-    status_ = running;
-    pool_size_ = pool_size;
+    {
+      std::unique_lock<std::mutex> lock(mtx_);
+      if (status_ != stopped)
+        return false;
+      status_ = running;
+      pool_size_ = pool_size;
+    }
     for (size_t i = 0; i < pool_size_; i++)
 #if CXX_VER >= 201103L
       threads_.emplace_back(std::thread(std::bind(&thread_pool::woker_, this)));
@@ -118,18 +122,16 @@ public:
    * @param wait
    */
   void stop(bool wait = true) {
-    if (status_ != running)
-      return;
-
-    status_ = stop_pending;
-    cv_.notify_all();
-    if (wait) {
-      CXX_FOR(std::thread & thread, threads_) {
-        if (thread.joinable())
-          thread.join();
-      }
+    {
+      std::unique_lock<std::mutex> lock(mtx_);
+      if (status_ == stopped)
+        return;
+      if (status_ == running)
+        status_ = stop_pending;
     }
-    status_ = stopped;
+    cv_.notify_all();
+    if (wait)
+      join_threads_();
   }
 
   /**
@@ -151,14 +153,13 @@ public:
   std::future<typename CXX_INVOKE_RESULT(F, Args...)> queue(F &&fn,
                                                             Args &&... args) {
 #endif // CXX_RVALUE_REF_NOT_SUPPORTED
-    if (status_ != status::running)
-      throw std::runtime_error("This thread pool is not running");
-
     auto task = std::make_shared<
         std::packaged_task<typename CXX_INVOKE_RESULT(F, Args...)()>>(
         std::bind(std::forward<F>(fn), std::forward<Args>(args)...));
     {
       std::unique_lock<std::mutex> lock(mtx_);
+      if (status_ != status::running)
+        throw std::runtime_error("This thread pool is not running");
       queue_.push([task]() { (*task)(); });
     }
     cv_.notify_one();
@@ -166,13 +167,12 @@ public:
   }
 #else
   template <typename F> std::future<void> queue(F fn) {
-    if (status_ != running)
-      throw std::runtime_error("This thread pool is not running");
-
     std::shared_ptr<std::packaged_task<void>> task =
         std::make_shared<std::packaged_task<void>>(fn);
     {
       std::unique_lock<std::mutex> lock(mtx_);
+      if (status_ != running)
+        throw std::runtime_error("This thread pool is not running");
 #if defined(__cpp_lambdas)
       queue_.push([task]() { (*task)(); });
 #else
@@ -189,10 +189,19 @@ public:
    *
    * @return status
    */
-  status status() { return status_; }
+  status status() {
+    std::unique_lock<std::mutex> lock(mtx_);
+    return status_;
+  }
 
 private:
   void woker_() {
+    if (initializer_ && !initializer_()) {
+      if (finalizer_)
+        finalizer_();
+      return;
+    }
+
     std::function<void()> fn;
     for (;;) {
       {
@@ -204,13 +213,26 @@ private:
         cv_.wait(lk, std::bind(&thread_pool::wait_, this));
 #endif
         if (status_ != running)
-          return;
+          break;
 
         fn = queue_.front();
         queue_.pop();
       }
       fn();
     }
+
+    if (finalizer_)
+      finalizer_();
+  }
+
+  void join_threads_() {
+    CXX_FOR(std::thread & thread, threads_) {
+      if (thread.joinable())
+        thread.join();
+    }
+    threads_.clear();
+    std::unique_lock<std::mutex> lock(mtx_);
+    status_ = stopped;
   }
 #if !defined(__cpp_lambdas)
   bool wait_() { return !queue_.empty() || status_ != running; }

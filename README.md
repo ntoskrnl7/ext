@@ -1316,6 +1316,9 @@ total.value(); // 60
 
 ### thread_pool
 
+Small fixed-size worker pool with future-returning task submission. Optional
+initializer/finalizer callbacks run once per worker thread.
+
 #### Requirements
 
 - GCC 8.3.0+
@@ -1326,6 +1329,24 @@ total.value(); // 60
 #### Examples
 
 ```C++
+#include <ext/thread_pool>
+#include <future>
+
+ext::thread_pool pool(
+    2,
+    []() {
+      // Initialize per-worker resources.
+      return true;
+    },
+    []() {
+      // Release per-worker resources.
+      return true;
+    });
+
+std::future<int> result = pool.queue([]() { return 42; });
+int value = result.get(); // 42
+
+pool.stop();
 ```
 
 ### type_traits
