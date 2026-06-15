@@ -15,10 +15,13 @@
 #define _EXT_THREAD_POOL_
 
 #include <condition_variable>
+#include <exception>
 #include <functional>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <queue>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -34,26 +37,93 @@ class thread_pool {
 public:
   enum status { running, stop_pending, stopped };
 
+  class task_canceled : public std::runtime_error {
+  public:
+    task_canceled() : std::runtime_error("Task canceled.") {}
+  };
+
+private:
+  class queued_task_base {
+  public:
+    virtual ~queued_task_base() {}
+    virtual bool cancel() = 0;
+    virtual bool canceled() = 0;
+    virtual void run() = 0;
+  };
+
+  template <typename T> class queued_task : public queued_task_base {
+  public:
+    queued_task(std::function<T()> fn) : fn_(fn), state_(pending) {}
+
+    std::future<T> get_future() { return promise_.get_future(); }
+
+    bool cancel() {
+      std::unique_lock<std::mutex> lock(mtx_);
+      if (state_ != pending)
+        return false;
+      state_ = canceled_state;
+      promise_.set_exception(std::make_exception_ptr(task_canceled()));
+      return true;
+    }
+
+    bool canceled() {
+      std::unique_lock<std::mutex> lock(mtx_);
+      return state_ == canceled_state;
+    }
+
+    void run() {
+      {
+        std::unique_lock<std::mutex> lock(mtx_);
+        if (state_ == canceled_state)
+          return;
+        if (state_ != pending)
+          return;
+        state_ = executing;
+      }
+
+      try {
+        set_task_value_(promise_, fn_);
+      } catch (...) {
+        promise_.set_exception(std::current_exception());
+      }
+
+      std::unique_lock<std::mutex> lock(mtx_);
+      state_ = completed;
+    }
+
+  private:
+    enum task_state { pending, executing, canceled_state, completed };
+
+    std::function<T()> fn_;
+    std::promise<T> promise_;
+    std::mutex mtx_;
+    task_state state_;
+  };
+
+public:
   template <typename T> class queue_item {
   public:
-    queue_item(thread_pool *pool, std::shared_ptr<std::packaged_task<T()>> task)
-        : pool_(pool), task_(task) {}
+    queue_item() {}
+    queue_item(std::shared_ptr<queued_task<T>> task) : task_(task) {}
 
   public:
-    void cancel() {}
+    bool cancel() { return task_ && task_->cancel(); }
+
+    bool canceled() { return task_ && task_->canceled(); }
 
     std::future<T> get_future() { return task_->get_future(); }
 
   private:
-    thread_pool *pool_;
-    std::shared_ptr<std::packaged_task<T()>> task_;
+    std::shared_ptr<queued_task<T>> task_;
   };
 
   /**
    * @brief Construct a new thread pool object
    *
    */
-  thread_pool() : pool_size_(0), status_(stopped) {}
+  thread_pool()
+      : pool_size_(0), starting_workers_(0), started_workers_(0),
+        start_failed_(false), status_(stopped) {}
 
   /**
    * @brief Construct a new thread pool object
@@ -63,6 +133,7 @@ public:
    */
   thread_pool(initialize_callback initializer, finalize_callback finalizer)
       : initializer_(initializer), finalizer_(finalizer), pool_size_(0),
+        starting_workers_(0), started_workers_(0), start_failed_(false),
         status_(stopped) {}
 
   /**
@@ -70,7 +141,11 @@ public:
    *
    * @param pool_size
    */
-  thread_pool(size_t pool_size) : status_(stopped) { start(pool_size); }
+  thread_pool(size_t pool_size)
+      : pool_size_(0), starting_workers_(0), started_workers_(0),
+        start_failed_(false), status_(stopped) {
+    start(pool_size);
+  }
 
   /**
    * @brief Construct a new thread pool object
@@ -82,6 +157,7 @@ public:
   thread_pool(size_t pool_size, initialize_callback initializer,
               finalize_callback finalizer)
       : initializer_(initializer), finalizer_(finalizer), pool_size_(0),
+        starting_workers_(0), started_workers_(0), start_failed_(false),
         status_(stopped) {
     start(pool_size);
   }
@@ -106,6 +182,9 @@ public:
         return false;
       status_ = running;
       pool_size_ = pool_size;
+      starting_workers_ = pool_size;
+      started_workers_ = 0;
+      start_failed_ = false;
     }
     for (size_t i = 0; i < pool_size_; i++)
 #if CXX_VER >= 201103L
@@ -113,6 +192,21 @@ public:
 #else
       threads_.push_back(std::thread(std::bind(&thread_pool::woker_, this)));
 #endif
+    std::unique_lock<std::mutex> lock(mtx_);
+#if defined(__cpp_lambdas)
+    start_cv_.wait(lock, [this]() {
+      return start_failed_ || started_workers_ == starting_workers_;
+    });
+#else
+    start_cv_.wait(lock, std::bind(&thread_pool::start_wait_, this));
+#endif
+    if (start_failed_) {
+      status_ = stop_pending;
+      lock.unlock();
+      cv_.notify_all();
+      join_threads_();
+      return false;
+    }
     return true;
   }
 
@@ -153,34 +247,66 @@ public:
   std::future<typename CXX_INVOKE_RESULT(F, Args...)> queue(F &&fn,
                                                             Args &&... args) {
 #endif // CXX_RVALUE_REF_NOT_SUPPORTED
-    auto task = std::make_shared<
-        std::packaged_task<typename CXX_INVOKE_RESULT(F, Args...)()>>(
-        std::bind(std::forward<F>(fn), std::forward<Args>(args)...));
+    typedef typename CXX_INVOKE_RESULT(F, Args...) result_type;
+    std::shared_ptr<queued_task<result_type>> task =
+        make_task_<result_type>(std::bind(std::forward<F>(fn),
+                                          std::forward<Args>(args)...));
+    std::future<result_type> future = task->get_future();
     {
       std::unique_lock<std::mutex> lock(mtx_);
       if (status_ != status::running)
         throw std::runtime_error("This thread pool is not running");
-      queue_.push([task]() { (*task)(); });
+      queue_.push(task);
     }
     cv_.notify_one();
-    return task->get_future();
+    return future;
+  }
+
+  template <typename F, typename... Args>
+#ifdef CXX_RVALUE_REF_NOT_SUPPORTED
+  queue_item<typename CXX_INVOKE_RESULT(F, Args...)>
+  queue_cancellable(F fn, Args... args) {
+#else  // CXX_RVALUE_REF_NOT_SUPPORTED
+  queue_item<typename CXX_INVOKE_RESULT(F, Args...)>
+  queue_cancellable(F &&fn, Args &&... args) {
+#endif // CXX_RVALUE_REF_NOT_SUPPORTED
+    typedef typename CXX_INVOKE_RESULT(F, Args...) result_type;
+    std::shared_ptr<queued_task<result_type>> task =
+        make_task_<result_type>(std::bind(std::forward<F>(fn),
+                                          std::forward<Args>(args)...));
+    {
+      std::unique_lock<std::mutex> lock(mtx_);
+      if (status_ != status::running)
+        throw std::runtime_error("This thread pool is not running");
+      queue_.push(task);
+    }
+    cv_.notify_one();
+    return queue_item<result_type>(task);
   }
 #else
   template <typename F> std::future<void> queue(F fn) {
-    std::shared_ptr<std::packaged_task<void>> task =
-        std::make_shared<std::packaged_task<void>>(fn);
+    std::shared_ptr<queued_task<void>> task = make_task_<void>(fn);
+    std::future<void> future = task->get_future();
     {
       std::unique_lock<std::mutex> lock(mtx_);
       if (status_ != running)
         throw std::runtime_error("This thread pool is not running");
-#if defined(__cpp_lambdas)
-      queue_.push([task]() { (*task)(); });
-#else
-      queue_.push(std::bind(push_task_, task));
-#endif
+      queue_.push(task);
     }
     cv_.notify_one();
-    return task->get_future();
+    return future;
+  }
+
+  template <typename F> queue_item<void> queue_cancellable(F fn) {
+    std::shared_ptr<queued_task<void>> task = make_task_<void>(fn);
+    {
+      std::unique_lock<std::mutex> lock(mtx_);
+      if (status_ != running)
+        throw std::runtime_error("This thread pool is not running");
+      queue_.push(task);
+    }
+    cv_.notify_one();
+    return queue_item<void>(task);
   }
 #endif
 
@@ -196,13 +322,13 @@ public:
 
 private:
   void woker_() {
-    if (initializer_ && !initializer_()) {
-      if (finalizer_)
-        finalizer_();
+    if (!run_initializer_()) {
+      notify_worker_start_failed_();
       return;
     }
+    notify_worker_started_();
 
-    std::function<void()> fn;
+    std::shared_ptr<queued_task_base> task;
     for (;;) {
       {
         std::unique_lock<std::mutex> lk(mtx_);
@@ -215,14 +341,13 @@ private:
         if (status_ != running)
           break;
 
-        fn = queue_.front();
+        task = queue_.front();
         queue_.pop();
       }
-      fn();
+      task->run();
     }
 
-    if (finalizer_)
-      finalizer_();
+    run_finalizer_();
   }
 
   void join_threads_() {
@@ -234,21 +359,70 @@ private:
     std::unique_lock<std::mutex> lock(mtx_);
     status_ = stopped;
   }
+
+  bool run_initializer_() {
+    try {
+      return !initializer_ || initializer_();
+    } catch (...) {
+      return false;
+    }
+  }
+
+  void run_finalizer_() {
+    try {
+      if (finalizer_)
+        finalizer_();
+    } catch (...) {
+    }
+  }
+
+  void notify_worker_started_() {
+    std::unique_lock<std::mutex> lock(mtx_);
+    ++started_workers_;
+    start_cv_.notify_all();
+  }
+
+  void notify_worker_start_failed_() {
+    std::unique_lock<std::mutex> lock(mtx_);
+    start_failed_ = true;
+    start_cv_.notify_all();
+  }
+
+  template <typename T>
+  static void set_task_value_(std::promise<T> &promise, std::function<T()> &fn) {
+    promise.set_value(fn());
+  }
+
+  static void set_task_value_(std::promise<void> &promise,
+                              std::function<void()> &fn) {
+    fn();
+    promise.set_value();
+  }
+
+  template <typename T>
+  static std::shared_ptr<queued_task<T>> make_task_(std::function<T()> fn) {
+    return std::make_shared<queued_task<T>>(fn);
+  }
+
 #if !defined(__cpp_lambdas)
   bool wait_() { return !queue_.empty() || status_ != running; }
-  static void push_task_(std::shared_ptr<std::packaged_task<void>> task) {
-    (*task)();
+  bool start_wait_() {
+    return start_failed_ || started_workers_ == starting_workers_;
   }
 #endif
 
 private:
   std::mutex mtx_;
   std::condition_variable cv_;
-  std::queue<std::function<void()>> queue_;
+  std::condition_variable start_cv_;
+  std::queue<std::shared_ptr<queued_task_base>> queue_;
   std::vector<std::thread> threads_;
   initialize_callback initializer_;
   finalize_callback finalizer_;
   size_t pool_size_;
+  size_t starting_workers_;
+  size_t started_workers_;
+  bool start_failed_;
   enum status status_;
 };
 } // namespace ext
