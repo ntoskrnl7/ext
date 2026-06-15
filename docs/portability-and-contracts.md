@@ -44,7 +44,8 @@ memory should read the API-specific behavior notes.
   cancellation flag and return voluntarily.
 - `thread_pool::stop()` requests worker shutdown. It is not a queue-drain API;
   callers that require all queued work to complete should wait on returned
-  futures before stopping the pool.
+  futures before stopping the pool. `stop(false)` requests shutdown without an
+  immediate join; destruction or a later waiting stop still joins workers.
 - `observable` protects subscription bookkeeping when a shared mutex is
   available, but callbacks run synchronously from `notify()`. Avoid mutating
   subscriptions from inside an observer callback unless the specific locking
