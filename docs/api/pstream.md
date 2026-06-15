@@ -22,6 +22,8 @@ Wraps platform pipe/file handles in C++ stream buffers and stream types. It prov
 - `native_handle()` exposes the underlying platform handle when direct integration is required.
 - `detach()` transfers handle ownership on implementations that allocate the buffer dynamically.
 - Call `close()` when the stream endpoint should be closed before object destruction.
+- After `detach()`, the caller becomes responsible for closing the native
+  handle on implementations where ownership is transferred.
 
 ## Requirements
 

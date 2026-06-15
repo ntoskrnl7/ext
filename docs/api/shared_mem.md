@@ -23,6 +23,20 @@ Wraps Windows file mappings and POSIX shared memory objects behind a common acce
 - The API is intentionally close to the native OS model; callers manage handles and mapped pointers carefully.
 - Windows global mappings may require privileges for `Global\` names.
 - `ext::shared_mem<T>::operator->` and `operator*` map the memory and expose it as `T`.
+- The wrapper constructs `T` in-place only when this instance created the
+  backing object.
+- `destroy()` removes the named backing object; coordinate that call with every
+  process that may still open or map the object.
+
+## Layout Contract
+
+- Every process must use the same `T` layout, packing, alignment, and binary
+  compatibility assumptions.
+- Prefer trivially copyable payloads. Pointers, references, process-local
+  handles, virtual functions, and allocator-owned members are not portable
+  across process boundaries.
+- Synchronization is not provided by `shared_mem<T>`; use an external
+  interprocess synchronization primitive when multiple processes can write.
 
 ## Requirements
 

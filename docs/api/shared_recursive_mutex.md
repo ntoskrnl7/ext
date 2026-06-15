@@ -19,6 +19,12 @@ Provides a mutex with exclusive and shared locking operations while tracking own
 ## Behavior Notes
 
 - Recursive exclusive ownership is tracked per thread.
+- Recursive shared ownership is tracked per thread through an internal map.
+- `unlock()` by a thread that does not own the exclusive lock throws
+  `std::system_error`.
+- Upgrading from shared ownership to exclusive ownership is specialized
+  behavior; prefer a simpler lock design when recursive upgrade-like behavior is
+  not required.
 - Use it only where recursive shared/exclusive behavior is required; standard mutexes are simpler for ordinary locking.
 
 ## Requirements

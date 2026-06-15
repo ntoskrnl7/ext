@@ -2,7 +2,15 @@
 
 C++ **EX**tended **T**emplate Library
 
-**ext** is a modern, cross-platform C++ template utility library designed to bridge the gap between the Standard Library and real-world production needs. It provides practical, reusable components that make C++ development easier, safer, and more productive without the complexity or overhead of larger frameworks.
+**ext** is a small, header-oriented C++ utility library for projects that need
+portable building blocks across old and modern toolchains. It focuses on
+independent helpers around compatibility, strings, parsing, process I/O,
+threading, and small application patterns rather than trying to be a framework.
+
+The library intentionally carries compatibility code for older compilers such
+as Visual Studio 2008 SP1 while also exposing cleaner APIs on newer C++
+standards. Some features therefore have different availability and guarantees
+depending on compiler, standard library, and platform support.
 
 [![CMake](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml/badge.svg?branch=master&event=push)](https://github.com/ntoskrnl7/ext/actions/workflows/cmake.yml?query=branch%3Amaster)
 [![MSYS2](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml/badge.svg?branch=master&event=push)](https://github.com/ntoskrnl7/ext/actions/workflows/msys2.yml?query=branch%3Amaster)
@@ -40,6 +48,21 @@ target_link_libraries(tests ext)
 
 - [API reference](docs/api/README.md)
 - [Build and test](docs/build-and-test.md)
+- [Portability and API contracts](docs/portability-and-contracts.md)
+
+## Project Scope
+
+ext is best used as a collection of opt-in headers:
+
+- Use one feature at a time; most headers are independent utility components.
+- Prefer the standard library first when it already provides the exact behavior
+  you need on every supported toolchain.
+- Treat concurrency, cancellation, process, and shared-memory APIs as thin
+  wrappers over platform behavior. Their exact guarantees are documented per API
+  and summarized in [Portability and API contracts](docs/portability-and-contracts.md).
+- Compatibility shims live behind feature checks and `CXX_USE_*` macros. New
+  code should avoid depending on those internal macros unless it is extending
+  ext itself.
 
 ## Features
 

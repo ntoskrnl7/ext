@@ -24,6 +24,8 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
 - `get()` throws `error_occurred` when called on an error result.
 - `error()` throws `no_error_occurred` when called on a successful `result<T, E>`.
 - `void_result<E>::error()` returns the stored error wrapper and does not throw on success.
+- `ok<T>` and `err<E>` are wrapper types with conversion operators; this is an
+  ext-specific result model rather than `std::expected`.
 
 ## Requirements
 
@@ -48,7 +50,7 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
   }
 
   result = err_fn();
-  if (!result) { // false
+  if (!result) { // true for error
     result.error(); // EBUSY
   }
   ```
@@ -71,7 +73,7 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
     }
 
     result = err_fn();
-    if (!result) { // false
+    if (!result) { // true for error
       result.error(); // EBUSY
     }
     ```
@@ -99,7 +101,7 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
     }
 
     result = err_fn();
-    if (!result) { // false
+    if (!result) { // true for error
       result.error(); // EBUSY
     }
     try {

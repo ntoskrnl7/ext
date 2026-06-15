@@ -25,6 +25,15 @@ Starts a child command with optional arguments and working directory, exposes pi
 - The class is move-only on modern compilers and supports `operator|` to connect stdout to the next process stdin.
 - The implementation uses Windows process APIs on Windows and `fork`/`exec`/`waitpid`-style behavior on POSIX systems.
 
+## Lifetime Contract
+
+- Always call `join()` or move the process object before it is destroyed.
+- Close `in()` when the child process expects EOF on stdin.
+- Read `out()` and `err()` according to the child process behavior; a child that
+  writes enough data to a pipe can block if the parent never drains it.
+- `exit_code()` is meaningful after the process has finished and join state has
+  been refreshed.
+
 ## Requirements
 
 - GCC 8.3.0+

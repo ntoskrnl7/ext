@@ -22,6 +22,16 @@ Runs a callback that writes values through an `async_result<T>::context`, then l
 - Cancellation is cooperative; producer callbacks should check `ctx.cancel_requested()` and stop pushing when requested.
 - `size()` and `current()` expose total and consumed item counts for progress-style workflows.
 - The iterator becomes stopped when the producer has finished and the queue is drained.
+- The `async_result` destructor joins the producer thread when one is running.
+
+## Lifetime Contract
+
+- Producer callbacks should call `ctx.end()` when they finish. The context
+  destructor also marks the result as finished, but explicit `end()` makes the
+  producer intent clear.
+- `cancel()` only sets a flag; it does not interrupt the producer thread.
+- A long-running producer that ignores `ctx.cancel_requested()` can keep
+  iterators and destruction waiting.
 
 ## Requirements
 

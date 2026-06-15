@@ -22,6 +22,18 @@ Provides an `observable<Self, Args...>` base and nested `observer` type. Derived
 - The destructor paths remove cross-references to avoid stale observer links.
 - When supported, a shared global mutex protects subscription and notification lists.
 - Use it for object-to-observer relationships; use `callback` for a simpler multicast callable list.
+- Notifications are synchronous: `notify()` calls observers before returning.
+- Avoid changing subscriptions from inside `update()` unless you have reviewed
+  the active locking path for the target platform.
+
+## Lifetime Contract
+
+- Observers must derive from the nested `observer` type of the matching
+  observable specialization.
+- Destroying an observer unsubscribes it from all tracked observables.
+- Destroying an observable removes it from subscribed observers.
+- Observer callbacks should not keep references to the observable beyond the
+  callback unless the observable lifetime is guaranteed elsewhere.
 
 ## Requirements
 

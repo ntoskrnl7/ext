@@ -22,6 +22,9 @@ Lets instances of `collection_base<T>::item` automatically register themselves i
 - The registry is per item type `T` and backed by static singleton storage.
 - Construct an item with the temporary flag to avoid automatic registration.
 - The implementation uses `std::shared_mutex`, Boost shared mutex, or `ext::shared_recursive_mutex` depending on platform support.
+- Collection view objects hold the registry lock while the view object is alive.
+- Registered pointers are not ownership handles; destroying an object without
+  unregistering it leaves a stale pointer in the registry.
 
 ## Requirements
 
@@ -74,7 +77,7 @@ Lets instances of `collection_base<T>::item` automatically register themselves i
     // cnt == 21
     cnt = 0;
     for (auto data : managed_data_list_rw()) {
-        int val = dat->value;
+        int val = data->value;
         data->value = 10;
         cnt++;
     }
@@ -102,16 +105,16 @@ Lets instances of `collection_base<T>::item` automatically register themselves i
     // data_list_rw::size() == 0;
 
     data data0;
-    //data_list_r::size() == 21;
-    //data_list_rw::size() == 21;
+    // data_list_r::size() == 0;
+    // data_list_rw::size() == 0;
 
     data *ptr = new data;
-    // data_list_r::size() == 22;
-    // data_list_rw::size() == 22;
+    // data_list_r::size() == 0;
+    // data_list_rw::size() == 0;
 
     delete ptr;
-    // data_list_r::size() == 21;
-    // data_list_rw::size() == 21;
+    // data_list_r::size() == 0;
+    // data_list_rw::size() == 0;
 
     // data_list_r::size() == 0
     // data_list_rw::size() == 0
@@ -134,7 +137,7 @@ Lets instances of `collection_base<T>::item` automatically register themselves i
     // cnt == 1
     cnt = 0;
     for (auto data : data_list_rw()) {
-        int val = dat->value;
+        int val = data->value;
         data->value = 10;
         cnt++;
     }

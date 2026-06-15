@@ -22,6 +22,17 @@ Builds a temporary object that locks a supplied mutex and returns a reference to
 - The object and mutex are non-type template parameters, so they must have suitable storage duration.
 - Shared access uses `std::shared_lock`; exclusive access uses `std::unique_lock`.
 - The implementation depends on `decltype`, alias templates, atomics, threads, and a shared mutex implementation.
+- The returned reference is protected only while the temporary proxy remains alive.
+
+## Lifetime Contract
+
+- Use `get_object_safety(obj, mutex, true)` for shared const access and
+  `get_object_safety(obj, mutex, false)` for exclusive mutable access.
+- Do not store a reference or pointer obtained through the proxy beyond the
+  expression or scope that owns the lock.
+- The protected object and mutex must outlive every proxy that can access them.
+- Prefer ordinary scoped locks when the object and mutex are already local and
+  do not need to be bound as compile-time references.
 
 ## Requirements
 

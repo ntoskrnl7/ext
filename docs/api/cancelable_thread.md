@@ -22,6 +22,20 @@ Wraps `std::thread` and exposes cancellation-oriented state such as ready, compl
 - Deferred mode is modeled after `PTHREAD_CANCEL_DEFERRED`; immediate mode is modeled after `PTHREAD_CANCEL_ASYNCHRONOUS`.
 - The macOS pthread implementation does not guarantee C++ stack unwinding for deferred cancellation, so RAII cleanup is not documented as supported there.
 - Immediate cancellation is inherently dangerous because ordinary C++ destructors may not run; use the cleanup callback to release resources that must be unlocked.
+- Cancellation follows the underlying platform primitive. It is not a portable replacement for cooperative stop tokens.
+
+## Cancellation Contract
+
+- Prefer cooperative cancellation for ordinary application logic. Use
+  `async_result::context::cancel_requested()` or an application-owned atomic flag
+  when a worker can stop itself safely.
+- Deferred cancellation can be used for blocking calls that are known
+  cancellation points on the target platform.
+- Immediate cancellation should only be used when the caller accepts that C++
+  stack unwinding, local destructors, and ordinary scope cleanup may be skipped.
+- The optional cleanup callback is a last-resort hook. It should only perform
+  operations that are valid for the resource and platform even when the worker
+  thread is interrupted.
 
 ## Requirements
 

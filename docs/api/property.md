@@ -22,6 +22,9 @@ Stores a value, optionally validates assignments, and inherits from `observable`
 - Invalid assignments are rejected by the validator and leave the previous value in place.
 - Property chaining can mirror one property into another through the observable update path.
 - Use this when value mutation should be observable rather than manually notifying callbacks.
+- Notifications are synchronous through `observable`.
+- The value is not internally synchronized; protect shared properties with an
+  external lock when they are accessed from multiple threads.
 
 ## Requirements
 
