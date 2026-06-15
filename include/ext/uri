@@ -19,6 +19,7 @@
 #include <iterator>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "stl_compat"
@@ -38,9 +39,13 @@ template <> struct strings<char> {
   static char question() { return '?'; }
   static char hash() { return '#'; }
   static char colon() { return ':'; }
+  static char at() { return '@'; }
+  static char open_bracket() { return '['; }
+  static char close_bracket() { return ']'; }
   static char assign() { return '='; }
   static char ampersand() { return '&'; }
   static char percent() { return '%'; }
+  static char period() { return '.'; }
   static char zero() { return '0'; }
 
   static bool is_gen_delims(wchar_t c) {
@@ -72,9 +77,13 @@ template <> struct strings<wchar_t> {
   static wchar_t question() { return L'?'; }
   static wchar_t hash() { return L'#'; }
   static wchar_t colon() { return L':'; }
+  static wchar_t at() { return L'@'; }
+  static wchar_t open_bracket() { return L'['; }
+  static wchar_t close_bracket() { return L']'; }
   static wchar_t assign() { return L'='; }
   static wchar_t ampersand() { return L'&'; }
   static wchar_t percent() { return L'%'; }
+  static wchar_t period() { return L'.'; }
   static wchar_t zero() { return L'0'; }
 
   static bool is_gen_delims(wchar_t c) {
@@ -154,29 +163,14 @@ template <typename T> struct basic_uri {
 #endif
   }
 
-  basic_uri(const std::u8string &uri_str, const u8query_map &query)
+  basic_uri(const std::u8string &uri_str, const u8query_map &query_params)
 #if CXX_VER < 201103L
   {
-    swap(basic_uri(uri_str));
+    swap(basic_uri(encode_uri<T>(uri_str)));
 #else
-      : basic_uri(uri_str) {
+      : basic_uri(encode_uri<T>(uri_str)) {
 #endif
-    CXX_FOR(typename u8query_map::value_type q, query) {
-      this->query += static_cast<typename std::u8string::value_type>(
-                         strings<char>::ampersand()) +
-                     q.first +
-                     static_cast<typename std::u8string::value_type>(
-                         strings<char>::assign()) +
-                     q.second;
-    }
-    if (this->query.size() > 2) {
-      this->query = static_cast<typename std::u8string::value_type>(
-                        strings<T>::question()) +
-                    this->query.substr(1);
-      value += this->query;
-    }
-    if (!query.empty())
-      query = encode_uri_component<T, std::basic_string<T>>(query);
+    append_u8_query_(query_params);
   }
 #endif // defined(_EXT_U8STRING_)
 
@@ -189,20 +183,15 @@ template <typename T> struct basic_uri {
       value.clear();
       return;
     }
-    scheme.reserve(distance(uri_str.begin(), scheme_end_it));
-    std::transform(uri_str.begin(), scheme_end_it, back_inserter(scheme),
-                   tolower);
+    assign_lower_(scheme, uri_str.begin(), scheme_end_it);
     advance(scheme_end_it, scheme_end.length());
 
     typename string_type::const_iterator host_end_it =
         find_authority_end_(scheme_end_it, uri_str.end());
 
-    host.reserve(distance(scheme_end_it, host_end_it));
-    std::transform(scheme_end_it, host_end_it, back_inserter(host), tolower);
-    typename string_type::size_type pos = host.find(strings<T>::colon());
-    if (pos != string_type::npos) {
-      port = static_cast<unsigned short>(std::stoul(host.substr(pos + 1)));
-      host.resize(pos);
+    if (!parse_authority_(scheme_end_it, host_end_it)) {
+      invalidate_();
+      return;
     }
 
     if (host_end_it == uri_str.end())
@@ -252,6 +241,7 @@ template <typename T> struct basic_uri {
   void swap(basic_uri &other) {
     value.swap(other.value);
     scheme.swap(other.scheme);
+    userinfo.swap(other.userinfo);
     host.swap(other.host);
     std::swap(port, other.port);
     path.swap(other.path);
@@ -263,8 +253,129 @@ template <typename T> struct basic_uri {
 
   operator const string_type &() const { return value; }
 
+  query_map query_params() const {
+    query_map params;
+    if (query.empty())
+      return params;
+
+    typename string_type::size_type pos =
+        query[0] == strings<T>::question() ? 1 : 0;
+    while (pos <= query.size()) {
+      typename string_type::size_type amp =
+          query.find(strings<T>::ampersand(), pos);
+      string_type item = query.substr(pos, amp == string_type::npos
+                                               ? string_type::npos
+                                               : amp - pos);
+      if (!item.empty()) {
+        typename string_type::size_type assign =
+            item.find(strings<T>::assign());
+        string_type key = assign == string_type::npos ? item
+                                                      : item.substr(0, assign);
+        string_type value =
+            assign == string_type::npos ? string_type() : item.substr(assign + 1);
+        params[decode_component(key)] = decode_component(value);
+      }
+      if (amp == string_type::npos)
+        break;
+      pos = amp + 1;
+    }
+    return params;
+  }
+
+  static basic_uri resolve(const basic_uri &base,
+                           const string_type &reference) {
+    if (!base.valid())
+      return basic_uri(string_type());
+
+    static const string_type &scheme_end = strings<T>::scheme_end();
+    if (std::search(reference.begin(), reference.end(), scheme_end.begin(),
+                    scheme_end.end()) != reference.end())
+      return basic_uri(reference);
+
+    reference_parts ref = parse_reference_(reference);
+    string_type authority = authority_string_(base);
+    string_type target_path;
+    string_type target_query;
+
+    if (ref.has_authority) {
+      authority = ref.authority;
+      target_path = remove_dot_segments(ref.path);
+      target_query = ref.query;
+    } else {
+      if (ref.path.empty()) {
+        target_path = base.path;
+        target_query = ref.has_query ? ref.query : base.query;
+      } else {
+        if (ref.path[0] == strings<T>::slash())
+          target_path = remove_dot_segments(ref.path);
+        else
+          target_path = remove_dot_segments(merge_paths_(base.path, ref.path));
+        target_query = ref.query;
+      }
+    }
+
+    string_type resolved = base.scheme + scheme_end + authority + target_path +
+                           target_query + ref.fragment;
+    return basic_uri(resolved);
+  }
+
+  basic_uri resolve(const string_type &reference) const {
+    return resolve(*this, reference);
+  }
+
+  static string_type remove_dot_segments(const string_type &input_path) {
+    string_type input = input_path;
+    string_type output;
+
+    while (!input.empty()) {
+      if (starts_with_(input, string_type(2, strings<T>::period()) +
+                                  strings<T>::slash())) {
+        input.erase(0, 3);
+      } else if (starts_with_(input, string_type(1, strings<T>::period()) +
+                                         strings<T>::slash())) {
+        input.erase(0, 2);
+      } else if (starts_with_(input, strings<T>::slash() +
+                                         string_type(1, strings<T>::period()) +
+                                         strings<T>::slash())) {
+        input.replace(0, 3, string_type(1, strings<T>::slash()));
+      } else if (input == strings<T>::slash() +
+                              string_type(1, strings<T>::period())) {
+        input.replace(0, 2, string_type(1, strings<T>::slash()));
+      } else if (starts_with_(input, strings<T>::slash() +
+                                         string_type(2, strings<T>::period()) +
+                                         strings<T>::slash())) {
+        input.replace(0, 4, string_type(1, strings<T>::slash()));
+        pop_last_path_segment_(output);
+      } else if (input == strings<T>::slash() +
+                              string_type(2, strings<T>::period())) {
+        input.replace(0, 3, string_type(1, strings<T>::slash()));
+        pop_last_path_segment_(output);
+      } else if (input == string_type(1, strings<T>::period()) ||
+                 input == string_type(2, strings<T>::period())) {
+        input.clear();
+      } else {
+        typename string_type::size_type next = string_type::npos;
+        if (input[0] == strings<T>::slash())
+          next = input.find(strings<T>::slash(), 1);
+        else
+          next = input.find(strings<T>::slash());
+
+        if (next == string_type::npos) {
+          output += input;
+          input.clear();
+        } else {
+          output += input.substr(0, next);
+          input.erase(0, next);
+        }
+      }
+    }
+
+    return output;
+  }
+
   string_type value;
   string_type scheme;
+  string_type userinfo;
   string_type host;
   unsigned short port;
   string_type path;
@@ -274,6 +385,26 @@ template <typename T> struct basic_uri {
   static string_type encode_component(const std::string &u8_str) {
     return encode_uri_component<T, std::string>(u8_str);
   }
+
+  static string_type decode_component(const string_type &encoded) {
+    string_type decoded;
+    for (typename string_type::size_type i = 0; i < encoded.size(); ++i) {
+      if (encoded[i] != strings<T>::percent()) {
+        decoded += encoded[i];
+        continue;
+      }
+
+      if (i + 2 >= encoded.size())
+        throw std::invalid_argument("invalid percent escape");
+      const int high = hex_value_(encoded[i + 1]);
+      const int low = hex_value_(encoded[i + 2]);
+      if (high < 0 || low < 0)
+        throw std::invalid_argument("invalid percent escape");
+      decoded += static_cast<T>((high << 4) | low);
+      i += 2;
+    }
+    return decoded;
+  }
 #if defined(_EXT_U8STRING_)
   static string_type encode_component(const std::u8string &u8_str) {
     return encode_uri_component<T, std::u8string>(u8_str);
@@ -281,6 +412,42 @@ template <typename T> struct basic_uri {
 #endif // defined(_EXT_U8STRING_)
 
 private:
+  struct reference_parts {
+    bool has_authority;
+    bool has_query;
+    string_type authority;
+    string_type path;
+    string_type query;
+    string_type fragment;
+
+    reference_parts() : has_authority(false), has_query(false) {}
+  };
+
+  static T ascii_lower_(T c) {
+    return c >= static_cast<T>('A') && c <= static_cast<T>('Z')
+               ? static_cast<T>(c - static_cast<T>('A') + static_cast<T>('a'))
+               : c;
+  }
+
+  template <typename It> static void assign_lower_(string_type &out, It begin,
+                                                   It end) {
+    out.clear();
+    out.reserve(distance(begin, end));
+    for (It it = begin; it != end; ++it)
+      out += ascii_lower_(*it);
+  }
+
+  void invalidate_() {
+    value.clear();
+    scheme.clear();
+    userinfo.clear();
+    host.clear();
+    port = 0;
+    path.clear();
+    query.clear();
+    fragment.clear();
+  }
+
   static typename string_type::const_iterator
   min_iterator_(typename string_type::const_iterator lhs,
                 typename string_type::const_iterator rhs,
@@ -306,6 +473,75 @@ private:
                          end);
   }
 
+  bool parse_authority_(typename string_type::const_iterator begin,
+                        typename string_type::const_iterator end) {
+    string_type authority(begin, end);
+    typename string_type::size_type host_begin = 0;
+    typename string_type::size_type at = authority.find(strings<T>::at());
+    if (at != string_type::npos) {
+      userinfo.assign(authority.begin(), authority.begin() + at);
+      host_begin = at + 1;
+    }
+
+    if (host_begin < authority.size() &&
+        authority[host_begin] == strings<T>::open_bracket()) {
+      typename string_type::size_type close =
+          authority.find(strings<T>::close_bracket(), host_begin + 1);
+      if (close == string_type::npos)
+        return false;
+      assign_lower_(host, authority.begin() + host_begin + 1,
+                    authority.begin() + close);
+      if (close + 1 == authority.size())
+        return true;
+      if (authority[close + 1] != strings<T>::colon())
+        return false;
+      return parse_port_(authority.substr(close + 2));
+    }
+
+    typename string_type::size_type first_colon =
+        authority.find(strings<T>::colon(), host_begin);
+    typename string_type::size_type last_colon =
+        authority.rfind(strings<T>::colon());
+    if (first_colon != string_type::npos && first_colon != last_colon)
+      return false;
+
+    typename string_type::size_type host_end =
+        first_colon == string_type::npos ? authority.size() : first_colon;
+    assign_lower_(host, authority.begin() + host_begin,
+                  authority.begin() + host_end);
+    if (first_colon == string_type::npos)
+      return true;
+    return parse_port_(authority.substr(first_colon + 1));
+  }
+
+  bool parse_port_(const string_type &port_text) {
+    if (port_text.empty())
+      return false;
+    for (typename string_type::size_type i = 0; i < port_text.size(); ++i) {
+      if (!is_digit_(port_text[i]))
+        return false;
+    }
+
+    try {
+      std::size_t parsed_chars = 0;
+      const unsigned long parsed = std::stoul(port_text, &parsed_chars, 10);
+      if (parsed_chars != port_text.size() || parsed > 65535UL)
+        return false;
+      port = static_cast<unsigned short>(parsed);
+      return true;
+    } catch (const std::exception &) {
+      return false;
+    }
+  }
+
+  static bool is_digit_(T c) {
+    return c >= static_cast<T>('0') && c <= static_cast<T>('9');
+  }
+
+  static string_type encode_component_string_(const string_type &raw) {
+    return encode_uri_component<T, string_type>(raw);
+  }
+
   void append_query_(const query_map &query_params) {
     if (query_params.empty())
       return;
@@ -316,7 +552,8 @@ private:
         query_text += strings<T>::question();
       else
         query_text += strings<T>::ampersand();
-      query_text += q.first + strings<T>::assign() + q.second;
+      query_text += encode_component_string_(q.first) + strings<T>::assign() +
+                    encode_component_string_(q.second);
     }
 
     string_type base = value;
@@ -327,6 +564,136 @@ private:
 
     query = query_text;
     value = base + query + fragment;
+  }
+
+#if defined(_EXT_U8STRING_)
+  void append_u8_query_(const u8query_map &query_params) {
+    if (query_params.empty())
+      return;
+
+    string_type query_text = query;
+    CXX_FOR(typename u8query_map::value_type q, query_params) {
+      if (query_text.empty())
+        query_text += strings<T>::question();
+      else
+        query_text += strings<T>::ampersand();
+      query_text += encode_uri_component<T, std::u8string>(q.first) +
+                    strings<T>::assign() +
+                    encode_uri_component<T, std::u8string>(q.second);
+    }
+
+    string_type base = value;
+    if (!fragment.empty())
+      base.resize(base.size() - fragment.size());
+    if (!query.empty())
+      base.resize(base.size() - query.size());
+
+    query = query_text;
+    value = base + query + fragment;
+  }
+#endif // defined(_EXT_U8STRING_)
+
+  static int hex_value_(T c) {
+    if (c >= static_cast<T>('0') && c <= static_cast<T>('9'))
+      return static_cast<int>(c - static_cast<T>('0'));
+    if (c >= static_cast<T>('A') && c <= static_cast<T>('F'))
+      return static_cast<int>(c - static_cast<T>('A') + 10);
+    if (c >= static_cast<T>('a') && c <= static_cast<T>('f'))
+      return static_cast<int>(c - static_cast<T>('a') + 10);
+    return -1;
+  }
+
+  static bool starts_with_(const string_type &value,
+                           const string_type &prefix) {
+    return value.size() >= prefix.size() &&
+           value.compare(0, prefix.size(), prefix) == 0;
+  }
+
+  static void pop_last_path_segment_(string_type &path_value) {
+    typename string_type::size_type pos =
+        path_value.find_last_of(strings<T>::slash());
+    if (pos == string_type::npos) {
+      path_value.clear();
+      return;
+    }
+    path_value.resize(pos);
+  }
+
+  static reference_parts parse_reference_(const string_type &reference) {
+    reference_parts parts;
+    typename string_type::size_type path_begin = 0;
+    typename string_type::size_type fragment_begin =
+        reference.find(strings<T>::hash());
+    typename string_type::size_type end =
+        fragment_begin == string_type::npos ? reference.size() : fragment_begin;
+    if (fragment_begin != string_type::npos)
+      parts.fragment = reference.substr(fragment_begin);
+
+    if (reference.size() >= 2 && reference[0] == strings<T>::slash() &&
+        reference[1] == strings<T>::slash()) {
+      parts.has_authority = true;
+      typename string_type::size_type authority_end =
+          find_authority_end_index_(reference, 2, end);
+      parts.authority = reference.substr(2, authority_end - 2);
+      path_begin = authority_end;
+    }
+
+    typename string_type::size_type query_begin =
+        reference.find(strings<T>::question(), path_begin);
+    if (query_begin != string_type::npos && query_begin < end) {
+      parts.has_query = true;
+      parts.path = reference.substr(path_begin, query_begin - path_begin);
+      parts.query = reference.substr(query_begin, end - query_begin);
+    } else {
+      parts.path = reference.substr(path_begin, end - path_begin);
+    }
+
+    return parts;
+  }
+
+  static typename string_type::size_type
+  find_authority_end_index_(const string_type &value,
+                            typename string_type::size_type begin,
+                            typename string_type::size_type end) {
+    typename string_type::size_type slash = value.find(strings<T>::slash(), begin);
+    typename string_type::size_type query =
+        value.find(strings<T>::question(), begin);
+    typename string_type::size_type fragment =
+        value.find(strings<T>::hash(), begin);
+    typename string_type::size_type ret = end;
+    if (slash != string_type::npos && slash < ret)
+      ret = slash;
+    if (query != string_type::npos && query < ret)
+      ret = query;
+    if (fragment != string_type::npos && fragment < ret)
+      ret = fragment;
+    return ret;
+  }
+
+  static string_type merge_paths_(const string_type &base_path,
+                                  const string_type &reference_path) {
+    if (base_path.empty())
+      return string_type(1, strings<T>::slash()) + reference_path;
+    typename string_type::size_type pos =
+        base_path.find_last_of(strings<T>::slash());
+    if (pos == string_type::npos)
+      return reference_path;
+    return base_path.substr(0, pos + 1) + reference_path;
+  }
+
+  static string_type authority_string_(const basic_uri &uri_value) {
+    static const string_type &scheme_end = strings<T>::scheme_end();
+    typename string_type::size_type begin =
+        uri_value.scheme.size() + scheme_end.size();
+    if (uri_value.value.size() < begin)
+      return string_type();
+
+    typename string_type::const_iterator authority_begin =
+        uri_value.value.begin() + begin;
+    typename string_type::const_iterator authority_end =
+        find_authority_end_(authority_begin, uri_value.value.end());
+    return uri_value.value.substr(
+        begin, distance(authority_begin, authority_end));
   }
 };
 

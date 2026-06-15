@@ -8,9 +8,10 @@
 
 ## Overview
 
-Parses simple absolute URI strings into scheme, host, port, path, query, and
-fragment fields and provides URI/component percent-encoding helpers. Tests cover
-invalid URIs, literals, query maps, fragments, and UTF-8 encoding.
+Parses hierarchical URI strings into scheme, user info, host, port, path, query,
+and fragment fields and provides URI/component percent-encoding helpers. Tests
+cover invalid URIs, literals, query maps, fragments, IPv6 literals, relative
+resolution, and UTF-8 encoding.
 
 ## Key APIs
 
@@ -25,30 +26,43 @@ invalid URIs, literals, query maps, fragments, and UTF-8 encoding.
 - `basic_uri(std::u8string)` and `basic_uri(std::u8string, u8query_map)` are
   available when UTF-8 string support is enabled.
 - `scheme_host_port()` returns the URI prefix through the authority/port section.
+- `query_params()` parses `query` into a decoded `query_map`.
+- `resolve(base, reference)` resolves a relative reference against a base URI.
+- `remove_dot_segments(path)` applies RFC 3986 dot-segment path cleanup.
 - `valid()` reports whether parsing produced a non-empty value.
 - `operator const string_type &()` exposes the stored URI string.
 - `basic_uri::encode_component(u8_string)` is a static component-encoding
   convenience wrapper.
+- `basic_uri::decode_component(encoded)` decodes percent escapes in a component.
 - `ext::literals::operator"" _uri` creates `uri` or `wuri` from string
   literals when user-defined literals are supported.
 
 ## Behavior Notes
 
 - A URI without `://` is considered invalid and clears `value`.
-- Scheme and host are normalized to lowercase during parsing. Path and query are
-  kept as provided.
-- The parser recognizes a port only when the authority contains `:port`.
+- Scheme and host are normalized to lowercase during parsing. User info, path,
+  query, and fragment are kept as provided.
+- `userinfo@host` is split into `userinfo` and `host`.
+- IPv6 host literals must use bracket form such as `[2001:db8::1]`. The parsed
+  `host` field stores the address without brackets.
+- Ports must be decimal, fully consumed, and in the range `0..65535`; malformed
+  ports make the URI invalid.
 - Query strings are stored with the leading `?` when present. Query maps append
-  `?key=value&...` to the stored value before any fragment.
+  percent-encoded `?key=value&...` pairs to the stored value before any
+  fragment.
+- `query_params()` decodes percent escapes and stores duplicate keys using
+  `std::map` semantics, so later duplicate keys overwrite earlier ones.
 - Fragment strings are stored with the leading `#` when present.
-- The parser is intentionally lightweight. It does not validate every RFC 3986
-  grammar rule, does not decode percent-encoded input, and does not parse user
-  info or IPv6 authority forms as separate fields.
+- Relative references are resolved with RFC 3986-style path merging and
+  dot-segment cleanup. The constructor still requires a hierarchical absolute
+  URI containing `://`; use `resolve()` for relative references.
+- The parser validates common authority and port errors, but it does not enforce
+  every RFC 3986 grammar rule and does not implement non-hierarchical schemes
+  such as `mailto:`.
 - `encode_uri` and `encode_uri_component` operate on bytes from the supplied
   UTF-8-like string. They emit uppercase percent escapes.
-- Query map constructors append keys and values as provided for `std::string`
-  and `std::wstring` maps. Encode keys and values first when component escaping
-  is required.
+- `decode_component` reverses percent escapes byte-by-byte. It does not perform
+  UTF-8 transcoding for wide strings.
 
 ## Requirements
 
@@ -65,10 +79,19 @@ invalid URIs, literals, query maps, fragments, and UTF-8 encoding.
 
   ext::uri u("https://localhost:8443/test");
   // u.scheme == "https"
+  // u.userinfo.empty() == true
   // u.host == "localhost"
   // u.port == 8443
   // u.path == "/test"
   // u.scheme_host_port() == "https://localhost:8443"
+
+  u = ext::uri("https://User:Pass@EXAMPLE.com:8443/test");
+  // u.userinfo == "User:Pass"
+  // u.host == "example.com"
+
+  u = ext::uri("https://[2001:DB8::1]:443/test");
+  // u.host == "2001:db8::1"
+  // u.port == 443
 
   u = ext::uri("foo://info.example.com?fred");
   // u.scheme == "foo"
@@ -88,12 +111,31 @@ invalid URIs, literals, query maps, fragments, and UTF-8 encoding.
   #include <ext/uri>
 
   ext::uri::query_map query = {
-    {"q", ext::uri::encode_component("hello world")},
+    {"q", "hello world"},
+    {"a+b", "c&d"},
     {"page", "1"},
   };
 
   ext::uri u("https://example.com/search#results", query);
-  // u.value == "https://example.com/search?page=1&q=hello%20world#results"
+  // u.value == "https://example.com/search?a%2Bb=c%26d&page=1&q=hello%20world#results"
+
+  ext::uri parsed("https://example.com/search?q=hello%20world&a%2Bb=c%26d");
+  ext::uri::query_map params = parsed.query_params();
+  // params["q"] == "hello world"
+  // params["a+b"] == "c&d"
+  ```
+
+- relative references
+
+  ```C++
+  #include <ext/uri>
+
+  ext::uri base("https://User@example.com/a/b/c?x=1#old");
+  ext::uri resolved = base.resolve("../d/./e?y=2#new");
+  // resolved.value == "https://User@example.com/a/d/e?y=2#new"
+
+  ext::uri::remove_dot_segments("/a/b/../c/./");
+  // "/a/c/"
   ```
 
 - wuri
@@ -148,4 +190,7 @@ invalid URIs, literals, query maps, fragments, and UTF-8 encoding.
 
     ext::uri::encode_component("a b+c");
     // "a%20b%2Bc"
+
+    ext::uri::decode_component("a%20b%2Bc");
+    // "a b+c"
   ```
