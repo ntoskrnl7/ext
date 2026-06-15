@@ -6,6 +6,21 @@
 
 `#include <ext/type_traits>`
 
+## Overview
+
+Adds compile-time utilities that the rest of the library uses for callable and chain support. Tests cover removing the owning class from member-function pointers and deducing member-function types.
+
+## Key APIs
+
+- `ext::remove_class<T>` strips the class from member-function pointer types.
+- `ext::deduce_mem_fn<T>` derives a callable function signature from a member-function pointer.
+- Const and non-const member-function pointer forms are supported.
+
+## Behavior Notes
+
+- These traits are intended for template metaprogramming and usually appear in helper code rather than application code.
+- They rely on compiler support for the relevant type-trait and template features.
+
 ## Requirements
 
 - GCC 8.3.0+

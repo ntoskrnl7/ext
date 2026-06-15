@@ -6,6 +6,23 @@
 
 `#include <ext/any_function>`
 
+## Overview
+
+Provides a `std::function`-compatible wrapper that can be called with a `std::vector<std::any>`. It is useful for command queues, reflection-like dispatch, and APIs that need to store callable objects while binding arguments later.
+
+## Key APIs
+
+- `ext::any_function<R(Args...)>` stores a callable and exposes both typed calls and `std::any`-based calls.
+- `push_back`, `set_args`, and `clear` manage the stored argument vector used by the nullary `operator()()`.
+- `call(args...)` invokes the stored callable with typed arguments and returns `R` directly.
+- `invalid_argument_type` and `argument_count_mismatch` describe failed dynamic argument conversion.
+
+## Behavior Notes
+
+- Dynamic calls validate the number of arguments before invocation.
+- Each `std::any` argument is cast to the function signature type; mismatches throw with the failing argument index.
+- Reference wrappers are supported for pass-by-reference command patterns.
+
 ## Requirements
 
 - GCC 8.3.0+

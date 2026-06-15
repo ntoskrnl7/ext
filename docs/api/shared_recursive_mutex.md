@@ -6,6 +6,21 @@
 
 `#include <ext/shared_recursive_mutex>`
 
+## Overview
+
+Provides a mutex with exclusive and shared locking operations while tracking ownership so recursive acquisition by the same thread can succeed. Tests cover exclusive and shared lock construction.
+
+## Key APIs
+
+- `ext::shared_recursive_mutex` exposes mutex-style `lock`, `unlock`, `try_lock`, `lock_shared`, and `unlock_shared` operations.
+- It is compatible with standard lock wrappers such as `std::unique_lock` and `std::shared_lock`.
+- The type can back `collection`, `observable`, and `safe_object` when standard shared mutex support is unavailable or insufficient.
+
+## Behavior Notes
+
+- Recursive exclusive ownership is tracked per thread.
+- Use it only where recursive shared/exclusive behavior is required; standard mutexes are simpler for ordinary locking.
+
 ## Requirements
 
 - GCC 8.3.0+

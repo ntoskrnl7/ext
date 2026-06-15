@@ -6,6 +6,23 @@
 
 `#include <ext/base64>`
 
+## Overview
+
+Implements RFC 2045-style Base64 conversion helpers. The API accepts narrow or wide encoded text and can decode into strings, byte vectors, caller-provided objects, or `std::shared_ptr<T>` results.
+
+## Key APIs
+
+- `ext::base64::encode(value)` encodes strings, wide strings, byte vectors, or object bytes.
+- `ext::base64::decode(encoded)` returns decoded bytes as `std::vector<std::byte>`.
+- `ext::base64::decode_str<T>(encoded)` converts decoded bytes into a `std::basic_string<T>`.
+- `ext::base64::decode(encoded, object)` and `decode_shared_ptr<T>` decode bytes into typed storage.
+
+## Behavior Notes
+
+- The text character type can be selected with template arguments such as `encode<wchar_t>(...)`.
+- Object decoding treats the object as raw bytes; it is intended for simple binary-compatible data layouts.
+- The tests include RFC 2045 sample text and long narrow/wide payloads.
+
 ## Requirements
 
 - GCC 8.3.0+

@@ -6,6 +6,23 @@
 
 `#include <ext/path>`
 
+## Overview
+
+Adds cross-platform string and wide-string path helpers. Tests cover Windows-style and POSIX-style relative markers, existence checks, dirname/basename behavior, and multiple join cases.
+
+## Key APIs
+
+- `ext::path::basename(path)` and `dirname(path)` split the final component from its parent directory.
+- `ext::path::exists(path)` checks whether a path exists.
+- `ext::path::is_relative(path)` recognizes `./name`, `../name`, `.\name`, and `..\name` as relative path forms.
+- `ext::path::join(base, child, ...)` joins path components while preserving platform-style separators.
+
+## Behavior Notes
+
+- Both `std::string` and `std::wstring` path overloads are supported where the platform API allows it.
+- A bare `.` or `..` is not considered a relative path by `is_relative`; the tests require an actual child component.
+- Absolute child paths replace earlier base components in join behavior.
+
 ## Requirements
 
 - GCC 8.3.0+

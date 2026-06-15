@@ -9,6 +9,22 @@
 - SI
 - IEC
 
+## Overview
+
+Defines unit wrapper types for decimal SI and binary IEC quantities. Tests cover construction, conversion, arithmetic, and suffix-style usage.
+
+## Key APIs
+
+- `ext::units::si` provides decimal kilo/mega/giga-style units.
+- `ext::units::iec` provides binary kibi/mebi/gibi-style units.
+- Unit values support arithmetic and conversion back to their base numeric representation.
+- Convenience aliases and suffix-like helpers make expressions readable.
+
+## Behavior Notes
+
+- Use SI units for powers of 1000 and IEC units for powers of 1024.
+- The wrappers are compile-time typed so mixed-unit expressions are clearer than raw integers.
+
 ## Requirements
 
 - GCC 8.3.0+

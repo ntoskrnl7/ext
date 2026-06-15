@@ -6,6 +6,23 @@
 
 `#include <ext/ini>`
 
+## Overview
+
+Reads section/key/value pairs from streams and lets callers inspect, mutate, erase, and serialize INI data. Tests cover string streams, files, output streams, and erase behavior.
+
+## Key APIs
+
+- `ext::ini` stores data as sections containing name/value string pairs.
+- `contains(section)` and `contains(section, name)` test for existing entries.
+- `operator[](section)` exposes the section map for reading or assignment.
+- `erase(section)` and `erase(section, name)` remove data, and stream insertion serializes it.
+
+## Behavior Notes
+
+- The parser recognizes bracketed sections and simple `name=value` entries.
+- All stored values are strings; callers convert typed values themselves.
+- Ordering follows the underlying `std::map` ordering.
+
 ## Requirements
 
 - GCC 8.3.0+

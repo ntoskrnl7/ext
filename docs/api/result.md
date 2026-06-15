@@ -6,6 +6,23 @@
 
 `#include <ext/result>`
 
+## Overview
+
+Models a return value that is either successful `ok<T>` data or failed `err<E>` data. The API offers boolean state checks and accessor methods that throw if the wrong side is read.
+
+## Key APIs
+
+- `ext::ok<T>` wraps successful values; `ok<void>` represents success without a value.
+- `ext::err<E>` wraps error values and an optional error message.
+- `ext::result<T, E>` stores either success data or error data.
+- `ext::void_result<E>` stores success/failure when there is no success value.
+
+## Behavior Notes
+
+- `operator bool()` is true on success and false on error.
+- `ok()` throws `error_occurred` when called on an error result.
+- `err()` throws `no_error_occurred` when called on a successful result.
+
 ## Requirements
 
 - GCC 8.3.0+

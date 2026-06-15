@@ -6,6 +6,23 @@
 
 `#include <ext/property>`
 
+## Overview
+
+Stores a value, optionally validates assignments, and inherits from `observable` so dependent properties can react to changes. Tests cover assignment, comparison-like chain helpers, and notification behavior.
+
+## Key APIs
+
+- `ext::property<T>` stores a value of type `T`.
+- Constructors accept an initial value and optional `std::function<bool(const T&)>` validator.
+- `operator=` updates the value and notifies observers when validation succeeds.
+- `operator T()` reads the current value.
+
+## Behavior Notes
+
+- Invalid assignments are rejected by the validator and leave the previous value in place.
+- Property chaining can mirror one property into another through the observable update path.
+- Use this when value mutation should be observable rather than manually notifying callbacks.
+
 ## Requirements
 
 - GCC 8.3.0+

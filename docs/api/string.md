@@ -6,6 +6,24 @@
 
 `#include <ext/string>`
 
+## Overview
+
+Collects helpers under `ext::string` for common string transformations and compatibility behavior. It also provides optional movable string aliases and a `u8string` fallback for compilers without native `char8_t` support.
+
+## Key APIs
+
+- `printable`, `lprintable`, and `rprintable` remove non-printable characters.
+- `trim`, `ltrim`, and `rtrim` remove whitespace from strings.
+- `replace_all`, `split`, `starts_with`, `equal`, and search helpers cover common text operations.
+- `stoul` and `stoull` provide unsigned numeric parsing compatibility.
+- `to_u8string`, `from_u8`, and `from_u8string` bridge UTF-8 string types.
+
+## Behavior Notes
+
+- Most helpers are templated for `char` and `wchar_t` string types.
+- In-place overloads mutate the supplied string and const/input overloads return transformed copies.
+- The `ext::u8string` fallback uses `unsigned char` storage when native `std::u8string` is unavailable.
+
 ## Requirements
 
 - GCC 8.3.0+

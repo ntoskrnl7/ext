@@ -6,6 +6,24 @@
 
 `#include <ext/thread_pool>`
 
+## Overview
+
+Creates worker threads that consume queued packaged tasks. The API is intentionally small: start workers, queue work, stop workers, and observe the pool status.
+
+## Key APIs
+
+- `ext::thread_pool` owns worker threads and a task queue.
+- `start(pool_size)` creates worker threads when the pool is stopped.
+- `queue(fn, args...)` submits work and returns a `std::future` for the packaged task result.
+- `stop(wait)` requests worker shutdown and optionally joins the worker threads.
+- `status()` reports `running`, `stop_pending`, or `stopped`.
+
+## Behavior Notes
+
+- The pool requires standard thread, mutex, and condition variable support or configured Boost equivalents.
+- Task results and exceptions are surfaced through the returned `std::future`.
+- `queue()` throws when the pool is not running.
+
 ## Requirements
 
 - GCC 8.3.0+
@@ -16,4 +34,11 @@
 ## Examples
 
 ```C++
+#include <ext/thread_pool>
+
+ext::thread_pool pool(2);
+std::future<int> result = pool.queue([]() { return 42; });
+
+int value = result.get(); // 42
+pool.stop();
 ```

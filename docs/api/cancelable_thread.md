@@ -6,6 +6,23 @@
 
 `#include <ext/cancelable_thread>`
 
+## Overview
+
+Wraps `std::thread` and exposes cancellation-oriented state such as ready, completed, canceled, joinable, and wait-for-completion. It supports a deferred cancellation mode and an immediate mode with a caller-supplied cleanup callback.
+
+## Key APIs
+
+- `ext::cancelable_thread(fn)` starts a worker in deferred-cancel mode.
+- `ext::cancelable_thread(fn, cleanup)` enables immediate-cancel mode and calls `cleanup` when the thread is interrupted.
+- `cancel_request()` requests cancellation without joining.
+- `cancel()` requests cancellation and joins, while `join()` and `wait_for()` manage completion explicitly.
+
+## Behavior Notes
+
+- Deferred mode is modeled after `PTHREAD_CANCEL_DEFERRED`; immediate mode is modeled after `PTHREAD_CANCEL_ASYNCHRONOUS`.
+- The macOS pthread implementation does not guarantee C++ stack unwinding for deferred cancellation, so RAII cleanup is not documented as supported there.
+- Immediate cancellation is inherently dangerous because ordinary C++ destructors may not run; use the cleanup callback to release resources that must be unlocked.
+
 ## Requirements
 
 - GCC 8.3.0+

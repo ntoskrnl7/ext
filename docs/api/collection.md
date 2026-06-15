@@ -6,6 +6,23 @@
 
 `#include <ext/collection>`
 
+## Overview
+
+Lets instances of `collection_base<T>::item` automatically register themselves in a per-type collection on construction and unregister on destruction. Collection views hold locks while iterating.
+
+## Key APIs
+
+- `ext::collection_base<T, Lock>::item` is the base class for objects that should be tracked.
+- `ext::collection<T>` / `collection_with_unique_lock<T>` provide mutable exclusive access.
+- `ext::const_collection<T>` / `collection_with_shared_lock<T>` provide shared const access.
+- `collection_base<T, Lock>::size()` returns the current number of registered items.
+
+## Behavior Notes
+
+- The registry is per item type `T` and backed by static singleton storage.
+- Construct an item with the temporary flag to avoid automatic registration.
+- The implementation uses `std::shared_mutex`, Boost shared mutex, or `ext::shared_recursive_mutex` depending on platform support.
+
 ## Requirements
 
 - GCC 8.3.0+

@@ -6,6 +6,23 @@
 
 `#include <ext/chain>`
 
+## Overview
+
+Provides a base template for objects that execute a step, optionally forward to `next()`, and return a structured `result`. Tests cover basic chaining, prepared start/next flows, tuple returns, aborted chains, and result conversion.
+
+## Key APIs
+
+- `ext::chain<T, R, Args...>` is inherited by concrete chain steps using CRTP-style `T`.
+- `next(chain)` and `operator>>` connect one chain step to another.
+- `invoke(args...)` and `operator()(args...)` run a chain step and return `chain::result`.
+- `start(args...)` stores arguments for delayed execution, while `result::get()` retrieves or rethrows the final state.
+
+## Behavior Notes
+
+- `result::state()` distinguishes `done`, `aborted`, and `end_of_chain`.
+- Exceptions thrown during execution are captured as an aborted result and rethrown through `get()` as `chain_aborted`.
+- `result::tuple()` returns both the value and the chain reference for callers that need to continue fluent workflows.
+
 ## Requirements
 
 - GCC 8.3.0+

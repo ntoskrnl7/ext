@@ -6,6 +6,23 @@
 
 `#include <ext/lang>`
 
+## Overview
+
+Provides `ext::lang::ko_kr` utilities for decomposing Hangul syllables, choosing Korean postpositions, and converting numeric values into Korean nominal, ordinal, and cardinal forms.
+
+## Key APIs
+
+- `ko_kr::numeric::{nominal, ordinal, cardinal}` return UTF-8 string forms.
+- `ko_kr::numeric::{wnominal, wordinal, wcardinal}` return wide-string forms.
+- `ko_kr::syllable::{onset, nucleus, coda}` decompose Hangul syllable characters.
+- `ko_kr::postposition` selects topic, identifier, objective, destination, conjunction, vocative, and exclamation particles.
+
+## Behavior Notes
+
+- `syllable::letter` reports invalid input for non-syllables while retaining recognized jamo where possible.
+- Syllable helpers validate the Unicode Hangul syllable range before decomposition.
+- Postposition selection is based on whether the final syllable has a coda.
+
 ## Requirements
 
 - GCC 8.3.0+

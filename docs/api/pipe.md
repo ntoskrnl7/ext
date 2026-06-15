@@ -6,6 +6,22 @@
 
 `#include <ext/pipe>`
 
+## Overview
+
+Creates a connected read/write pipe pair and exposes stream objects for moving data through it. Tests cover both narrow and wide pipe variants.
+
+## Key APIs
+
+- `ext::basic_pipe<CharT>` owns the platform pipe handles.
+- `ext::pipe` is the narrow-character pipe alias.
+- `ext::wpipe` is the wide-character pipe alias.
+- Read and write stream endpoints expose standard stream-style operations.
+
+## Behavior Notes
+
+- The wrapper is used internally by `process` for stdin, stdout, and stderr plumbing.
+- Pipe endpoints close their native handles when the owning stream/buffer closes.
+
 ## Requirements
 
 - GCC 8.3.0+

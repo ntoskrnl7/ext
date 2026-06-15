@@ -6,6 +6,24 @@
 
 `#include <ext/uri>`
 
+## Overview
+
+Parses URI strings into scheme, host, port, path, query, and fragment fields and provides URI/component percent-encoding helpers. Tests cover invalid URIs, literals, query maps, and encoding.
+
+## Key APIs
+
+- `ext::basic_uri<CharT>` stores parsed URI components and the original value.
+- `ext::uri` and `ext::wuri` are narrow and wide aliases.
+- `encode_uri<CharT>(u8_string)` preserves reserved URI characters while escaping others.
+- `encode_uri_component<CharT>(u8_string)` escapes reserved characters for component values.
+- Constructors can append query maps to an existing URI.
+
+## Behavior Notes
+
+- A URI without `://` is considered invalid and clears `value`.
+- Scheme and host are normalized to lowercase during parsing.
+- Query strings are stored with the leading `?` when present.
+
 ## Requirements
 
 - GCC 8.3.0+

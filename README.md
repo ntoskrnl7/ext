@@ -45,37 +45,37 @@ target_link_libraries(tests ext)
 
 | Feature | Header | Description |
 | --- | --- | --- |
-| [any_function](docs/api/any_function.md) | `<ext/any_function>` | Invoke functions stored in `std::any` values. |
-| [async_result](docs/api/async_result.md) | `<ext/async_result>` | Run asynchronous work and retrieve typed results. |
-| [base64](docs/api/base64.md) | `<ext/base64>` | Encode and decode Base64 strings. |
-| [callback](docs/api/callback.md) | `<ext/callback>` | Manage callback handlers and dispatch. |
-| [cancelable_thread](docs/api/cancelable_thread.md) | `<ext/cancelable_thread>` | Wrap a thread with cancellation helpers. |
-| [cdbg](docs/api/cdbg.md) | `<ext/cdbg>` | Small conditional debug-printing helper. |
-| [chain](docs/api/chain.md) | `<ext/chain>` | Compose fluent callable chains. |
-| [debug_utils](docs/api/debug_utils.md) | `<ext/debug_utils.h>` | Debug-time utility macros and helpers. |
-| [collection](docs/api/collection.md) | `<ext/collection>` | Collection helpers for common container operations. |
-| [ini](docs/api/ini.md) | `<ext/ini>` | Read and write INI-style configuration data. |
-| [lang](docs/api/lang.md) | `<ext/lang>` | Language and Unicode helpers, including Korean Hangul utilities. |
-| [observable](docs/api/observable.md) | `<ext/observable>` | Observable value and event notification helpers. |
-| [path](docs/api/path.md) | `<ext/path>` | Path utility helpers. |
-| [pipe](docs/api/pipe.md) | `<ext/pipe>` | Pipe utility helpers. |
-| [process](docs/api/process.md) | `<ext/process>` | Process execution helpers. |
-| [property](docs/api/property.md) | `<ext/property>` | Property wrapper helpers. |
-| [pstream](docs/api/pstream.md) | `<ext/pstream>` | Process stream helpers. |
-| [result](docs/api/result.md) | `<ext/result>` | Result type for value-or-error flows. |
-| [safe_object](docs/api/safe_object.md) | `<ext/safe_object>` | Thread-safe object access wrapper. |
-| [shared_recursive_mutex](docs/api/shared_recursive_mutex.md) | `<ext/shared_recursive_mutex>` | Shared recursive mutex implementation. |
-| [shared_mem](docs/api/shared_mem.md) | `<ext/shared_mem>` | Shared memory helper. |
-| [singleton](docs/api/singleton.md) | `<ext/singleton>` | Singleton helper template. |
-| [string](docs/api/string.md) | `<ext/string>` | String conversion and formatting helpers. |
-| [stl_compat](docs/api/stl_compat.md) | `<ext/stl_compat>` | Compatibility layer for standard library features. |
-| [thread_pool](docs/api/thread_pool.md) | `<ext/thread_pool>` | Thread pool helper. |
-| [type_traits](docs/api/type_traits.md) | `<ext/type_traits>` | Additional compile-time type traits. |
-| [typeinfo](docs/api/typeinfo.md) | `<ext/typeinfo>` | Type information helpers. |
-| [units](docs/api/units.md) | `<ext/units>` | Strongly typed unit helpers. |
-| [uri](docs/api/uri.md) | `<ext/uri>` | URI parsing and formatting helpers. |
-| [version](docs/api/version.md) | `<ext/version>` | Version parsing and comparison helpers. |
-| [wordexp](docs/api/wordexp.md) | `<ext/wordexp>` | Shell-style word expansion helpers. |
+| [any_function](docs/api/any_function.md) | `<ext/any_function>` | Type-erased function wrapper that accepts arguments as `std::any` values and reports argument count/type errors explicitly. |
+| [async_result](docs/api/async_result.md) | `<ext/async_result>` | Asynchronous producer/result container with iterator-style consumption and cooperative cancellation flag support. |
+| [base64](docs/api/base64.md) | `<ext/base64>` | Base64 encoder/decoder for strings, wide strings, byte vectors, and trivially copyable objects. |
+| [callback](docs/api/callback.md) | `<ext/callback>` | Multicast callback list with add/remove operators and argument forwarding. |
+| [cancelable_thread](docs/api/cancelable_thread.md) | `<ext/cancelable_thread>` | Thread wrapper with deferred and immediate cancellation paths over pthread or Windows primitives. |
+| [cdbg](docs/api/cdbg.md) | `<ext/cdbg>` | Debug stream objects that write through platform debug sinks or console fallback streams. |
+| [chain](docs/api/chain.md) | `<ext/chain>` | Composable chain-of-responsibility helper with typed results, continuation links, and exception-aware result state. |
+| [debug_utils](docs/api/debug_utils.md) | `<ext/debug_utils.h>` | Debugger detection and wait helpers for POSIX-style debug workflows. |
+| [collection](docs/api/collection.md) | `<ext/collection>` | Self-registering object collection with shared or exclusive locking around global per-type item lists. |
+| [ini](docs/api/ini.md) | `<ext/ini>` | INI parser and writer backed by nested string maps. |
+| [lang](docs/api/lang.md) | `<ext/lang>` | Korean language helpers for Hangul syllables, postpositions, and native/Sino-Korean number words. |
+| [observable](docs/api/observable.md) | `<ext/observable>` | Observer pattern base template with automatic unsubscribe on observer or observable destruction. |
+| [path](docs/api/path.md) | `<ext/path>` | Path helpers for existence checks, relative path detection, and path joining. |
+| [pipe](docs/api/pipe.md) | `<ext/pipe>` | Cross-platform anonymous pipe wrapper for narrow and wide byte streams. |
+| [process](docs/api/process.md) | `<ext/process>` | Cross-platform child process launcher with stdin/stdout/stderr pipe streams and process lifetime management. |
+| [property](docs/api/property.md) | `<ext/property>` | Observable value wrapper with assignment validation and property-to-property propagation. |
+| [pstream](docs/api/pstream.md) | `<ext/pstream>` | Native-handle-backed stream wrappers used to read from and write to process pipes. |
+| [result](docs/api/result.md) | `<ext/result>` | Small `ok`/`err` result type for explicit value-or-error returns. |
+| [safe_object](docs/api/safe_object.md) | `<ext/safe_object>` | RAII lock proxy for globally named objects and mutexes selected at compile time. |
+| [shared_recursive_mutex](docs/api/shared_recursive_mutex.md) | `<ext/shared_recursive_mutex>` | Shared mutex variant that permits recursive locking by the owning thread. |
+| [shared_mem](docs/api/shared_mem.md) | `<ext/shared_mem>` | Named shared memory creation, opening, mapping, unmapping, and destruction helpers. |
+| [singleton](docs/api/singleton.md) | `<ext/singleton>` | CRTP singleton base that exposes one static instance per derived type. |
+| [string](docs/api/string.md) | `<ext/string>` | String utility namespace for trimming, printable filtering, searching, splitting, replacement, numeric conversion, and UTF-8 helpers. |
+| [stl_compat](docs/api/stl_compat.md) | `<ext/stl_compat>` | Compatibility macros, aliases, and fallback implementations for older C++ standards and compilers. |
+| [thread_pool](docs/api/thread_pool.md) | `<ext/thread_pool>` | Fixed-size worker pool with future-returning task submission and explicit start/stop state. |
+| [type_traits](docs/api/type_traits.md) | `<ext/type_traits>` | Type-trait helpers for removing class qualifiers from member functions and deducing member-function signatures. |
+| [typeinfo](docs/api/typeinfo.md) | `<ext/typeinfo>` | Portable type-name helper around C++ RTTI type information. |
+| [units](docs/api/units.md) | `<ext/units>` | Strongly typed SI and IEC byte-size units with arithmetic and conversion helpers. |
+| [uri](docs/api/uri.md) | `<ext/uri>` | RFC 3986-oriented URI parser and percent-encoding helpers for narrow, wide, and UTF-8 input. |
+| [version](docs/api/version.md) | `<ext/version>` | Semantic version parser, formatter, hashing, comparison, and mutation helper. |
+| [wordexp](docs/api/wordexp.md) | `<ext/wordexp>` | Environment or shell-style string expansion wrapper with platform-specific behavior. |
 
 ## License
 

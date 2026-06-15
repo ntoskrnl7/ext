@@ -6,6 +6,25 @@
 
 `#include <ext/process>`
 
+## Overview
+
+Starts a child command with optional arguments and working directory, exposes pipe streams for standard input/output/error, and tracks exit state. Tests cover invalid commands, working-directory execution, standard stream piping, and move semantics.
+
+## Key APIs
+
+- `ext::process(command, arguments, working_directory)` starts a child process.
+- `joinable()` checks whether the child is still running and refreshes exit state when it has ended.
+- `join()` waits for completion and closes pipe streams.
+- `in()`, `out()`, and `err()` expose process stdin, stdout, and stderr streams.
+- `get_id()`, `native_handle()`, `exit_code()`, and `last_error()` expose process metadata.
+- `get_cmdline()`, `get_cwd()`, and `ext::this_process` helpers expose command-line and working-directory details.
+
+## Behavior Notes
+
+- The destructor calls `std::terminate()` if the process is still joinable, mirroring `std::thread`-style ownership rules.
+- The class is move-only on modern compilers and supports `operator|` to connect stdout to the next process stdin.
+- The implementation uses Windows process APIs on Windows and `fork`/`exec`/`waitpid`-style behavior on POSIX systems.
+
 ## Requirements
 
 - GCC 8.3.0+

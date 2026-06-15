@@ -8,6 +8,23 @@
 
 [Semantic Versioning](https://semver.org/)
 
+## Overview
+
+Represents SemVer-style version numbers with major, minor, patch, prerelease, and build metadata fields. Tests cover invalid parsing, hashing, comparisons, updates, and formatting.
+
+## Key APIs
+
+- `ext::version` parses version strings and exposes numeric components.
+- Comparison operators order versions by their parsed fields.
+- Hash support allows use in hashed containers.
+- `major()`, `minor()`, `patch()`, `prerelease()`, `build_metadata()`, `release()`, and `str()` expose or mutate version state.
+
+## Behavior Notes
+
+- Invalid version strings throw `std::invalid_argument`.
+- Build metadata is intentionally excluded from equality/hash semantics through `str(false)`.
+- Full prerelease ordering is not implemented; comparison only distinguishes prerelease from released versions when major/minor/patch match.
+
 ## Requirements
 
 - GCC 8.3.0+
