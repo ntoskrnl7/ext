@@ -59,6 +59,10 @@ memory should read the API-specific behavior notes.
   recursion is not required.
 - `shared_mem` maps named platform resources. The creating and opening
   processes must agree on the object type layout, name, and lifetime.
+- `named_mutex` coordinates named resources across processes. Windows uses
+  native named mutexes; POSIX uses named semaphores as binary mutexes and does
+  not enforce lock ownership or provide robust-owner recovery if a process exits
+  while holding the lock.
 
 ## Error and Exception Boundaries
 

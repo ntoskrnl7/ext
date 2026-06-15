@@ -11,19 +11,12 @@
 
 #include <ext/cancelable_thread>
 #include <gtest/gtest.h>
-#include <iostream>
 
 #if defined(_EXT_CANCELABLE_THREAD_)
 class test_class {
 public:
-  test_class(int i, bool &flag) : i_(i), flag_(flag) {
-    std::cout << i << " Constructor\n";
-    flag_ = false;
-  }
-  ~test_class() {
-    std::cout << i_ << " Destructor\n";
-    flag_ = true;
-  }
+  test_class(int i, bool &flag) : i_(i), flag_(flag) { flag_ = false; }
+  ~test_class() { flag_ = true; }
   int i_;
   bool &flag_;
 };
@@ -40,14 +33,10 @@ TEST(cancelable_thread_test, cancel_immediately) {
   ext::cancelable_thread t(
 #if defined(_WIN32)
       [&mtx, &destructor_invoked, &reached]() {
-        std::cout
-            << "cancelable_thread_test::cancel_immediately thread started\n";
         test_class t1(1, destructor_invoked[0]);
         test_class t2(2, destructor_invoked[1]);
 #else
       [&mtx, &reached]() {
-        std::cout
-            << "cancelable_thread_test::cancel_immediately thread started\n";
 #endif
         std::unique_lock<std::mutex> lk(mtx);
         while (true) {
@@ -55,8 +44,6 @@ TEST(cancelable_thread_test, cancel_immediately) {
         }
 
         reached = true;
-        std::cout
-            << "cancelable_thread_test::cancel_immediately thread stopped\n";
       },
       [&mtx]() { mtx.unlock(); });
 
@@ -64,8 +51,6 @@ TEST(cancelable_thread_test, cancel_immediately) {
 
   EXPECT_TRUE(t.joinable());
   t.cancel_request();
-  std::cout
-      << "cancelable_thread_test::cancel_immediately thread cancel_requested\n";
 
   t.join();
   EXPECT_FALSE(t.completed());
@@ -100,7 +85,6 @@ TEST(cancelable_thread_test, cancel) {
   bool reached = false;
   bool destructor_invoked[] = {false, false};
   ext::cancelable_thread t([&mtx, &destructor_invoked, &reached]() {
-    std::cout << "cancelable_thread_test::cancel started\n";
     test_class t1(1, destructor_invoked[0]);
     test_class t2(2, destructor_invoked[1]);
     std::unique_lock<std::mutex> lk(mtx);
@@ -111,16 +95,10 @@ TEST(cancelable_thread_test, cancel) {
       throw ext::canceled_exception();
 #endif
     reached = false;
-    std::cout << "cancelable_thread_test::cancel stopped\n";
   });
-  std::cout << "cancel debug 0" << std::endl;
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  std::cout << "cancel debug 1" << std::endl;
   EXPECT_TRUE(t.joinable());
-  std::cout << "cancel debug 2" << std::endl;
   t.cancel_request();
-  std::cout << "cancelable_thread_test::cancel thread cancel_requested"
-            << std::endl;
 
   t.join();
   EXPECT_FALSE(t.completed());
@@ -144,12 +122,10 @@ void cancel_immediately_test_fn() {
   test_class t1(1, destructor_invoked[0]);
   test_class t2(2, destructor_invoked[1]);
   std::unique_lock<std::mutex> lk(mtx);
-  std::cout << "cancelable_thread_test::cancel_immediately thread started\n";
   while (true) {
     // std::this_thread::yield();
   }
   reached = true;
-  std::cout << "cancelable_thread_test::cancel_immediately thread stopped\n";
 }
 
 TEST(cancelable_thread_test, cancel_immediately) {
@@ -178,7 +154,6 @@ TEST(cancelable_thread_test, cancel_immediately) {
 }
 
 void cancel_test_fn() {
-  std::cout << "cancelable_thread_test::cancel started\n";
   test_class t1(1, destructor_invoked[0]);
   test_class t2(2, destructor_invoked[1]);
   std::unique_lock<std::mutex> lk(mtx);
@@ -187,7 +162,6 @@ void cancel_test_fn() {
     throw ext::canceled_exception();
 
   reached = true;
-  std::cout << "cancelable_thread_test::cancel stopped\n";
 }
 
 TEST(cancelable_thread_test, cancel) {

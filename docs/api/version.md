@@ -15,15 +15,20 @@ Represents SemVer-style version numbers with major, minor, patch, prerelease, an
 ## Key APIs
 
 - `ext::version` parses version strings and exposes numeric components.
-- Comparison operators order versions by their parsed fields.
+- Comparison operators order versions by major, minor, patch, and SemVer
+  prerelease precedence.
 - Hash support allows use in hashed containers.
 - `major()`, `minor()`, `patch()`, `prerelease()`, `build_metadata()`, `release()`, and `str()` expose or mutate version state.
 
 ## Behavior Notes
 
 - Invalid version strings throw `std::invalid_argument`.
-- Build metadata is intentionally excluded from equality/hash semantics through `str(false)`.
-- Full prerelease ordering is not implemented; comparison only distinguishes prerelease from released versions when major/minor/patch match.
+- Build metadata is intentionally excluded from precedence, equality, and hash
+  semantics through `str(false)`.
+- Prerelease comparison follows SemVer item 11: dot-separated numeric
+  identifiers compare numerically, numeric identifiers sort before non-numeric
+  identifiers, and a release version has higher precedence than a prerelease
+  version with the same major, minor, and patch.
 
 ## Requirements
 

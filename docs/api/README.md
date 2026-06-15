@@ -10,7 +10,7 @@ threading behavior, see [Portability and API contracts](../portability-and-contr
 - Compatibility: [stl_compat](stl_compat.md), [type_traits](type_traits.md), [typeinfo](typeinfo.md)
 - Text, parsing, and data: [base64](base64.md), [ini](ini.md), [lang](lang.md), [path](path.md), [string](string.md), [uri](uri.md), [version](version.md), [wordexp](wordexp.md)
 - Function and object patterns: [any_function](any_function.md), [callback](callback.md), [chain](chain.md), [collection](collection.md), [observable](observable.md), [property](property.md), [result](result.md), [singleton](singleton.md)
-- Concurrency and IPC: [async_result](async_result.md), [cancelable_thread](cancelable_thread.md), [pipe](pipe.md), [process](process.md), [pstream](pstream.md), [safe_object](safe_object.md), [shared_mem](shared_mem.md), [shared_recursive_mutex](shared_recursive_mutex.md), [thread_pool](thread_pool.md)
+- Concurrency and IPC: [async_result](async_result.md), [cancelable_thread](cancelable_thread.md), [named_mutex](named_mutex.md), [pipe](pipe.md), [process](process.md), [pstream](pstream.md), [safe_object](safe_object.md), [shared_mem](shared_mem.md), [shared_recursive_mutex](shared_recursive_mutex.md), [thread_pool](thread_pool.md)
 
 ## Feature Table
 
@@ -27,6 +27,7 @@ threading behavior, see [Portability and API contracts](../portability-and-contr
 | [collection](collection.md) | `<ext/collection>` | Self-registering object collection with shared or exclusive locking around global per-type item lists. |
 | [ini](ini.md) | `<ext/ini>` | INI parser and writer backed by nested string maps. |
 | [lang](lang.md) | `<ext/lang>` | Korean language helpers for Hangul syllables, postpositions, and native/Sino-Korean number words. |
+| [named_mutex](named_mutex.md) | `<ext/named_mutex>` | Cross-process named mutex wrapper for coordinating shared resources and shared-memory payloads. |
 | [observable](observable.md) | `<ext/observable>` | Observer pattern base template with automatic unsubscribe on observer or observable destruction. |
 | [path](path.md) | `<ext/path>` | Path helpers for existence checks, relative path detection, and path joining. |
 | [pipe](pipe.md) | `<ext/pipe>` | Cross-platform anonymous pipe wrapper for narrow and wide byte streams. |
