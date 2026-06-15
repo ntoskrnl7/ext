@@ -268,6 +268,7 @@ inline shared_mem_handle create_shared_mem(const char *name,
   if (handle == -1)
     return shared_mem_handle_null;
   if (ftruncate(handle, length) == -1) {
+    close(handle);
     shm_unlink(name);
     return shared_mem_handle_null;
   }
@@ -336,7 +337,7 @@ class shared_mem_base {
 public:
   shared_mem_base(const char *Name)
       : name_(Name), handle_(shared_mem_handle_null),
-        accessMask_(shared_mem_unspecified)
+        accessMask_(shared_mem_unspecified), size_(0)
 #if defined(_WIN32)
         ,
         lastErrorCode_(ERROR_SUCCESS)

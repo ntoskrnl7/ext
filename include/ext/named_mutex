@@ -1,0 +1,190 @@
+/**
+ * @file named_mutex
+ * @author Jung-kang Lee (ntoskrnl7@gmail.com)
+ * @brief This module implements a cross-process named mutex.
+ *
+ * @copyright Copyright (c) 2020 C++ Extended template library Authors
+ *
+ */
+#pragma once
+
+#ifdef CXX_USE_BOOST
+#define CXX_USE_STD_ATOMIC
+#include <boost/atomic.hpp>
+#endif // CXX_USE_BOOST
+
+#define CXX_USE_NULLPTR
+#include "stl_compat"
+
+#if ((!defined(CXX_STD_ATOMIC_NOT_SUPPORTED)) || defined(_EXT_STD_ATOMIC_))
+
+#ifndef _EXT_NAMED_MUTEX_
+#define _EXT_NAMED_MUTEX_
+
+#include <stdexcept>
+#include <string>
+
+#ifndef _EXT_STD_ATOMIC_
+#include <atomic>
+#endif
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <errno.h>
+#include <fcntl.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#endif
+
+namespace ext {
+
+class named_mutex {
+public:
+  explicit named_mutex(const char *name)
+      : name_(normalize_name_(name)), abandoned_(false) {
+#if defined(_WIN32)
+    handle_ = CreateMutexA(NULL, FALSE, name_.c_str());
+    if (handle_ == NULL)
+      throw std::runtime_error("Failed to create named mutex: " + name_);
+#else
+    handle_ = sem_open(name_.c_str(), O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
+                                             S_IWGRP | S_IROTH | S_IWOTH,
+                       1);
+    if (handle_ == SEM_FAILED)
+      throw std::runtime_error("Failed to create named mutex: " + name_);
+#endif
+  }
+
+  ~named_mutex() { close(); }
+
+  const std::string &name() const { return name_; }
+
+  bool valid() const {
+#if defined(_WIN32)
+    return handle_ != NULL;
+#else
+    return handle_ != SEM_FAILED;
+#endif
+  }
+
+  bool abandoned() const { return abandoned_.load(); }
+
+  void lock() {
+    ensure_valid_();
+#if defined(_WIN32)
+    DWORD result = WaitForSingleObject(handle_, INFINITE);
+    if (result == WAIT_OBJECT_0) {
+      abandoned_.store(false);
+      return;
+    }
+    if (result == WAIT_ABANDONED) {
+      abandoned_.store(true);
+      return;
+    }
+    throw std::runtime_error("Failed to lock named mutex: " + name_);
+#else
+    while (sem_wait(handle_) == -1) {
+      if (errno == EINTR)
+        continue;
+      throw std::runtime_error("Failed to lock named mutex: " + name_);
+    }
+    abandoned_.store(false);
+#endif
+  }
+
+  bool try_lock() {
+    ensure_valid_();
+#if defined(_WIN32)
+    DWORD result = WaitForSingleObject(handle_, 0);
+    if (result == WAIT_OBJECT_0) {
+      abandoned_.store(false);
+      return true;
+    }
+    if (result == WAIT_ABANDONED) {
+      abandoned_.store(true);
+      return true;
+    }
+    if (result == WAIT_TIMEOUT)
+      return false;
+    throw std::runtime_error("Failed to try-lock named mutex: " + name_);
+#else
+    while (sem_trywait(handle_) == -1) {
+      if (errno == EINTR)
+        continue;
+      if (errno == EAGAIN)
+        return false;
+      throw std::runtime_error("Failed to try-lock named mutex: " + name_);
+    }
+    abandoned_.store(false);
+    return true;
+#endif
+  }
+
+  void unlock() {
+    ensure_valid_();
+#if defined(_WIN32)
+    if (!ReleaseMutex(handle_))
+      throw std::runtime_error("Failed to unlock named mutex: " + name_);
+#else
+    if (sem_post(handle_) == -1)
+      throw std::runtime_error("Failed to unlock named mutex: " + name_);
+#endif
+  }
+
+  void close() {
+#if defined(_WIN32)
+    if (handle_ != NULL) {
+      CloseHandle(handle_);
+      handle_ = NULL;
+    }
+#else
+    if (handle_ != SEM_FAILED) {
+      sem_close(handle_);
+      handle_ = SEM_FAILED;
+    }
+#endif
+  }
+
+  bool unlink() {
+#if defined(_WIN32)
+    return true;
+#else
+    return sem_unlink(name_.c_str()) == 0 || errno == ENOENT;
+#endif
+  }
+
+private:
+  named_mutex(const named_mutex &);
+  named_mutex &operator=(const named_mutex &);
+
+  static std::string normalize_name_(const char *name) {
+    if (name == NULL || *name == '\0')
+      throw std::invalid_argument("Named mutex name must not be empty.");
+
+    std::string normalized(name);
+#if !defined(_WIN32)
+    if (normalized[0] != '/')
+      normalized.insert(0, "/");
+#endif
+    return normalized;
+  }
+
+  void ensure_valid_() const {
+    if (!valid())
+      throw std::runtime_error("Named mutex is closed: " + name_);
+  }
+
+  std::string name_;
+#if defined(_WIN32)
+  HANDLE handle_;
+#else
+  sem_t *handle_;
+#endif
+  std::atomic_bool abandoned_;
+};
+
+} // namespace ext
+
+#endif // _EXT_NAMED_MUTEX_
+#endif

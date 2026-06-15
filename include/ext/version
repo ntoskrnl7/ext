@@ -22,6 +22,8 @@
 #define CXX_USE_STD_CSTDINT
 #include "stl_compat"
 #include <cstdint>
+#include <cctype>
+#include <vector>
 
 #if ((!defined(CXX_STD_REGEX_NOT_SUPPORTED)) || defined(_EXT_STD_REGEX_))
 #include "string"
@@ -127,12 +129,6 @@ public:
 
   bool operator!=(const version &rhs) const { return !operator==(rhs); }
 
-  // https://semver.org/#spec-item-11
-  //
-  // TODO
-  // Pre-release value comparison is not implemented yet.
-  // 1.0.0-alpha < 1.0.0-alpha.1 < 1.0.0-alpha.beta < 1.0.0-beta
-  // < 1.0.0-beta.2 < 1.0.0-beta.11 < 1.0.0-rc.1 < 1.0.0.
   bool operator<(const version &rhs) const {
     if (major_ != rhs.major_)
       return major_ < rhs.major_;
@@ -140,7 +136,7 @@ public:
       return minor_ < rhs.minor_;
     if (patch_ != rhs.patch_)
       return patch_ < rhs.patch_;
-    return (!prerelease_.empty()) && rhs.prerelease_.empty();
+    return compare_prerelease_(prerelease_, rhs.prerelease_) < 0;
   }
 
   bool operator>(const version &rhs) const {
@@ -150,7 +146,7 @@ public:
       return minor_ > rhs.minor_;
     if (patch_ != rhs.patch_)
       return patch_ > rhs.patch_;
-    return prerelease_.empty() && !rhs.prerelease_.empty();
+    return compare_prerelease_(prerelease_, rhs.prerelease_) > 0;
   }
 
   bool operator<=(const version &rhs) const {
@@ -210,6 +206,86 @@ public:
   }
 
 private:
+  static bool is_numeric_identifier_(const std::string &identifier) {
+    if (identifier.empty())
+      return false;
+    for (std::string::const_iterator it = identifier.begin();
+         it != identifier.end(); ++it) {
+      if (!std::isdigit(static_cast<unsigned char>(*it)))
+        return false;
+    }
+    return true;
+  }
+
+  static std::vector<std::string> split_prerelease_(
+      const std::string &prerelease) {
+    std::vector<std::string> identifiers;
+    std::string::size_type start = 0;
+
+    while (start <= prerelease.size()) {
+      std::string::size_type dot = prerelease.find('.', start);
+      if (dot == std::string::npos) {
+        identifiers.push_back(prerelease.substr(start));
+        break;
+      }
+
+      identifiers.push_back(prerelease.substr(start, dot - start));
+      start = dot + 1;
+    }
+
+    return identifiers;
+  }
+
+  static int compare_numeric_identifier_(const std::string &lhs,
+                                         const std::string &rhs) {
+    if (lhs.size() != rhs.size())
+      return lhs.size() < rhs.size() ? -1 : 1;
+    if (lhs == rhs)
+      return 0;
+    return lhs < rhs ? -1 : 1;
+  }
+
+  static int compare_prerelease_(const std::string &lhs,
+                                 const std::string &rhs) {
+    if (lhs.empty() && rhs.empty())
+      return 0;
+    if (lhs.empty())
+      return 1;
+    if (rhs.empty())
+      return -1;
+
+    std::vector<std::string> lhs_identifiers = split_prerelease_(lhs);
+    std::vector<std::string> rhs_identifiers = split_prerelease_(rhs);
+    const size_t count = lhs_identifiers.size() < rhs_identifiers.size()
+                             ? lhs_identifiers.size()
+                             : rhs_identifiers.size();
+
+    for (size_t i = 0; i < count; ++i) {
+      const std::string &lhs_identifier = lhs_identifiers[i];
+      const std::string &rhs_identifier = rhs_identifiers[i];
+      const bool lhs_numeric = is_numeric_identifier_(lhs_identifier);
+      const bool rhs_numeric = is_numeric_identifier_(rhs_identifier);
+
+      if (lhs_numeric && rhs_numeric) {
+        int numeric_compare =
+            compare_numeric_identifier_(lhs_identifier, rhs_identifier);
+        if (numeric_compare != 0)
+          return numeric_compare;
+        continue;
+      }
+
+      if (lhs_numeric != rhs_numeric)
+        return lhs_numeric ? -1 : 1;
+
+      if (lhs_identifier != rhs_identifier)
+        return lhs_identifier < rhs_identifier ? -1 : 1;
+    }
+
+    if (lhs_identifiers.size() == rhs_identifiers.size())
+      return 0;
+    return lhs_identifiers.size() < rhs_identifiers.size() ? -1 : 1;
+  }
+
   class major_ major_;
   class minor_ minor_;
   uint64_t patch_;

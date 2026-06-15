@@ -9,6 +9,9 @@
 #pragma once
 
 #ifdef CXX_USE_BOOST
+#define CXX_USE_STD_ATOMIC
+#include <boost/atomic.hpp>
+
 #define CXX_USE_STD_CHRONO
 #include <boost/chrono/chrono.hpp>
 
@@ -24,7 +27,8 @@
 
 #include "stl_compat"
 
-#if ((!defined(CXX_STD_CHRONO_NOT_SUPPORTED)) || defined(_EXT_STD_CHRONO_)) && \
+#if ((!defined(CXX_STD_ATOMIC_NOT_SUPPORTED)) || defined(_EXT_STD_ATOMIC_)) && \
+    ((!defined(CXX_STD_CHRONO_NOT_SUPPORTED)) || defined(_EXT_STD_CHRONO_)) && \
     ((!defined(CXX_STD_MUTEX_NOT_SUPPORTED)) || defined(_EXT_STD_MUTEX_)) &&   \
     ((!defined(CXX_STD_THREAD_NOT_SUPPORTED)) || defined(_EXT_STD_THREAD_)) && \
     ((!defined(CXX_STD_CONDITION_VARIABLE_NOT_SUPPORTED)) ||                   \
@@ -36,6 +40,9 @@
 #include <memory>
 #include <stdexcept>
 
+#ifndef _EXT_STD_ATOMIC_
+#include <atomic>
+#endif
 #ifndef _EXT_STD_MUTEX_
 #include <mutex>
 #endif
@@ -105,7 +112,7 @@ private:
     if (ctx && ctx->cleanup_) {
       ctx->cleanup_();
       ctx->cleanup_ = NULL;
-      ctx->canceled_ = true;
+      ctx->canceled_.store(true);
       ctx->cv_.notify_all();
     }
   }
@@ -114,14 +121,14 @@ private:
 #ifndef __cpp_lambdas
   void thread_proc_(std::function<void()> fn) {
     try {
-      ready_ = true;
+      ready_.store(true);
       cv_.notify_all();
-      if (cancel_requsted_)
+      if (cancel_requsted_.load())
         throw canceled_exception();
       fn();
-      completed_ = true;
+      completed_.store(true);
     } catch (const canceled_exception &) {
-      canceled_ = true;
+      canceled_.store(true);
     }
     cv_.notify_all();
   }
@@ -144,7 +151,7 @@ public:
         if (ctx && ctx->cleanup_) {
           ctx->cleanup_();
           ctx->cleanup_ = nullptr;
-          ctx->canceled_ = true;
+          ctx->canceled_.store(true);
           ctx->cv_.notify_all();
 #if defined(_WIN32)
           ExitThread(0);
@@ -154,7 +161,7 @@ public:
 
       void (*cancel_routine)(void *) = [](void *ptr) {
         cancelable_thread *ctx = reinterpret_cast<cancelable_thread *>(ptr);
-        ctx->canceled_ = true;
+        ctx->canceled_.store(true);
         ctx->cv_.notify_all();
         if (getenv("WINDIR"))
           throw ext::canceled_exception();
@@ -164,14 +171,14 @@ public:
                            this);
 #endif // EXT_CANCELABLE_THREAD_USE_PTHREAD
       try {
-        ready_ = true;
+        ready_.store(true);
         cv_.notify_all();
-        if (cancel_requsted_)
+        if (cancel_requsted_.load())
           throw canceled_exception();
         fn();
-        completed_ = true;
+        completed_.store(true);
       } catch (const canceled_exception &) {
-        canceled_ = true;
+        canceled_.store(true);
       }
       cv_.notify_all();
 #if EXT_CANCELABLE_THREAD_USE_PTHREAD
@@ -184,11 +191,11 @@ public:
 #endif // !defined(__cpp_lambdas)
   }
 
-  bool ready() const { return ready_; }
+  bool ready() const { return ready_.load(); }
 
-  bool completed() const { return completed_; }
+  bool completed() const { return completed_.load(); }
 
-  bool canceled() const { return canceled_; }
+  bool canceled() const { return canceled_.load(); }
 
   std::thread::native_handle_type native_handle() {
     return thread_.native_handle();
@@ -198,14 +205,14 @@ public:
     if (!thread_.joinable())
       return false;
 
-    cancel_requsted_ = true;
+    cancel_requsted_.store(true);
     std::unique_lock<std::mutex> lk(mtx_);
 #if defined(__cpp_lambdas)
-    cv_.wait(lk, [this]() { return ready_; });
+    cv_.wait(lk, [this]() { return ready_.load(); });
 #else
     cv_.wait(lk, std::bind(&cancelable_thread::ready, this));
 #endif
-    ready_ = false;
+    ready_.store(false);
     cv_.notify_all();
 #if EXT_CANCELABLE_THREAD_USE_PTHREAD
     pthread_cancel(thread_.native_handle());
@@ -254,7 +261,7 @@ public:
       return false;
     if (thread_.joinable())
       thread_.join();
-    return canceled_;
+    return canceled_.load();
   }
 
   bool joinable() const { return thread_.joinable(); }
@@ -268,7 +275,9 @@ public:
   bool wait_for(const std::chrono::duration<_Rep, _Period> &time) {
     std::unique_lock<std::mutex> lk(mtx_);
 #if defined(__cpp_lambdas)
-    return cv_.wait_for(lk, time, [this]() { return completed_ || canceled_; });
+    return cv_.wait_for(lk, time, [this]() {
+      return completed_.load() || canceled_.load();
+    });
 #else
     return cv_.wait_for(lk, time,
                         std::bind(&cancelable_thread::is_wait_, this));
@@ -276,17 +285,17 @@ public:
   }
 
 private:
-  bool is_wait_() { return completed_ || canceled_; }
+  bool is_wait_() { return completed_.load() || canceled_.load(); }
 
   std::thread thread_;
   std::mutex mtx_;
   std::condition_variable cv_;
   std::function<void()> cleanup_;
-  bool ready_;
+  std::atomic_bool ready_;
   bool cancel_immediately_;
-  bool cancel_requsted_;
-  bool canceled_;
-  bool completed_;
+  std::atomic_bool cancel_requsted_;
+  std::atomic_bool canceled_;
+  std::atomic_bool completed_;
 };
 } // namespace ext
 

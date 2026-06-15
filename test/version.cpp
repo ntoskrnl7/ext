@@ -117,7 +117,28 @@ TEST(version_test, comparison) {
   // 11.4
   // Example: 1.0.0-alpha < 1.0.0-alpha.1 < 1.0.0-alpha.beta < 1.0.0-beta
   // < 1.0.0-beta.2 < 1.0.0-beta.11 < 1.0.0-rc.1 < 1.0.0. Pre-release value
-  // comparison is not implemented yet.
+  // comparison follows dot-separated SemVer identifiers.
+  EXPECT_TRUE(ext::version("1.0.0-alpha") <
+              ext::version("1.0.0-alpha.1"));
+  EXPECT_TRUE(ext::version("1.0.0-alpha.1") <
+              ext::version("1.0.0-alpha.beta"));
+  EXPECT_TRUE(ext::version("1.0.0-alpha.beta") <
+              ext::version("1.0.0-beta"));
+  EXPECT_TRUE(ext::version("1.0.0-beta") <
+              ext::version("1.0.0-beta.2"));
+  EXPECT_TRUE(ext::version("1.0.0-beta.2") <
+              ext::version("1.0.0-beta.11"));
+  EXPECT_TRUE(ext::version("1.0.0-beta.11") <
+              ext::version("1.0.0-rc.1"));
+  EXPECT_TRUE(ext::version("1.0.0-rc.1") < ext::version("1.0.0"));
+  EXPECT_TRUE(ext::version("1.0.0-alpha.9") <
+              ext::version("1.0.0-alpha.10"));
+  EXPECT_TRUE(ext::version("1.0.0-alpha.10") >
+              ext::version("1.0.0-alpha.9"));
+  EXPECT_TRUE(ext::version("1.0.0-alpha.1") <
+              ext::version("1.0.0-alpha.beta"));
+  EXPECT_TRUE(ext::version("1.0.0-alpha.beta") >
+              ext::version("1.0.0-alpha.1"));
 }
 
 TEST(version_test, update) {

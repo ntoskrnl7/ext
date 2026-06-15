@@ -37,6 +37,8 @@ Wraps Windows file mappings and POSIX shared memory objects behind a common acce
   across process boundaries.
 - Synchronization is not provided by `shared_mem<T>`; use an external
   interprocess synchronization primitive when multiple processes can write.
+- `ext::named_mutex` is the companion primitive for portable cross-process
+  write synchronization.
 
 ## Requirements
 
@@ -65,6 +67,29 @@ Wraps Windows file mappings and POSIX shared memory objects behind a common acce
   if (st_mem.created()) {
     st_mem->i = 10;
     st_mem->j = 20;
+  }
+  ```
+
+- Synchronized access
+
+  ```C++
+  #include <ext/named_mutex>
+  #include <ext/shared_mem>
+  #include <mutex>
+
+  struct memory_struct0 {
+    int i;
+    int j;
+  };
+
+  ext::shared_mem<memory_struct0> st_mem("memory_struct0",
+                                         shared_mem_all_access);
+  ext::named_mutex lock("memory_struct0.lock");
+
+  {
+    std::lock_guard<ext::named_mutex> guard(lock);
+    st_mem->i += 1;
+    st_mem->j += 1;
   }
   ```
 

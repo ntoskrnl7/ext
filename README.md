@@ -79,6 +79,7 @@ ext is best used as a collection of opt-in headers:
 | [collection](docs/api/collection.md) | `<ext/collection>` | Self-registering object collection with shared or exclusive locking around global per-type item lists. |
 | [ini](docs/api/ini.md) | `<ext/ini>` | INI parser and writer backed by nested string maps. |
 | [lang](docs/api/lang.md) | `<ext/lang>` | Korean language helpers for Hangul syllables, postpositions, and native/Sino-Korean number words. |
+| [named_mutex](docs/api/named_mutex.md) | `<ext/named_mutex>` | Cross-process named mutex wrapper for coordinating shared resources and shared-memory payloads. |
 | [observable](docs/api/observable.md) | `<ext/observable>` | Observer pattern base template with automatic unsubscribe on observer or observable destruction. |
 | [path](docs/api/path.md) | `<ext/path>` | Path helpers for existence checks, relative path detection, and path joining. |
 | [pipe](docs/api/pipe.md) | `<ext/pipe>` | Cross-platform anonymous pipe wrapper for narrow and wide byte streams. |
