@@ -68,6 +68,11 @@ memory should read the API-specific behavior notes.
 
 - `result` and `void_result` model explicit value-or-error returns, but they are
   small ext-specific types rather than `std::expected`.
+- Returning success from `result` or `void_result` performs no memory
+  allocation. The `err<E>` wrapper derives from `std::runtime_error`, so it is
+  built only when there is an error to report. This makes both types usable on
+  hot paths, provided the call granularity is a buffer rather than a single
+  element.
 - `thread_pool` task exceptions are delivered through returned futures.
 - Parsing helpers such as `version` and `uri` throw or store parsed state
   according to their API pages.
