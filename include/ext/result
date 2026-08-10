@@ -48,37 +48,88 @@ public:
 };
 
 template <typename T> struct err : result_error {
-  err() : result_error(no_error_occurred()) {}
-  explicit err(T value) : value(value), result_error(error_occurred("error")) {}
+  // Base classes are initialized before members regardless of the order
+  // written here, so the base is listed first to match that order.
+  // value is value-initialized so that a default constructed err has a
+  // deterministic value rather than an indeterminate one.
+  err() : result_error(no_error_occurred()), value() {}
+  explicit err(T value) : result_error(error_occurred("error")), value(value) {}
   explicit err(T value, const std::string &message)
-      : value(value), result_error(error_occurred(message)) {}
+      : result_error(error_occurred(message)), value(value) {}
   operator T() const { return value; }
   T value;
 };
 
+namespace internal {
+
+/**
+ * @brief Stores an err<E> only when an error actually occurred.
+ *
+ * err<E> derives from std::runtime_error, so every instance carries an error
+ * message and constructing one costs a memory allocation. result and
+ * void_result used to hold an err<E> member by value, which meant the success
+ * path paid that cost as well: returning success allocated, and the returned
+ * object was as large as an exception object.
+ *
+ * Building the wrapper only when there is an error to report keeps the
+ * success path allocation free. The error path is unchanged in practice,
+ * since reporting an error already had to build the message.
+ */
+template <typename E> class error_holder {
+public:
+  error_holder() : error_(nullptr) {}
+
+  explicit error_holder(const err<E> &error) : error_(new err<E>(error)) {}
+
+  error_holder(const error_holder &other)
+      : error_(other.error_ ? new err<E>(*other.error_) : nullptr) {}
+
+  ~error_holder() { delete error_; }
+
+  error_holder &operator=(const error_holder &other) {
+    if (this != &other) {
+      // The copy is made before releasing the old value so that a failed
+      // allocation leaves this object unchanged.
+      err<E> *replacement = other.error_ ? new err<E>(*other.error_) : nullptr;
+      delete error_;
+      error_ = replacement;
+    }
+    return *this;
+  }
+
+  bool empty() const { return error_ == nullptr; }
+
+  const err<E> &get() const { return *error_; }
+
+private:
+  err<E> *error_;
+};
+
+} // namespace internal
+
 template <typename T, typename E> class result {
 public:
-  result(ok<T> ok) : succeed_(true), ok_(ok) {}
+  result(ok<T> ok) : ok_(ok), succeed_(true) {}
 
-  result(err<E> error) : succeed_(false), err_(error) {}
+  result(err<E> error) : err_(error), succeed_(false) {}
 
   operator bool() const { return succeed_; }
 
   const ext::ok<T> &get() const {
     if (succeed_)
       return ok_;
-    throw error_occurred(err_.what());
+    throw error_occurred(err_.get().what());
   }
 
   const ext::err<E> &error() const {
     if (succeed_)
       throw no_error_occurred();
-    return err_;
+    return err_.get();
   }
 
 private:
   ext::ok<T> ok_;
-  ext::err<E> err_;
+  internal::error_holder<E> err_;
   bool succeed_;
 };
 
@@ -86,14 +137,37 @@ template <typename E> class void_result {
 public:
   void_result(ok<void>) : succeed_(true) {}
 
-  void_result(err<E> error) : succeed_(false), err_(error) {}
+  void_result(err<E> error) : err_(error), succeed_(false) {}
 
   operator bool() const { return succeed_; }
 
-  const ext::err<E> &error() const { return err_; }
+  /**
+   * @brief Returns the error wrapper. Does not throw on success.
+   *
+   * There is no stored wrapper on success, so a default constructed one is
+   * returned. Reading it is still a caller error, but it now yields a
+   * deterministic value instead of the indeterminate one that the previous
+   * always-present member left behind.
+   */
+  const ext::err<E> &error() const {
+    if (err_.empty())
+      return no_error();
+    return err_.get();
+  }
 
 private:
-  ext::err<E> err_;
+  /**
+   * @brief The wrapper returned by error() when no error occurred.
+   *
+   * Built at most once per E, and only if a caller actually reads error()
+   * on a successful result.
+   */
+  static const ext::err<E> &no_error() {
+    static const ext::err<E> value;
+    return value;
+  }
+
+  internal::error_holder<E> err_;
   bool succeed_;
 };
 } // namespace ext

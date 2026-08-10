@@ -24,6 +24,10 @@ Models a return value that is either successful `ok<T>` data or failed `err<E>` 
 - `get()` throws `error_occurred` when called on an error result.
 - `error()` throws `no_error_occurred` when called on a successful `result<T, E>`.
 - `void_result<E>::error()` returns the stored error wrapper and does not throw on success.
+  On success there is no stored wrapper, so a default constructed one is
+  returned; reading it is a caller error but yields a deterministic value.
+- Returning success allocates nothing. `err<E>` derives from
+  `std::runtime_error`, so it is constructed only when an error is reported.
 - `ok<T>` and `err<E>` are wrapper types with conversion operators; this is an
   ext-specific result model rather than `std::expected`.
 
